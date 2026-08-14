@@ -176,42 +176,33 @@ input.native::placeholder{color:var(--ink3)}
 .free-exhausted-bar .feh-body{font-size:12px;color:var(--ink2)}
 
 /* PROCESSING */
-.processing-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:3.5rem 2.5rem 2.5rem;text-align:center;box-shadow:var(--shadow-2);position:relative;overflow:hidden;max-width:480px;margin:0 auto}
-.processing-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--gold),var(--gold-h),transparent);animation:sweep 2.4s ease-in-out infinite}
+.processing-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:3.5rem 2rem;text-align:center;box-shadow:var(--shadow-2);position:relative;overflow:hidden}
+.processing-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);animation:sweep 2s ease-in-out infinite}
 @keyframes sweep{0%,100%{transform:translateX(-100%)}50%{transform:translateX(100%)}}
-.spin-holder{position:relative;width:72px;height:72px;margin:0 auto 28px}
-.spin-ring{width:72px;height:72px;border-radius:50%;border:2.5px solid var(--gold-tint);border-top-color:var(--gold);border-right-color:var(--gold);animation:spin 1s linear infinite}
-.spin-mark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-size:26px;color:var(--gold)}
+.spin-holder{position:relative;width:70px;height:70px;margin:0 auto 24px}
+.spin-ring{width:70px;height:70px;border-radius:50%;border:2px solid var(--gold-tint);border-top-color:var(--gold);border-right-color:var(--gold);animation:spin 0.9s linear infinite}
+.spin-mark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-size:24px;color:var(--gold)}
 @keyframes spin{to{transform:rotate(360deg)}}
-.proc-title{font-family:var(--serif);font-size:26px;color:var(--ink);margin-bottom:6px;letter-spacing:-0.01em}
-.proc-msg{font-family:var(--mono);font-size:11.5px;color:var(--ink2);margin-bottom:28px;min-height:20px;letter-spacing:0.04em;transition:opacity 0.3s}
-
-/* ── Progress bar ──────────────────────────────────────── */
-.proc-progress-wrap{margin-bottom:24px}
-.progress-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;max-width:400px;margin-left:auto;margin-right:auto}
-.progress-label{font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink3)}
-.progress-pct{font-family:var(--mono);font-size:13px;color:var(--gold);font-weight:600;letter-spacing:0.02em;transition:all 0.4s ease;min-width:38px;text-align:right}
-.progress-track{background:var(--paper2);border-radius:6px;height:10px;max-width:400px;margin:0 auto;overflow:hidden;border:1px solid var(--border);position:relative}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-h),#D4AA45);border-radius:6px;transition:width 0.6s cubic-bezier(0.4,0,0.2,1);position:relative;min-width:0}
-.progress-fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.28) 50%,transparent 100%);border-radius:6px;animation:shimmer 1.6s ease-in-out infinite}
-@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
-.progress-glow{position:absolute;right:0;top:50%;transform:translateY(-50%);width:16px;height:16px;border-radius:50%;background:var(--gold-h);filter:blur(6px);opacity:0.6;transition:opacity 0.3s}
-
-/* ── Stage steps ───────────────────────────────────────── */
-.proc-stages{display:flex;align-items:flex-start;justify-content:center;gap:0;max-width:400px;margin:0 auto;padding-top:4px}
-.pstage{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative}
-.pstage:not(:last-child)::after{content:"";position:absolute;top:8px;left:calc(50% + 10px);right:calc(-50% + 10px);height:1.5px;background:var(--border);transition:background 0.4s,opacity 0.4s;z-index:0}
-.pstage.done:not(:last-child)::after{background:var(--gold);opacity:0.6}
-.pstage-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center;font-size:8px;color:transparent;transition:all 0.35s ease;position:relative;z-index:1;flex-shrink:0}
-.pstage.active .pstage-dot{border-color:var(--gold);background:var(--gold-tint);box-shadow:0 0 0 3px var(--gold-tint);animation:pulseDot 1.4s ease-in-out infinite}
-.pstage.done .pstage-dot{border-color:var(--gold);background:var(--gold);color:#fff}
-@keyframes pulseDot{0%,100%{box-shadow:0 0 0 3px var(--gold-tint)}50%{box-shadow:0 0 0 5px var(--gold-tint-strong)}}
-.pstage-name{font-family:var(--mono);font-size:9px;letter-spacing:0.06em;color:var(--ink4);text-transform:uppercase;transition:color 0.3s;text-align:center}
-.pstage.active .pstage-name{color:var(--gold)}
-.pstage.done .pstage-name{color:var(--ink3)}
-
-/* Legacy compat (keep width transition) */
-.progress-ledger{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:2rem;background:var(--card)}
+.proc-title{font-family:var(--serif);font-size:24px;color:var(--ink);margin-bottom:8px;letter-spacing:-0.01em}
+.proc-msg{font-family:var(--mono);font-size:12px;color:var(--ink2);margin-bottom:24px;min-height:20px;letter-spacing:0.02em}
+.progress-track{background:var(--paper2);border-radius:3px;height:6px;max-width:360px;margin:0 auto 6px;overflow:hidden;position:relative}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-h));border-radius:3px;transition:width 0.4s ease-out;position:relative;overflow:hidden}
+.progress-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.35) 50%,transparent 100%);animation:shimmer 1.4s infinite;transform:translateX(-100%)}
+@keyframes shimmer{to{transform:translateX(300%)}}
+.progress-pct{font-family:var(--mono);font-size:11px;color:var(--gold);font-weight:600;margin-bottom:24px}
+.stage-track{display:flex;align-items:flex-start;justify-content:center;max-width:360px;margin:0 auto}
+.stage-item{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;position:relative}
+.stage-connector{position:absolute;top:4px;left:50%;width:100%;height:1px;background:var(--border);transition:background 0.4s;z-index:0}
+.stage-connector.done{background:var(--gold)}
+.stage-item:last-child .stage-connector{display:none}
+.stage-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--border);background:var(--card);transition:all 0.4s;position:relative;z-index:1}
+.stage-dot.active{border-color:var(--gold);background:var(--gold);box-shadow:0 0 0 4px var(--gold-tint)}
+.stage-dot.done{border-color:var(--sage);background:var(--sage)}
+.stage-dot.active::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid var(--gold-tint-strong);animation:pulse-dot 1.2s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(1.4)}}
+.stage-label{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink3);transition:color 0.4s;white-space:nowrap}
+.stage-label.active{color:var(--gold)}
+.stage-label.done{color:var(--sage)}
 
 /* SETTINGS MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(15,21,36,0.6);z-index:1000;display:none;align-items:center;justify-content:center;padding:1rem}
@@ -529,37 +520,32 @@ input.native::placeholder{color:var(--ink3)}
       </div>
       <div class="proc-title">Preparing your minute</div>
       <div class="proc-msg" id="proc-msg">Starting…</div>
-
-      <!-- Progress bar -->
-      <div class="proc-progress-wrap">
-        <div class="progress-header">
-          <span class="progress-label">Processing</span>
-          <span class="progress-pct" id="progress-pct">5%</span>
-        </div>
-        <div class="progress-track">
-          <div class="progress-fill" id="progress-fill" style="width:5%">
-            <div class="progress-glow"></div>
-          </div>
-        </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;max-width:360px;margin:0 auto 4px;padding:0 2px">
+        <span style="font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:0.1em;text-transform:uppercase">PROCESSING</span>
+        <span class="progress-pct" id="progress-pct" style="margin-bottom:0">0%</span>
       </div>
-
-      <!-- Stage steps -->
-      <div class="proc-stages">
-        <div class="pstage active" id="pstage-1">
-          <div class="pstage-dot">✓</div>
-          <div class="pstage-name">Upload</div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      <!-- Stage dots -->
+      <div class="stage-track" style="margin-top:20px">
+        <div class="stage-item">
+          <div class="stage-dot active" id="sdot-upload"></div>
+          <div class="stage-connector" id="scon-upload"></div>
+          <div class="stage-label active" id="slbl-upload">Upload</div>
         </div>
-        <div class="pstage" id="pstage-2">
-          <div class="pstage-dot">✓</div>
-          <div class="pstage-name">Transcribe</div>
+        <div class="stage-item">
+          <div class="stage-dot" id="sdot-transcribe"></div>
+          <div class="stage-connector" id="scon-transcribe"></div>
+          <div class="stage-label" id="slbl-transcribe">Transcribe</div>
         </div>
-        <div class="pstage" id="pstage-3">
-          <div class="pstage-dot">✓</div>
-          <div class="pstage-name">Analyse</div>
+        <div class="stage-item">
+          <div class="stage-dot" id="sdot-analyse"></div>
+          <div class="stage-connector" id="scon-analyse"></div>
+          <div class="stage-label" id="slbl-analyse">Analyse</div>
         </div>
-        <div class="pstage" id="pstage-4">
-          <div class="pstage-dot">✓</div>
-          <div class="pstage-name">Structure</div>
+        <div class="stage-item">
+          <div class="stage-dot" id="sdot-structure"></div>
+          <div class="stage-connector" id="scon-structure"></div>
+          <div class="stage-label" id="slbl-structure">Structure</div>
         </div>
       </div>
     </div>
@@ -999,27 +985,71 @@ function setStep(n){
     el.className = "ledger-step" + (i<n?" done":i===n?" active":"");
   }
 }
-function setProgress(msg, pct){
-  document.getElementById("proc-msg").textContent = msg;
-  document.getElementById("progress-fill").style.width = pct + "%";
-  document.getElementById("progress-pct").textContent = pct + "%";
+/* ─── Smooth Progress Engine ─────────────────────────────────── */
+let _progCurrent = 0, _progTarget = 0, _progRaf = null;
 
-  // Stage thresholds: Upload 0-25 | Transcribe 25-60 | Analyse 60-82 | Structure 82-100
-  const thresholds = [0, 25, 60, 82, 100];
-  for (let i = 1; i <= 4; i++) {
-    const el = document.getElementById("pstage-" + i);
-    if (!el) continue;
-    const start = thresholds[i - 1];
-    const end   = thresholds[i];
-    if (pct >= end) {
-      el.className = "pstage done";       // completed
-    } else if (pct >= start) {
-      el.className = "pstage active";     // currently running
-    } else {
-      el.className = "pstage";            // not yet started
-    }
+function _animProg(){
+  const diff = _progTarget - _progCurrent;
+  if (Math.abs(diff) < 0.05){
+    _progCurrent = _progTarget;
+    _progRaf = null;
+  } else {
+    // ease-out: move faster when far, slower when close
+    _progCurrent += diff * 0.04;
+    _progRaf = requestAnimationFrame(_animProg);
   }
+  const pct = Math.min(Math.round(_progCurrent), 100);
+  document.getElementById("progress-fill").style.width = _progCurrent + "%";
+  document.getElementById("progress-pct").textContent = pct + "%";
 }
+
+function setProgress(msg, pct){
+  if (msg) document.getElementById("proc-msg").textContent = msg;
+  _progTarget = Math.max(_progTarget, pct); // never go backwards
+  if (!_progRaf) _progRaf = requestAnimationFrame(_animProg);
+}
+
+function resetProgress(){
+  _progCurrent = 0; _progTarget = 0;
+  if (_progRaf){ cancelAnimationFrame(_progRaf); _progRaf = null; }
+  document.getElementById("progress-fill").style.width = "0%";
+  document.getElementById("progress-pct").textContent = "0%";
+}
+
+/* ─── Stage Dot Manager ──────────────────────────────────────── */
+const STAGES = ['upload','transcribe','analyse','structure'];
+
+function setStage(activeStage){
+  const idx = STAGES.indexOf(activeStage);
+  STAGES.forEach((s, i) => {
+    const dot  = document.getElementById('sdot-' + s);
+    const lbl  = document.getElementById('slbl-' + s);
+    const con  = document.getElementById('scon-' + s);
+    if (!dot) return;
+    dot.classList.remove('active','done');
+    lbl.classList.remove('active','done');
+    if (con) con.classList.remove('done');
+    if (i < idx)      { dot.classList.add('done'); lbl.classList.add('done'); if(con) con.classList.add('done'); }
+    else if (i === idx){ dot.classList.add('active'); lbl.classList.add('active'); }
+  });
+}
+
+/* ─── Trickle: slowly drip progress during long API wait ─────── */
+let _trickleTimer = null;
+
+function startTrickle(from, ceiling, msPerStep){
+  stopTrickle();
+  setProgress(null, from);
+  _trickleTimer = setInterval(() => {
+    if (_progTarget < ceiling) setProgress(null, _progTarget + 0.4);
+    else stopTrickle();
+  }, msPerStep);
+}
+
+function stopTrickle(){
+  if (_trickleTimer){ clearInterval(_trickleTimer); _trickleTimer = null; }
+}
+
 function setPhase(id){
   ["phase-upload","phase-processing","phase-done"].forEach(p =>
     document.getElementById(p).classList.toggle("active", p === id));
@@ -1035,7 +1065,7 @@ async function handleProcess(){
   // If still recording, auto-stop first then wait for blob
   if (inputMode === 'record' && isRecording){
     stopRecording(false);
-    await sleep(600); // wait for onstop to fire and currentFile to be set
+    await sleep(600);
   }
 
   if (!currentFile){
@@ -1047,9 +1077,15 @@ async function handleProcess(){
     return showError("Free recording already used. Contact us to upgrade.");
   }
 
+  resetProgress();
   setPhase("phase-processing"); setStep(2);
+
   try{
-    setProgress("Uploading recording…", 8);
+    // ── Stage 1: Upload ───────────────────────────────────────
+    setStage('upload');
+    setProgress("Uploading recording…", 5);
+    startTrickle(5, 18, 120); // slowly move 5→18% while uploading
+
     const fd = new FormData();
     fd.append("file", currentFile, currentFile.name);
     fd.append("language", document.getElementById("language-select").value);
@@ -1058,18 +1094,41 @@ async function handleProcess(){
 
     const langVal = document.getElementById("language-select").value;
     const isAuto = (langVal === "auto" || langVal === "multilingual");
-    if (isAuto) setProgress("Uploading + detecting language…", 18);
 
-    const res = await fetch("/api/transcribe", {
+    // Kick off the fetch — long running (transcription can take 1–4 min)
+    const fetchPromise = fetch("/api/transcribe", {
       method: "POST", credentials: "same-origin", body: fd
     });
 
-    setProgress("Transcribing audio with Sarvam AI…", 45);
-    await sleep(300);
-    setProgress("Analysing topics, decisions & actions…", 68);
-    await sleep(300);
+    // ── Stage 2: Transcribe ───────────────────────────────────
+    await sleep(1200); // brief pause so upload stage is visible
+    stopTrickle();
+    setStage('transcribe');
+    setProgress("Transcribing audio…", 20);
+    startTrickle(20, 62, 180); // slowly 20→62% during transcription
+
+    // ── Stage 3: Analyse — triggered at ~62% ──────────────────
+    // We don't know when transcription ends so we switch stage at a time estimate
+    // Typical: 1 min audio ~15s, 30 min audio ~3-4 min
+    const fileSizeMB = (currentFile.size / 1024 / 1024);
+    const estTranscribeSec = Math.max(8000, Math.min(fileSizeMB * 800, 90000));
+    setTimeout(() => {
+      if (_progTarget >= 20 && _progTarget < 65){
+        stopTrickle();
+        setStage('analyse');
+        setProgress("Analysing content…", 65);
+        startTrickle(65, 82, 200);
+      }
+    }, estTranscribeSec);
+
+    const res = await fetchPromise;
+
+    // ── Stage 4: Structure ────────────────────────────────────
+    stopTrickle();
+    setStage('structure');
     setProgress("Structuring the minute…", 84);
-    await sleep(300);
+    startTrickle(84, 96, 80);
+    await sleep(400);
 
     const data = await res.json();
     if (!res.ok){
@@ -1108,6 +1167,15 @@ async function handleProcess(){
       data.is_multilingual
     );
 
+    stopTrickle();
+    setStage('structure'); // mark all done
+    STAGES.forEach(s => {
+      document.getElementById('sdot-'+s)?.classList.replace('active','done') ||
+      document.getElementById('sdot-'+s)?.classList.add('done');
+      document.getElementById('slbl-'+s)?.classList.replace('active','done') ||
+      document.getElementById('slbl-'+s)?.classList.add('done');
+      document.getElementById('scon-'+s)?.classList.add('done');
+    });
     setProgress("Done", 100);
     setStep(3); await sleep(200); setStep(4); await sleep(300);
 
@@ -1127,6 +1195,8 @@ async function handleProcess(){
 
     loadSettings();
   } catch(e){
+    stopTrickle();
+    resetProgress();
     setPhase("phase-upload"); setStep(1);
     showError(e.message);
   }
