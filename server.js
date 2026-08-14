@@ -17,6 +17,7 @@
   const Anthropic      = require('@anthropic-ai/sdk');
   const { Pool }       = require('pg');
   const session        = require('express-session');
+  const pgSession      = require('connect-pg-simple')(session);
   const passport       = require('passport');
   const GoogleStrategy = require('passport-google-oauth20').Strategy;
   const nodemailer     = require('nodemailer');
@@ -32,7 +33,7 @@
 
   // ─── PostgreSQL pool — Neon (DATABASE_URL) or local fallback ─────────────────
   const NEON_URL = process.env.DATABASE_URL ||
-    'postgresql://neondb_owner:npg_VBbtpMP0dY4K@ep-rapid-flower-ammnsym7-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require';
+    'postgresql://neondb_owner:npg_VBbtpMP0dY4K@ep-rapid-flower-ammnsym7-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require&uselibpqcompat=true';
 
   const pool = new Pool({
     connectionString:        NEON_URL,
@@ -41,6 +42,12 @@
     idleTimeoutMillis:       30000,
     connectionTimeoutMillis: 5000,
   });
+
+  // Sanitised DB label for startup log (never log credentials)
+  const DB_DISPLAY = (() => {
+    try { const u = new URL(NEON_URL); return `${u.hostname}/${u.pathname.replace('/','')}`; }
+    catch { return 'configured'; }
+  })();
 
   // ─── In-memory OTP store ─────────────────────────────────────────────────────
   const otpStore = new Map();
@@ -55,20 +62,25 @@
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // ── Trust Render reverse proxy so secure cookies work over HTTPS ─────────────
+  // ── Trust Render/Heroku reverse proxy so secure cookies work over HTTPS ───────
   app.set('trust proxy', 1);
 
-  // ── Session — 30 days rolling (fixes logout bug) ──────────────────────────────
+  // ── Session — PostgreSQL-backed store (no memory leak, survives restarts) ──────
   app.use(session({
+    store: new pgSession({
+      pool,
+      tableName:       'user_sessions',
+      createTableIfMissing: true,   // auto-creates session table on first boot
+    }),
     secret:            process.env.SESSION_SECRET || 'mom-generator-change-in-prod',
-    resave:            true,           // re-save on every request → keeps session alive
-    rolling:           true,           // reset cookie expiry on every request
+    resave:            false,        // pg store handles persistence — no need to resave
+    rolling:           true,         // reset cookie expiry on every request
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
       secure:   process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge:   30 * 24 * 60 * 60 * 1000   // 30 days always (no more 1-day default)
+      maxAge:   30 * 24 * 60 * 60 * 1000   // 30 days
     }
   }));
 
@@ -221,7 +233,7 @@
       host:   process.env.SMTP_HOST,
       port:   parseInt(process.env.SMTP_PORT || '587'),
       secure: process.env.SMTP_PORT === '465',
-      family: 4,
+      family: 4,   // force IPv4 — Render IPv6 → Gmail times out
       auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
       tls:  { rejectUnauthorized: false }
     });
@@ -864,20 +876,17 @@ ${MOM_JSON_SCHEMA}${extra}`;
 
     try {
       // ══════════════════════════════════════════════════════════════════
-      //  FREE TIER — STRICT ENFORCEMENT
-      //  1. Atomic DB reservation (prevents race condition / dual uploads)
+      //  FREE TIER — STRICT SERVER-SIDE ENFORCEMENT
+      //  1. Atomic DB reservation — prevents race condition / dual uploads
       //  2. Duration hard-limit: 30 min after WAV conversion
-      //  Both enforced server-side, independent of any client-side checks.
+      //  3. Slot rolled back if duration exceeded — user can retry shorter file
       // ══════════════════════════════════════════════════════════════════
-
       const FREE_FILES   = 1;
       const FREE_MINUTES = parseInt(process.env.FREE_MINUTES_LIMIT || '30');
       const FREE_SECONDS = FREE_MINUTES * 60;
 
-      // ── Atomic slot reservation ───────────────────────────────────────
-      // UPDATE only succeeds if free_files_used < FREE_FILES.
-      // If two requests arrive simultaneously, only ONE gets RETURNING rows.
-      // The other gets rowCount=0 and is rejected immediately.
+      // Atomic: only succeeds if free_files_used < FREE_FILES
+      // Two simultaneous requests → only ONE gets rowCount=1
       const reserve = await pool.query(
         `UPDATE users
             SET free_files_used = free_files_used + 1
@@ -888,7 +897,6 @@ ${MOM_JSON_SCHEMA}${extra}`;
       );
 
       if (reserve.rowCount === 0) {
-        // Slot already used (or concurrent request beat this one)
         return res.status(402).json({
           error: `You have used your ${FREE_FILES} free recording. Contact us to upgrade.`,
           free_tier_exhausted: true,
@@ -896,7 +904,7 @@ ${MOM_JSON_SCHEMA}${extra}`;
         });
       }
 
-      // Slot reserved — if anything fails below, we roll it back
+      // Rollback helper — releases reserved slot if something fails downstream
       let slotRolledBack = false;
       async function rollbackSlot() {
         if (!slotRolledBack) {
@@ -908,6 +916,10 @@ ${MOM_JSON_SCHEMA}${extra}`;
         }
       }
 
+      // ── Fetch user for custom prompt + AI provider ────────────────
+      const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [req.session.user.email]);
+      const user       = userResult.rows[0];
+
       // ── Step 1: Extract audio from video (if needed) ──────────────
       workingPath = await extractAudioFromVideo(workingPath);
 
@@ -918,12 +930,12 @@ ${MOM_JSON_SCHEMA}${extra}`;
       const durationSeconds = getWavDuration(wavPath);
       console.log(`[transcribe] Duration: ${durationSeconds.toFixed(1)}s`);
 
-      // ── Strict duration check: 30-min hard limit ──────────────────
+      // ── Free tier duration check (30 min hard limit) ──────────────
       if (durationSeconds > FREE_SECONDS) {
-        await rollbackSlot(); // release the reserved slot
+        await rollbackSlot(); // release slot — user can retry with shorter file
         return res.status(402).json({
           error: `Recording exceeds the ${FREE_MINUTES}-minute limit (your file: ${Math.ceil(durationSeconds / 60)} min). Please trim it and try again.`,
-          free_tier_exhausted: false,  // slot rolled back — they can retry with a shorter file
+          free_tier_exhausted: false,
           duration_exceeded: true
         });
       }
@@ -1038,7 +1050,7 @@ ${MOM_JSON_SCHEMA}${extra}`;
       const saved = dbResult.rows[0];
       console.log(`[db] Saved as session #${saved.id}`);
 
-      // ── Step 8: Record minutes used (files already incremented atomically at start) ──
+      // ── Step 8: Record minutes used (file slot already reserved atomically at start) ──
       await pool.query(
         'UPDATE users SET free_minutes_used = free_minutes_used + $1 WHERE email = $2',
         [durationSeconds, req.session.user.email]
@@ -1292,7 +1304,7 @@ ${MOM_JSON_SCHEMA}${extra}`;
         console.log(`      OpenAI     : ${process.env.OPENAI_API_KEY    ? '✓ key set' : '— not configured (ChatGPT provider unavailable)'}`);
         console.log(`      Google     : ${process.env.GOOGLE_CLIENT_ID  ? '✓ configured' : '— not configured'}`);
         console.log(`      SMTP       : ${DEV_MODE ? '⚠️  DEV MODE — OTP logged to console' : '✓ configured'}`);
-        console.log(`      DB         : postgres://${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || '5432'}/${process.env.DB_NAME || 'postgres'}`);
+        console.log(`      DB         : ${DB_DISPLAY}`);
         console.log(`      Sessions   : 30-day rolling (auto-logout fix active)`);
         console.log('');
       });
