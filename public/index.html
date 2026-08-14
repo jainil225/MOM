@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Minute · Generate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --ink:#0F1524;--ink2:#4A5468;--ink3:#8A93A8;--ink4:#B8BFCC;
+  --paper:#FAF8F3;--paper2:#F4F0E6;--card:#FFFFFF;
+  --border:#E8E4D8;--border-strong:#D4CFC0;
+  --navy:#0F1B3D;--navy-h:#1F2D57;
+  --gold:#B8912A;--gold-h:#C89A3D;
+  --gold-tint:rgba(184,145,42,0.10);
+  --gold-tint-strong:rgba(184,145,42,0.22);
+  --sage:#4A7C59;--sage-tint:rgba(74,124,89,0.10);
+  --rust:#A0472E;--rust-tint:rgba(160,71,46,0.10);
+  --plum:#5C3D5C;--plum-tint:rgba(92,61,92,0.10);
+  --shadow-1:0 1px 2px rgba(15,21,36,0.04),0 2px 6px rgba(15,21,36,0.03);
+  --shadow-2:0 4px 20px rgba(15,21,36,0.06),0 12px 48px rgba(15,21,36,0.06);
+  --serif:'Instrument Serif',Georgia,serif;
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+}
+[data-theme="dark"]{
+  --ink:#F5F1E6;--ink2:#B8B0A0;--ink3:#6B6455;--ink4:#3D3830;
+  --paper:#0C0D10;--paper2:#141519;--card:#161820;
+  --border:#25272F;--border-strong:#333540;
+  --navy:#4A5B8C;--navy-h:#6274AA;
+  --gold:#D4A94A;--gold-h:#E8BC5A;
+  --gold-tint:rgba(212,169,74,0.10);
+  --gold-tint-strong:rgba(212,169,74,0.20);
+  --sage:#7BA88C;--sage-tint:rgba(123,168,140,0.10);
+  --rust:#D07358;--rust-tint:rgba(208,115,88,0.10);
+  --plum:#9F7B9F;--plum-tint:rgba(159,123,159,0.10);
+  --shadow-1:0 1px 2px rgba(0,0,0,0.3);
+  --shadow-2:0 4px 20px rgba(0,0,0,0.4);
+}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;line-height:1.55;font-feature-settings:'ss01','cv11';transition:background 0.3s,color 0.3s}
+
+/* NAV */
+.nav{background:var(--card);border-bottom:1px solid var(--border);height:60px;padding:0 1.75rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;transition:background 0.3s}
+.nav-brand{display:flex;align-items:center;gap:12px}
+.nav-mark{width:32px;height:32px;background:var(--navy);color:var(--gold);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-size:20px;line-height:1;padding-bottom:3px}
+.nav-title{font-family:var(--serif);font-size:20px;font-weight:400;letter-spacing:-0.01em}
+.nav-title em{font-style:italic;color:var(--gold)}
+.nav-sub{font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:0.14em;text-transform:uppercase;margin-top:1px}
+.nav-right{display:flex;align-items:center;gap:8px}
+.status-chip{font-family:var(--mono);font-size:10px;color:var(--ink2);display:flex;align-items:center;gap:6px;letter-spacing:0.06em;text-transform:uppercase;padding:5px 10px;background:var(--paper2);border:1px solid var(--border);border-radius:999px}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--ink4)}
+.status-dot.online{background:var(--sage);box-shadow:0 0 0 3px var(--sage-tint)}
+.status-dot.error{background:var(--rust);box-shadow:0 0 0 3px var(--rust-tint)}
+.free-chip{font-family:var(--mono);font-size:10px;padding:5px 10px;background:var(--gold-tint);border:1px solid var(--gold-tint-strong);border-radius:999px;color:var(--gold);letter-spacing:0.04em;cursor:default}
+.user-badge{font-family:var(--mono);font-size:11px;color:var(--ink2);padding:0 6px}
+.btn-nav{padding:7px 12px;font-size:12px;font-weight:500;background:var(--card);color:var(--ink2);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all 0.15s}
+.btn-nav:hover{border-color:var(--gold);color:var(--gold)}
+.theme-btn{padding:7px 10px;font-size:14px}
+
+/* PROGRESS LEDGER */
+.progress-ledger{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:2rem;background:var(--card)}
+.ledger-step{padding:14px 16px;border-right:1px solid var(--border);position:relative;transition:all 0.3s}
+.ledger-step:last-child{border-right:none}
+.ledger-num{font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:0.08em;margin-bottom:4px}
+.ledger-name{font-family:var(--serif);font-size:16px;color:var(--ink3);line-height:1;transition:color 0.3s}
+.ledger-step.active{background:var(--gold-tint)}
+.ledger-step.active .ledger-num{color:var(--gold)}
+.ledger-step.active .ledger-name{color:var(--gold);font-style:italic}
+.ledger-step.done{background:var(--paper2)}
+.ledger-step.done .ledger-name{color:var(--ink)}
+.ledger-step.done .ledger-num::after{content:" ✓";color:var(--sage)}
+
+/* SECTION HEADING */
+.section-hd{margin-bottom:1.25rem}
+.section-hd-eyebrow{font-family:var(--mono);font-size:10px;color:var(--gold);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:6px}
+.section-hd-title{font-family:var(--serif);font-size:28px;line-height:1.1;letter-spacing:-0.01em;color:var(--ink)}
+.section-hd-title em{font-style:italic;color:var(--gold)}
+
+/* INPUT MODE TABS */
+.input-tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:1rem;background:var(--card)}
+.tab-btn-mode{flex:1;padding:10px 16px;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;border:none;cursor:pointer;transition:all 0.2s;color:var(--ink3);background:transparent}
+.tab-btn-mode.active{background:var(--navy);color:var(--gold)}
+.tab-btn-mode:not(.active):hover{background:var(--paper2);color:var(--ink)}
+
+/* RECORDER CARD */
+.recorder-card{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:2rem 1.5rem;text-align:center;margin-bottom:1rem;transition:border-color 0.2s}
+.recorder-card.recording-active{border-color:var(--rust);box-shadow:0 0 0 3px var(--rust-tint)}
+
+.waveform-wrap{width:100%;height:72px;background:var(--paper2);border-radius:8px;position:relative;overflow:hidden;margin-bottom:1.25rem}
+#waveform-canvas{width:100%;height:72px;display:block}
+.waveform-idle{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--ink3);letter-spacing:0.08em;pointer-events:none}
+
+.rec-timer{font-family:var(--mono);font-size:48px;font-weight:600;color:var(--ink);letter-spacing:0.04em;line-height:1;margin-bottom:4px;transition:color 0.3s}
+.rec-timer.warning{color:var(--rust)}
+.rec-limit-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:1.5rem}
+.rec-limit-note{font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:0.08em}
+.rec-remaining{font-family:var(--mono);font-size:10px;color:var(--gold);letter-spacing:0.08em;font-weight:600}
+
+.rec-btn{display:inline-flex;align-items:center;gap:10px;padding:13px 28px;border:none;border-radius:10px;font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;background:var(--navy);color:#fff;position:relative;overflow:hidden}
+.rec-btn:hover{background:var(--navy-h)}
+.rec-btn.recording{background:var(--rust);animation:pulse-rec 1.6s ease-in-out infinite}
+.rec-btn.recording:hover{background:#c0562e}
+@keyframes pulse-rec{0%,100%{box-shadow:0 0 0 0 rgba(160,71,46,0.5)}50%{box-shadow:0 0 0 10px rgba(160,71,46,0)}}
+.rec-dot{width:10px;height:10px;border-radius:50%;background:#fff;flex-shrink:0}
+.rec-btn:not(.recording) .rec-dot{animation:none}
+.rec-btn.recording .rec-dot{animation:blink-dot 1s ease-in-out infinite}
+@keyframes blink-dot{0%,100%{opacity:1}50%{opacity:0.2}}
+
+.rec-status-chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.08em;padding:4px 10px;border-radius:999px;margin-top:12px}
+.rec-status-recording{background:var(--rust-tint);color:var(--rust);border:1px solid var(--rust)}
+.rec-status-done{background:var(--sage-tint);color:var(--sage);border:1px solid var(--sage)}
+
+.rec-file-preview{display:flex;align-items:center;gap:14px;text-align:left;background:var(--gold-tint);border:1px solid var(--gold-tint-strong);border-radius:10px;padding:12px 14px;margin-top:1rem}
+.rec-file-icon{font-size:28px;flex-shrink:0}
+.rec-file-name{font-size:14px;font-weight:600;margin-bottom:3px;color:var(--ink);word-break:break-all}
+.rec-file-meta{font-family:var(--mono);font-size:11px;color:var(--ink2)}
+.rec-file-badge{font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:3px;background:var(--sage-tint);color:var(--sage);margin-top:5px;display:inline-block;font-weight:600;letter-spacing:0.08em}
+
+/* DROPZONE */
+.dropzone{border:1.5px dashed var(--border-strong);border-radius:12px;padding:2.75rem 1.5rem;text-align:center;cursor:pointer;background:var(--card);transition:all 0.2s;margin-bottom:1rem;position:relative}
+.dropzone:hover,.dropzone.drag{border-color:var(--gold);background:var(--gold-tint)}
+.dropzone-icon{width:60px;height:60px;border-radius:14px;background:var(--paper2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 16px;transition:transform 0.2s}
+.dropzone:hover .dropzone-icon{transform:scale(1.05)}
+.dropzone h3{font-family:var(--serif);font-size:20px;font-weight:400;margin-bottom:6px;color:var(--ink);letter-spacing:-0.01em}
+.dropzone p{font-size:13px;color:var(--ink2);margin-bottom:16px}
+.file-chips{display:flex;gap:5px;justify-content:center;flex-wrap:wrap}
+.chip{font-family:var(--mono);font-size:9px;padding:3px 8px;background:var(--paper);border:1px solid var(--border);border-radius:3px;color:var(--ink3);letter-spacing:0.08em;font-weight:500}
+.file-preview{display:flex;align-items:center;gap:14px;text-align:left}
+.file-thumb{width:56px;height:56px;border-radius:12px;background:var(--gold-tint);border:1px solid var(--gold-tint-strong);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+.file-info{flex:1;min-width:0}
+.file-name{font-size:14px;font-weight:600;margin-bottom:3px;word-break:break-all;color:var(--ink)}
+.file-meta{font-family:var(--mono);font-size:11px;color:var(--ink2);letter-spacing:0.02em}
+.file-badge{font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:3px;background:var(--sage-tint);color:var(--sage);margin-top:6px;display:inline-block;font-weight:600;letter-spacing:0.08em}
+
+/* SETTINGS ROW */
+.settings-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.settings-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.setting-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.setting-label{font-family:var(--mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:var(--ink3);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.lang-detected-chip{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:3px;background:var(--sage-tint);color:var(--sage);font-weight:600;letter-spacing:0.06em;display:none}
+.lang-detecting{font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:0.06em;display:none}
+select.native,input.native{border:none;background:transparent;font-size:14px;font-weight:500;color:var(--ink);cursor:pointer;outline:none;width:100%;font-family:inherit}
+input.native{cursor:text;font-size:13px}
+input.native::placeholder{color:var(--ink3)}
+.tags-input-wrap{display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-height:24px}
+.tag-pill{font-family:var(--mono);font-size:10px;padding:2px 8px;background:var(--gold-tint);border:1px solid var(--gold-tint-strong);border-radius:999px;color:var(--gold);display:flex;align-items:center;gap:4px}
+.tag-pill button{background:none;border:none;color:var(--gold);cursor:pointer;padding:0;font-size:10px;line-height:1}
+
+/* BANNERS */
+.banner{border-radius:8px;padding:10px 12px;font-size:13px;display:flex;gap:8px;align-items:flex-start;margin-bottom:1rem;border-left:3px solid}
+.banner.danger{background:var(--rust-tint);color:var(--rust);border-color:var(--rust)}
+.banner.warning{background:var(--gold-tint);color:var(--gold);border-color:var(--gold)}
+.banner.info{background:var(--sage-tint);color:var(--sage);border-color:var(--sage)}
+
+/* BUTTONS */
+.btn-primary{width:100%;padding:14px;font-size:15px;font-weight:600;background:var(--navy);color:#fff;border:none;border-radius:10px;cursor:pointer;transition:all 0.18s;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;letter-spacing:0.01em;position:relative;overflow:hidden}
+.btn-primary::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,var(--gold-tint-strong),transparent);transform:translateX(-100%);transition:transform 0.5s}
+.btn-primary:hover:not(:disabled){background:var(--navy-h)}
+.btn-primary:hover:not(:disabled)::before{transform:translateX(100%)}
+.btn-primary:disabled{background:var(--border);color:var(--ink3);cursor:not-allowed}
+.btn-note{font-family:var(--mono);font-size:10px;color:var(--ink3);text-align:center;margin-top:10px;letter-spacing:0.06em}
+.btn-sm{padding:6px 11px;font-size:11px;font-weight:500;background:var(--card);color:var(--ink2);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;transition:all 0.15s;letter-spacing:0.01em}
+.btn-sm:hover{border-color:var(--gold);color:var(--gold)}
+
+/* FREE TIER BANNER */
+.free-tier-bar{background:var(--gold-tint);border:1px solid var(--gold-tint-strong);border-radius:8px;padding:10px 14px;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.free-tier-text{font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:0.04em}
+.free-tier-used{font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:0.04em}
+.free-exhausted-bar{background:var(--rust-tint);border:1px solid var(--rust);border-radius:8px;padding:12px 14px;margin-bottom:1rem;display:none}
+.free-exhausted-bar .feh-title{font-weight:600;color:var(--rust);margin-bottom:4px;font-size:13px}
+.free-exhausted-bar .feh-body{font-size:12px;color:var(--ink2)}
+
+/* PROCESSING */
+.processing-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:3.5rem 2.5rem 2.5rem;text-align:center;box-shadow:var(--shadow-2);position:relative;overflow:hidden;max-width:480px;margin:0 auto}
+.processing-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--gold),var(--gold-h),transparent);animation:sweep 2.4s ease-in-out infinite}
+@keyframes sweep{0%,100%{transform:translateX(-100%)}50%{transform:translateX(100%)}}
+.spin-holder{position:relative;width:72px;height:72px;margin:0 auto 28px}
+.spin-ring{width:72px;height:72px;border-radius:50%;border:2.5px solid var(--gold-tint);border-top-color:var(--gold);border-right-color:var(--gold);animation:spin 1s linear infinite}
+.spin-mark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-size:26px;color:var(--gold)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.proc-title{font-family:var(--serif);font-size:26px;color:var(--ink);margin-bottom:6px;letter-spacing:-0.01em}
+.proc-msg{font-family:var(--mono);font-size:11.5px;color:var(--ink2);margin-bottom:28px;min-height:20px;letter-spacing:0.04em;transition:opacity 0.3s}
+
+/* ── Progress bar ──────────────────────────────────────── */
+.proc-progress-wrap{margin-bottom:24px}
+.progress-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;max-width:400px;margin-left:auto;margin-right:auto}
+.progress-label{font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink3)}
+.progress-pct{font-family:var(--mono);font-size:13px;color:var(--gold);font-weight:600;letter-spacing:0.02em;transition:all 0.4s ease;min-width:38px;text-align:right}
+.progress-track{background:var(--paper2);border-radius:6px;height:10px;max-width:400px;margin:0 auto;overflow:hidden;border:1px solid var(--border);position:relative}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-h),#D4AA45);border-radius:6px;transition:width 0.6s cubic-bezier(0.4,0,0.2,1);position:relative;min-width:0}
+.progress-fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.28) 50%,transparent 100%);border-radius:6px;animation:shimmer 1.6s ease-in-out infinite}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+.progress-glow{position:absolute;right:0;top:50%;transform:translateY(-50%);width:16px;height:16px;border-radius:50%;background:var(--gold-h);filter:blur(6px);opacity:0.6;transition:opacity 0.3s}
+
+/* ── Stage steps ───────────────────────────────────────── */
+.proc-stages{display:flex;align-items:flex-start;justify-content:center;gap:0;max-width:400px;margin:0 auto;padding-top:4px}
+.pstage{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative}
+.pstage:not(:last-child)::after{content:"";position:absolute;top:8px;left:calc(50% + 10px);right:calc(-50% + 10px);height:1.5px;background:var(--border);transition:background 0.4s,opacity 0.4s;z-index:0}
+.pstage.done:not(:last-child)::after{background:var(--gold);opacity:0.6}
+.pstage-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center;font-size:8px;color:transparent;transition:all 0.35s ease;position:relative;z-index:1;flex-shrink:0}
+.pstage.active .pstage-dot{border-color:var(--gold);background:var(--gold-tint);box-shadow:0 0 0 3px var(--gold-tint);animation:pulseDot 1.4s ease-in-out infinite}
+.pstage.done .pstage-dot{border-color:var(--gold);background:var(--gold);color:#fff}
+@keyframes pulseDot{0%,100%{box-shadow:0 0 0 3px var(--gold-tint)}50%{box-shadow:0 0 0 5px var(--gold-tint-strong)}}
+.pstage-name{font-family:var(--mono);font-size:9px;letter-spacing:0.06em;color:var(--ink4);text-transform:uppercase;transition:color 0.3s;text-align:center}
+.pstage.active .pstage-name{color:var(--gold)}
+.pstage.done .pstage-name{color:var(--ink3)}
+
+/* Legacy compat (keep width transition) */
+.progress-ledger{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:2rem;background:var(--card)}
+
+/* SETTINGS MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,21,36,0.6);z-index:1000;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border-radius:14px;padding:2rem;max-width:560px;width:100%;border:1px solid var(--border);box-shadow:var(--shadow-2);max-height:90vh;overflow-y:auto}
+.modal-title{font-family:var(--serif);font-size:22px;font-weight:400;margin-bottom:6px;color:var(--ink);letter-spacing:-0.01em}
+.modal-sub{font-size:12px;color:var(--ink3);margin-bottom:1.5rem;font-family:var(--mono);letter-spacing:0.04em}
+.modal-section{margin-bottom:1.25rem}
+.modal-label{font-family:var(--mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:var(--ink3);margin-bottom:6px}
+.modal-input{width:100%;background:var(--paper2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--ink);font-family:inherit;outline:none;transition:border-color 0.15s}
+.modal-input:focus{border-color:var(--gold)}
+.modal-textarea{resize:vertical;min-height:100px;line-height:1.6}
+.modal-hint{font-size:11px;color:var(--ink3);margin-top:5px;line-height:1.5}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border)}
+.btn-modal-save{padding:9px 20px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background 0.15s}
+.btn-modal-save:hover{background:var(--navy-h)}
+.btn-modal-cancel{padding:9px 16px;background:transparent;color:var(--ink2);border:1px solid var(--border);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;transition:all 0.15s}
+.btn-modal-cancel:hover{border-color:var(--gold);color:var(--gold)}
+.key-status{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:3px;margin-left:8px}
+.key-set{background:var(--sage-tint);color:var(--sage)}
+.key-unset{background:var(--rust-tint);color:var(--rust)}
+.provider-btn{flex:1;display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--paper2);border:1.5px solid var(--border);border-radius:8px;cursor:pointer;text-align:left;font-family:inherit;transition:all 0.15s;color:var(--ink2)}
+.provider-btn.active{background:var(--gold-tint);border-color:var(--gold);color:var(--ink)}
+.provider-btn:hover{border-color:var(--gold-tint-strong)}
+
+/* Phases */
+.phase{display:none}
+.phase.active{display:block}
+
+/* Print */
+@media print{
+  .nav,.progress-ledger,.export-btns,.transcript-toggle,.transcript-box,
+  .status-chip,.nav-right,.section-hd,.mom-topbar,.modal-overlay{display:none!important}
+  body{background:#fff}.page{padding:0}
+}
+@media(max-width:520px){
+  .settings-row,.settings-row-3{grid-template-columns:1fr}
+  .progress-ledger{grid-template-columns:repeat(2,1fr)}
+  .ledger-step:nth-child(-n+2){border-bottom:1px solid var(--border)}
+  .ledger-step:nth-child(2n){border-right:none}
+  .rec-timer{font-size:36px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ SETTINGS MODAL ═══ -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <div class="modal-title">Settings</div>
+    <div class="modal-sub">Preferences saved per account · Applied to all future MOMs</div>
+
+    <!-- AI Provider toggle -->
+    <div class="modal-section">
+      <div class="modal-label">AI Provider for MOM Generation</div>
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <button class="provider-btn active" id="prov-claude" onclick="setProvider('claude')">
+          <span style="font-size:16px">🧠</span>
+          <div>
+            <div style="font-weight:600;font-size:13px">Claude</div>
+            <div style="font-size:10px;opacity:0.7">Anthropic · claude-sonnet-4-6</div>
+          </div>
+        </button>
+        <button class="provider-btn" id="prov-openai" onclick="setProvider('openai')">
+          <span style="font-size:16px">✦</span>
+          <div>
+            <div style="font-weight:600;font-size:13px">ChatGPT</div>
+            <div style="font-size:10px;opacity:0.7">OpenAI · gpt-4o · Your API key</div>
+          </div>
+        </button>
+      </div>
+      <div class="modal-hint" id="provider-hint">Claude is used by default — no API key needed.</div>
+    </div>
+
+    <!-- OpenAI availability (shown when OpenAI selected) -->
+    <div class="modal-section" id="oai-key-section" style="display:none">
+      <div class="modal-label">OpenAI Key Status <span class="key-status key-unset" id="oai-key-status">Not set</span></div>
+      <div class="modal-hint" id="oai-key-hint">The OpenAI API key is configured server-side in <code>.env</code>. No action needed — your custom prompts below will be applied when ChatGPT is selected.</div>
+    </div>
+
+    <!-- Custom prompt tabs -->
+    <div class="modal-section">
+      <div class="modal-label" style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        Custom MOM Instructions
+        <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-family:var(--mono);font-size:10px">
+          <button onclick="switchPromptTab('claude')" id="tab-claude"
+            style="padding:3px 10px;border:none;cursor:pointer;background:var(--navy);color:#fff;transition:all 0.15s">Claude</button>
+          <button onclick="switchPromptTab('openai')" id="tab-openai"
+            style="padding:3px 10px;border:none;cursor:pointer;background:transparent;color:var(--ink2);transition:all 0.15s">ChatGPT</button>
+        </div>
+      </div>
+      <textarea class="modal-input modal-textarea" id="custom-prompt-claude"
+        placeholder="E.g. Always write action items in bullet format. Include a Risk section if compliance topics are discussed. Our company name is RMPS &amp; Co — always refer to us by name."></textarea>
+      <textarea class="modal-input modal-textarea" id="custom-prompt-openai" style="display:none"
+        placeholder="E.g. Use a more conversational tone. Always add a section called Next Steps separate from Action Items. Format all dates as Month DD, YYYY."></textarea>
+      <div class="modal-hint">These instructions are appended to the standard MOM prompt. Separate prompts are maintained for Claude and ChatGPT.</div>
+    </div>
+
+    <!-- Full prompt preview -->
+    <div class="modal-section">
+      <div class="modal-label" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Full Prompt Preview</span>
+        <button onclick="togglePromptPreview()" id="prompt-preview-btn"
+          style="font-family:var(--mono);font-size:10px;padding:3px 10px;background:var(--paper2);border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--ink2)">
+          Show ↓
+        </button>
+      </div>
+      <div id="prompt-preview-wrap" style="display:none;margin-top:8px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--ink3);margin-bottom:6px;line-height:1.5" id="prompt-meta"></div>
+        <textarea id="prompt-preview-text" readonly
+          style="width:100%;background:var(--paper);border:1px solid var(--border);border-radius:8px;
+                 padding:10px 12px;font-family:var(--mono);font-size:11px;color:var(--ink2);
+                 line-height:1.65;height:280px;resize:vertical;outline:none"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="closeSettings()">Cancel</button>
+      <button class="btn-modal-save" onclick="saveSettings()">Save settings</button>
+    </div>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-mark">M</div>
+    <div>
+      <div class="nav-title">Minute<em>.</em></div>
+      <div class="nav-sub">RMPS · Generator</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <div class="status-chip">
+      <span class="status-dot" id="server-dot"></span>
+      <span id="server-label">Connecting</span>
+    </div>
+    <div class="free-chip" id="free-chip" title="Free tier">1 File · 30 min free</div>
+    <span class="user-badge" id="nav-user"></span>
+    <a href="/history" class="btn-nav">Archive →</a>
+    <button class="btn-nav" onclick="openSettings()" title="Settings">⚙</button>
+    <button class="btn-nav theme-btn" onclick="toggleTheme()" id="theme-btn">◐</button>
+    <button class="btn-nav" onclick="logout()">Sign out</button>
+  </div>
+</nav>
+
+<div class="page" style="max-width:720px;margin:0 auto;padding:2rem 1rem 4rem">
+
+  <div class="progress-ledger">
+    <div class="ledger-step active" id="lstep-1"><div class="ledger-num">STEP 01</div><div class="ledger-name">Record</div></div>
+    <div class="ledger-step" id="lstep-2"><div class="ledger-num">STEP 02</div><div class="ledger-name">Transcribe</div></div>
+    <div class="ledger-step" id="lstep-3"><div class="ledger-num">STEP 03</div><div class="ledger-name">Generate</div></div>
+    <div class="ledger-step" id="lstep-4"><div class="ledger-num">STEP 04</div><div class="ledger-name">Minute</div></div>
+  </div>
+
+  <!-- ═══ UPLOAD/RECORD ═══ -->
+  <div class="phase active" id="phase-upload">
+
+    <div class="section-hd">
+      <div class="section-hd-eyebrow">— New meeting</div>
+      <h1 class="section-hd-title">Record your <em>meeting</em></h1>
+    </div>
+
+    <!-- Free tier exhausted notice -->
+    <div class="free-exhausted-bar" id="free-exhausted-bar">
+      <div class="feh-title">⚠ Free recording used</div>
+      <div class="feh-body">You have used your 1 free recording (up to 30 min). Contact us to unlock more recordings.</div>
+    </div>
+
+    <!-- Input Mode Tabs -->
+    <div class="input-tabs">
+      <button class="tab-btn-mode active" id="tab-mode-record" onclick="switchInputMode('record')">🎙 Record Live</button>
+      <button class="tab-btn-mode" id="tab-mode-upload" onclick="switchInputMode('upload')">↑ Upload File</button>
+    </div>
+
+    <!-- ── RECORD MODE ── -->
+    <div id="mode-record">
+      <div class="recorder-card" id="recorder-card">
+        <!-- Waveform visualizer -->
+        <div class="waveform-wrap">
+          <canvas id="waveform-canvas"></canvas>
+          <div class="waveform-idle" id="waveform-idle">Press Record to start</div>
+        </div>
+
+        <!-- Timer -->
+        <div class="rec-timer" id="rec-timer">00:00</div>
+        <div class="rec-limit-row">
+          <span class="rec-limit-note">max 30:00 ·</span>
+          <span class="rec-remaining" id="rec-remaining">30:00 remaining</span>
+        </div>
+
+        <!-- Record button -->
+        <button class="rec-btn" id="rec-btn" onclick="toggleRecording()">
+          <span class="rec-dot"></span>
+          <span id="rec-btn-label">Start Recording</span>
+        </button>
+        <div id="rec-status" style="display:none" class="rec-status-chip"></div>
+
+        <!-- File preview after recording -->
+        <div id="rec-preview" style="display:none" class="rec-file-preview">
+          <div class="rec-file-icon">🎙</div>
+          <div>
+            <div class="rec-file-name" id="rec-file-name">—</div>
+            <div class="rec-file-meta" id="rec-file-meta">—</div>
+            <div class="rec-file-badge">READY TO PROCESS</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── UPLOAD MODE ── -->
+    <div id="mode-upload" style="display:none">
+      <div class="dropzone" id="dropzone"
+        onclick="document.getElementById('file-input').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="handleDrop(event)">
+        <input type="file" id="file-input" accept="audio/*,video/*" style="display:none" onchange="handleFile(this.files[0])">
+        <div id="drop-default">
+          <div class="dropzone-icon">↓</div>
+          <h3>Drop your recording</h3>
+          <p>Click to browse or drag &amp; drop — audio or video</p>
+          <div class="file-chips">
+            <span class="chip">MP3</span><span class="chip">WAV</span><span class="chip">M4A</span>
+            <span class="chip">MP4</span><span class="chip">MOV</span><span class="chip">WEBM</span>
+          </div>
+        </div>
+        <div id="drop-preview" style="display:none" class="file-preview">
+          <div class="file-thumb" id="file-thumb">♫</div>
+          <div class="file-info">
+            <div class="file-name" id="file-name">—</div>
+            <div class="file-meta" id="file-meta">—</div>
+            <span class="file-badge">READY TO PROCESS</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 1: Language + Category -->
+    <div class="settings-row">
+      <div class="setting-box">
+        <div class="setting-label">
+          Meeting Language
+          <span class="lang-detected-chip" id="lang-detected-chip"></span>
+          <span class="lang-detecting" id="lang-detecting">detecting…</span>
+        </div>
+        <select class="native" id="language-select" onchange="onLangChange(this.value)">
+          <option value="auto">🔍 Auto Detect</option>
+          <option value="multilingual">🌐 Multilingual (Mixed)</option>
+          <option value="hi">Hindi</option>
+          <option value="en">English (India)</option>
+          <option value="mr">Marathi</option>
+          <option value="gu">Gujarati</option>
+          <option value="ta">Tamil</option>
+          <option value="te">Telugu</option>
+          <option value="kn">Kannada</option>
+          <option value="ml">Malayalam</option>
+          <option value="bn">Bengali</option>
+          <option value="pa">Punjabi</option>
+          <option value="hinglish">Hinglish (Hindi+English)</option>
+        </select>
+      </div>
+      <div class="setting-box">
+        <div class="setting-label">Meeting Category</div>
+        <select class="native" id="category-select">
+          <option value="">— None —</option>
+          <option value="Board Meeting">Board Meeting</option>
+          <option value="Client Meeting">Client Meeting</option>
+          <option value="Team Standup">Team Standup</option>
+          <option value="Project Review">Project Review</option>
+          <option value="Sales Call">Sales Call</option>
+          <option value="Audit / Compliance">Audit / Compliance</option>
+          <option value="Finance Review">Finance Review</option>
+          <option value="HR / Recruitment">HR / Recruitment</option>
+          <option value="Strategy">Strategy</option>
+          <option value="Vendor Review">Vendor Review</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Multilingual hint (shown only when Multilingual is selected) -->
+    <div class="banner info" id="multilingual-hint" style="display:none;margin-top:-4px">
+      <span>🌐</span>
+      <span><strong>Multilingual mode</strong> — Sarvam AI will auto-detect the language of each audio segment independently. Suitable when speakers switch between languages mid-meeting (e.g. Hindi + Gujarati, or English + Tamil). The MOM will be generated in English with full translation.</span>
+    </div>
+
+    <!-- Row 2: Tags -->
+    <div class="settings-row" style="grid-template-columns:1fr">
+      <div class="setting-box">
+        <div class="setting-label">Tags <span style="color:var(--ink4);font-weight:400;letter-spacing:0">(press Enter to add · AI will auto-add attendee names)</span></div>
+        <div class="tags-input-wrap" id="tags-wrap">
+          <input class="native" type="text" id="tag-input" placeholder="e.g. Q1, RMPS, Project Alpha…" style="min-width:160px;flex:1"
+            onkeydown="handleTagKey(event)"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="banner danger" id="error-box" style="display:none">
+      <span>⚠</span><strong id="error-msg"></strong>
+    </div>
+
+    <button class="btn-primary" onclick="handleProcess()" id="process-btn">
+      <span>Generate Minute</span>
+      <span>→</span>
+    </button>
+    <p class="btn-note" id="btn-note-txt">Sarvam AI transcription · Claude structured output · 1 free recording · 30 min limit</p>
+  </div>
+
+  <!-- ═══ PROCESSING ═══ -->
+  <div class="phase" id="phase-processing">
+    <div class="processing-card">
+      <div class="spin-holder">
+        <div class="spin-ring"></div>
+        <div class="spin-mark">M</div>
+      </div>
+      <div class="proc-title">Preparing your minute</div>
+      <div class="proc-msg" id="proc-msg">Starting…</div>
+
+      <!-- Progress bar -->
+      <div class="proc-progress-wrap">
+        <div class="progress-header">
+          <span class="progress-label">Processing</span>
+          <span class="progress-pct" id="progress-pct">5%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill" style="width:5%">
+            <div class="progress-glow"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage steps -->
+      <div class="proc-stages">
+        <div class="pstage active" id="pstage-1">
+          <div class="pstage-dot">✓</div>
+          <div class="pstage-name">Upload</div>
+        </div>
+        <div class="pstage" id="pstage-2">
+          <div class="pstage-dot">✓</div>
+          <div class="pstage-name">Transcribe</div>
+        </div>
+        <div class="pstage" id="pstage-3">
+          <div class="pstage-dot">✓</div>
+          <div class="pstage-name">Analyse</div>
+        </div>
+        <div class="pstage" id="pstage-4">
+          <div class="pstage-dot">✓</div>
+          <div class="pstage-name">Structure</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DONE — redirect card ═══ -->
+  <div class="phase" id="phase-done">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;
+                padding:3rem 2rem;text-align:center;box-shadow:var(--shadow-2);position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;
+                  background:linear-gradient(90deg,transparent,var(--sage),transparent)"></div>
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--sage-tint);
+                  border:2px solid var(--sage);display:flex;align-items:center;justify-content:center;
+                  font-size:28px;margin:0 auto 20px">✓</div>
+      <div style="font-family:var(--serif);font-size:26px;color:var(--ink);margin-bottom:8px;letter-spacing:-0.01em">
+        Minute prepared
+      </div>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--ink2);margin-bottom:28px;letter-spacing:0.04em" id="done-meta">
+        —
+      </div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--ink3);margin-bottom:20px;letter-spacing:0.06em">
+        Redirecting to Archive in <span id="redirect-count" style="color:var(--gold);font-weight:700">3</span>s…
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button onclick="goToHistory()" class="btn-primary" style="width:auto;padding:10px 24px;font-size:14px">
+          Open in Archive →
+        </button>
+        <button onclick="resetTool()" class="btn-sm" style="padding:10px 18px;font-size:13px">
+          ↩ New recording
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ── State ── */
+let currentFile = null, currentTranscript = "", currentMOM = null;
+let currentSessionId = null, currentTags = [], txOpen = false;
+let actionDoneState = {}, userSettings = {};
+let inputMode = 'record'; // 'record' | 'upload'
+
+/* ── Recording state ── */
+let mediaRecorder = null, audioChunks = [], audioStream = null;
+let audioContext = null, analyser = null, animFrame = null;
+let recordingTimer = null, recordedSeconds = 0, isRecording = false;
+const MAX_REC_SECONDS = 1800; // 30 minutes
+
+/* ── Theme ── */
+(function(){ applyTheme(localStorage.getItem("mom_theme") || "light", false); })();
+function applyTheme(t, save=true){
+  document.documentElement.setAttribute("data-theme", t);
+  const b = document.getElementById("theme-btn");
+  if (b) b.textContent = t === "dark" ? "◑" : "◐";
+  if (save) localStorage.setItem("mom_theme", t);
+}
+function toggleTheme(){
+  applyTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
+}
+
+/* ── Auth ── */
+async function checkAuth(){
+  try{
+    const r = await fetch("/auth/me", { credentials: "same-origin" });
+    if (!r.ok){ window.location.href = "/login.html"; return; }
+    const d = await r.json();
+    if (d.user?.email) document.getElementById("nav-user").textContent = d.user.email.split("@")[0];
+  } catch { window.location.href = "/login.html"; }
+}
+async function logout(){
+  await fetch("/auth/logout", { method: "POST", credentials: "same-origin" });
+  window.location.href = "/login.html";
+}
+async function checkServer(){
+  try{
+    const r = await fetch("/health", { credentials: "same-origin" });
+    const d = await r.json();
+    document.getElementById("server-dot").className = "status-dot online";
+    document.getElementById("server-label").textContent = d.sarvam_key && d.anthropic_key ? "Ready" : "Check .env";
+  } catch {
+    document.getElementById("server-dot").className = "status-dot error";
+    document.getElementById("server-label").textContent = "Offline";
+  }
+}
+
+/* ── Load user settings + free tier ── */
+async function loadSettings(){
+  try{
+    const r = await fetch("/api/user/settings", { credentials: "same-origin" });
+    if (!r.ok) return;
+    const d = await r.json();
+    userSettings = d;
+
+    const chip = document.getElementById("free-chip");
+    if (d.free_files_used >= 1){
+      chip.textContent = "Free used ✓";
+      chip.style.background = "var(--rust-tint)";
+      chip.style.color = "var(--rust)";
+      chip.style.borderColor = "var(--rust)";
+      document.getElementById("free-exhausted-bar").style.display = "block";
+      document.getElementById("process-btn").disabled = true;
+      document.getElementById("btn-note-txt").textContent = "Free recording used · Contact us to upgrade";
+    } else {
+      chip.textContent = "1 File · 30 min free";
+    }
+
+    document.getElementById("custom-prompt-claude").value = d.custom_prompt || "";
+    document.getElementById("custom-prompt-openai").value = d.custom_prompt_openai || "";
+    const ks = document.getElementById("oai-key-status");
+    ks.textContent = d.has_openai_key ? "Configured ✓" : "Not configured";
+    ks.className   = "key-status " + (d.has_openai_key ? "key-set" : "key-unset");
+    // If OpenAI not available in env, disable the provider button
+    if (!d.has_openai_key) {
+      const oaiBtn = document.getElementById("prov-openai");
+      oaiBtn.style.opacity = "0.4";
+      oaiBtn.title = "OpenAI key not configured in .env";
+      if (activeProvider === 'openai') setProvider('claude', false);
+    }
+    setProvider(d.ai_provider || "claude", false);
+  } catch(e){ console.warn("Settings load failed", e); }
+}
+
+/* ── Provider toggle ── */
+let activeProvider = 'claude';
+function setProvider(p, updateBtn=true){
+  activeProvider = p;
+  const isOai = (p === 'openai');
+  document.getElementById("prov-claude").className = "provider-btn" + (isOai ? "" : " active");
+  document.getElementById("prov-openai").className = "provider-btn" + (isOai ? " active" : "");
+  document.getElementById("oai-key-section").style.display = isOai ? "block" : "none";
+  document.getElementById("provider-hint").textContent = isOai
+    ? "ChatGPT gpt-4o will be used via the server OpenAI key configured in .env."
+    : "Claude is used by default — no additional setup needed.";
+  switchPromptTab(p);
+  const note = document.getElementById("btn-note-txt");
+  if (note && userSettings.free_files_used < 1) note.textContent = isOai
+    ? "OpenAI GPT-4o (your key) · Sarvam transcription · 1 free recording · 30 min"
+    : "Sarvam AI transcription · Claude · 1 free recording · 30 min";
+}
+
+/* ── Prompt tabs ── */
+function switchPromptTab(tab){
+  const isOai = (tab === 'openai');
+  document.getElementById("custom-prompt-claude").style.display = isOai ? "none" : "block";
+  document.getElementById("custom-prompt-openai").style.display = isOai ? "block" : "none";
+  document.getElementById("tab-claude").style.cssText = isOai
+    ? "padding:3px 10px;border:none;cursor:pointer;background:transparent;color:var(--ink2);transition:all 0.15s"
+    : "padding:3px 10px;border:none;cursor:pointer;background:var(--navy);color:#fff;transition:all 0.15s";
+  document.getElementById("tab-openai").style.cssText = isOai
+    ? "padding:3px 10px;border:none;cursor:pointer;background:var(--navy);color:#fff;transition:all 0.15s"
+    : "padding:3px 10px;border:none;cursor:pointer;background:transparent;color:var(--ink2);transition:all 0.15s";
+}
+
+/* ── Settings modal ── */
+function openSettings(){
+  promptPreviewLoaded = false;
+  document.getElementById("prompt-preview-wrap").style.display = "none";
+  document.getElementById("prompt-preview-btn").textContent = "Show ↓";
+  document.getElementById("settings-modal").classList.add("open");
+}
+function closeSettings(){
+  document.getElementById("settings-modal").classList.remove("open");
+}
+document.getElementById("settings-modal").addEventListener("click", function(e){
+  if (e.target === this) closeSettings();
+});
+async function saveSettings(){
+  const promptClaude = document.getElementById("custom-prompt-claude").value.trim();
+  const promptOpenAI = document.getElementById("custom-prompt-openai").value.trim();
+  try{
+    const r = await fetch("/api/user/settings", {
+      method: "POST", credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        custom_prompt:        promptClaude || undefined,
+        custom_prompt_openai: promptOpenAI || undefined,
+        ai_provider:          activeProvider
+      })
+    });
+    if (r.ok){
+      const d = await r.json();
+      if (d.ai_provider !== activeProvider) {
+        // Server fell back (OpenAI key not in .env)
+        setProvider(d.ai_provider, true);
+      }
+      closeSettings(); loadSettings();
+    }
+  } catch(e){ alert("Save failed: " + e.message); }
+}
+
+/* ── Prompt preview ── */
+let promptPreviewLoaded = false;
+async function togglePromptPreview(){
+  const wrap = document.getElementById("prompt-preview-wrap");
+  const btn = document.getElementById("prompt-preview-btn");
+  const isOpen = wrap.style.display !== "none";
+  if (isOpen){ wrap.style.display = "none"; btn.textContent = "Show ↓"; return; }
+  wrap.style.display = "block"; btn.textContent = "Hide ↑";
+  if (!promptPreviewLoaded){
+    document.getElementById("prompt-preview-text").value = "Loading…";
+    try{
+      const r = await fetch("/api/user/full-prompt", { credentials: "same-origin" });
+      const d = await r.json();
+      const meta = document.getElementById("prompt-meta");
+      const providerLabel = d.provider === 'openai'
+        ? `<span style="color:#10a37f">✦ ChatGPT GPT-4o (your key)</span>`
+        : `<span style="color:var(--gold)">🧠 Claude ${d.effective_model}</span>`;
+      const hasCustom = d.active_custom_prompt.length > 0;
+      meta.innerHTML = `${providerLabel} &nbsp;·&nbsp; ` + (hasCustom
+        ? `<span style="color:var(--sage)">✓ Custom instructions active</span>`
+        : `<span style="color:var(--ink3)">No custom instructions for this provider.</span>`);
+      document.getElementById("prompt-preview-text").value = d.full_prompt;
+      promptPreviewLoaded = true;
+    } catch(e){
+      document.getElementById("prompt-preview-text").value = "Failed to load: " + e.message;
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RECORDING ENGINE
+════════════════════════════════════════════════════════════ */
+
+function switchInputMode(mode){
+  inputMode = mode;
+  document.getElementById("mode-record").style.display = mode === 'record' ? 'block' : 'none';
+  document.getElementById("mode-upload").style.display = mode === 'upload' ? 'block' : 'none';
+  document.getElementById("tab-mode-record").className = "tab-btn-mode" + (mode === 'record' ? ' active' : '');
+  document.getElementById("tab-mode-upload").className = "tab-btn-mode" + (mode === 'upload' ? ' active' : '');
+
+  // Clear file when switching
+  if (mode === 'upload' && inputMode !== 'upload'){
+    currentFile = null;
+    document.getElementById("drop-default").style.display = "block";
+    document.getElementById("drop-preview").style.display = "none";
+  }
+  if (mode === 'record' && isRecording){
+    // If switching away from record while recording, stop
+    stopRecording(false);
+  }
+  inputMode = mode;
+}
+
+async function toggleRecording(){
+  if (isRecording){
+    stopRecording(false);
+  } else {
+    await startRecording();
+  }
+}
+
+async function startRecording(){
+  // Reset
+  currentFile = null;
+  audioChunks = [];
+  document.getElementById("rec-preview").style.display = "none";
+  document.getElementById("error-box").style.display = "none";
+
+  // Request mic
+  try{
+    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+  } catch(err){
+    showError("Microphone access denied. Please allow microphone access in your browser settings.");
+    return;
+  }
+
+  // Waveform analyser
+  try{
+    audioContext = new AudioContext();
+    const source = audioContext.createMediaStreamSource(audioStream);
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 128;
+    source.connect(analyser);
+    startWaveform();
+  } catch(_){}
+
+  // Pick best mime type
+  const mimeType = ['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/ogg']
+    .find(m => MediaRecorder.isTypeSupported(m)) || '';
+
+  try{
+    mediaRecorder = new MediaRecorder(audioStream, mimeType ? { mimeType } : {});
+  } catch(e){
+    mediaRecorder = new MediaRecorder(audioStream);
+  }
+
+  mediaRecorder.ondataavailable = (e) => {
+    if (e.data && e.data.size > 0) audioChunks.push(e.data);
+  };
+
+  mediaRecorder.onstop = () => {
+    const blobType = mediaRecorder.mimeType || 'audio/webm';
+    const blob = new Blob(audioChunks, { type: blobType });
+    const ext = blobType.includes('ogg') ? 'ogg' : 'webm';
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0,16).replace('T','_').replace(/:/g,'-');
+    const fname = `recording_${dateStr}.${ext}`;
+    currentFile = new File([blob], fname, { type: blobType });
+    // Show preview
+    document.getElementById("rec-preview").style.display = "flex";
+    document.getElementById("rec-file-name").textContent = fname;
+    document.getElementById("rec-file-meta").textContent =
+      `AUDIO · ${(blob.size / 1024 / 1024).toFixed(2)} MB · ${fmtDur(recordedSeconds)}`;
+    // Clean up audio context
+    if (audioContext){ audioContext.close(); audioContext = null; }
+  };
+
+  mediaRecorder.start(500);
+  isRecording = true;
+  recordedSeconds = 0;
+  updateTimerDisplay(0);
+
+  // Start countdown timer
+  recordingTimer = setInterval(() => {
+    recordedSeconds++;
+    updateTimerDisplay(recordedSeconds);
+    if (recordedSeconds >= MAX_REC_SECONDS){
+      stopRecording(true); // auto-stop at 30 min
+    }
+  }, 1000);
+
+  // UI
+  document.getElementById("rec-btn").classList.add("recording");
+  document.getElementById("rec-btn-label").textContent = "Stop Recording";
+  document.getElementById("recorder-card").classList.add("recording-active");
+  document.getElementById("waveform-idle").style.display = "none";
+  setRecStatus('recording', '⏺ Recording…');
+}
+
+function stopRecording(autoStopped = false){
+  if (recordingTimer){ clearInterval(recordingTimer); recordingTimer = null; }
+  isRecording = false;
+
+  if (mediaRecorder && mediaRecorder.state !== 'inactive'){
+    mediaRecorder.stop();
+  }
+  if (audioStream){
+    audioStream.getTracks().forEach(t => t.stop());
+    audioStream = null;
+  }
+  if (animFrame){ cancelAnimationFrame(animFrame); animFrame = null; }
+  clearWaveform();
+
+  document.getElementById("rec-btn").classList.remove("recording");
+  document.getElementById("rec-btn-label").textContent = "Record Again";
+  document.getElementById("recorder-card").classList.remove("recording-active");
+  document.getElementById("waveform-idle").style.display = "flex";
+  document.getElementById("waveform-idle").textContent = autoStopped
+    ? "⏹ 30-min limit reached — recording ready"
+    : "⏹ Stopped — recording ready";
+
+  setRecStatus('done', autoStopped ? '⏹ 30 min reached' : '✓ Recording complete');
+  if (autoStopped){
+    showError("Recording auto-stopped at 30 minutes. Click Generate Minute to proceed.");
+  }
+}
+
+function setRecStatus(type, text){
+  const el = document.getElementById("rec-status");
+  el.style.display = "inline-flex";
+  el.textContent = text;
+  el.className = "rec-status-chip rec-status-" + type;
+}
+
+function updateTimerDisplay(seconds){
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  const remaining = MAX_REC_SECONDS - seconds;
+  const rm = Math.floor(remaining / 60);
+  const rs = remaining % 60;
+
+  const timerEl = document.getElementById("rec-timer");
+  timerEl.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  timerEl.className = "rec-timer" + (remaining <= 300 ? " warning" : "");
+
+  document.getElementById("rec-remaining").textContent =
+    `${String(rm).padStart(2,'0')}:${String(rs).padStart(2,'0')} remaining`;
+}
+
+function startWaveform(){
+  const canvas = document.getElementById("waveform-canvas");
+  // Match canvas resolution to display
+  canvas.width = canvas.offsetWidth || 640;
+  canvas.height = canvas.offsetHeight || 72;
+  const ctx = canvas.getContext("2d");
+  const bufLen = analyser.frequencyBinCount;
+  const dataArr = new Uint8Array(bufLen);
+
+  function frame(){
+    animFrame = requestAnimationFrame(frame);
+    analyser.getByteFrequencyData(dataArr);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const barW = canvas.width / bufLen;
+    for (let i = 0; i < bufLen; i++){
+      const h = (dataArr[i] / 255) * canvas.height * 0.9;
+      const alpha = 0.25 + (dataArr[i] / 255) * 0.75;
+      ctx.fillStyle = `rgba(184,145,42,${alpha})`;
+      ctx.fillRect(i * barW, canvas.height - h, Math.max(barW - 1, 1), h);
+    }
+  }
+  frame();
+}
+
+function clearWaveform(){
+  const canvas = document.getElementById("waveform-canvas");
+  if (!canvas) return;
+  canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+}
+
+/* ══════════════════════════════════════════════════════════
+   FILE UPLOAD HANDLING
+═══════════════════════════════════════════════════════════ */
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById("dropzone").classList.remove("drag");
+  handleFile(e.dataTransfer.files[0]);
+}
+function handleFile(f){
+  if (!f) return;
+  currentFile = f;
+  const isVideo = f.type.startsWith("video/");
+  document.getElementById("drop-default").style.display = "none";
+  document.getElementById("drop-preview").style.display = "flex";
+  document.getElementById("file-thumb").textContent = isVideo ? "▶" : "♫";
+  document.getElementById("file-name").textContent = f.name;
+  document.getElementById("file-meta").textContent =
+    (isVideo ? "VIDEO" : "AUDIO") + " · " + (f.size/1024/1024).toFixed(2) + " MB";
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STEPS / PHASES / PROGRESS
+════════════════════════════════════════════════════════════ */
+function setStep(n){
+  for (let i=1; i<=4; i++){
+    const el = document.getElementById("lstep-" + i);
+    el.className = "ledger-step" + (i<n?" done":i===n?" active":"");
+  }
+}
+function setProgress(msg, pct){
+  document.getElementById("proc-msg").textContent = msg;
+  document.getElementById("progress-fill").style.width = pct + "%";
+  document.getElementById("progress-pct").textContent = pct + "%";
+
+  // Stage thresholds: Upload 0-25 | Transcribe 25-60 | Analyse 60-82 | Structure 82-100
+  const thresholds = [0, 25, 60, 82, 100];
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById("pstage-" + i);
+    if (!el) continue;
+    const start = thresholds[i - 1];
+    const end   = thresholds[i];
+    if (pct >= end) {
+      el.className = "pstage done";       // completed
+    } else if (pct >= start) {
+      el.className = "pstage active";     // currently running
+    } else {
+      el.className = "pstage";            // not yet started
+    }
+  }
+}
+function setPhase(id){
+  ["phase-upload","phase-processing","phase-done"].forEach(p =>
+    document.getElementById(p).classList.toggle("active", p === id));
+}
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN PROCESS
+════════════════════════════════════════════════════════════ */
+async function handleProcess(){
+  document.getElementById("error-box").style.display = "none";
+
+  // If still recording, auto-stop first then wait for blob
+  if (inputMode === 'record' && isRecording){
+    stopRecording(false);
+    await sleep(600); // wait for onstop to fire and currentFile to be set
+  }
+
+  if (!currentFile){
+    return showError(inputMode === 'record'
+      ? "Please record audio first, then click Generate Minute."
+      : "Please upload a recording first.");
+  }
+  if (userSettings.free_files_used >= 1){
+    return showError("Free recording already used. Contact us to upgrade.");
+  }
+
+  setPhase("phase-processing"); setStep(2);
+  try{
+    setProgress("Uploading recording…", 8);
+    const fd = new FormData();
+    fd.append("file", currentFile, currentFile.name);
+    fd.append("language", document.getElementById("language-select").value);
+    fd.append("category", document.getElementById("category-select").value);
+    fd.append("tags", currentTags.join(","));
+
+    const langVal = document.getElementById("language-select").value;
+    const isAuto = (langVal === "auto" || langVal === "multilingual");
+    if (isAuto) setProgress("Uploading + detecting language…", 18);
+
+    const res = await fetch("/api/transcribe", {
+      method: "POST", credentials: "same-origin", body: fd
+    });
+
+    setProgress("Transcribing audio with Sarvam AI…", 45);
+    await sleep(300);
+    setProgress("Analysing topics, decisions & actions…", 68);
+    await sleep(300);
+    setProgress("Structuring the minute…", 84);
+    await sleep(300);
+
+    const data = await res.json();
+    if (!res.ok){
+      if (data.free_tier_exhausted){
+        setPhase("phase-upload"); setStep(1);
+        document.getElementById("free-exhausted-bar").style.display = "block";
+        document.getElementById("process-btn").disabled = true;
+        showError(data.error);
+        loadSettings();
+        return;
+      }
+      throw new Error(data.error || "Processing failed");
+    }
+    if (!data.transcript || data.transcript.trim().length < 5)
+      throw new Error("No speech detected — check audio quality and language setting.");
+
+    currentTranscript = data.transcript;
+    currentMOM = data.mom;
+    currentSessionId = data.session_id;
+    actionDoneState = {};
+
+    // Auto-populate tags (includes attendee names from AI)
+    if (data.merged_tags && data.merged_tags.length){
+      currentTags = data.merged_tags;
+      renderTags();
+    } else if (data.suggested_tags && data.suggested_tags.length){
+      const existing = new Set(currentTags);
+      data.suggested_tags.forEach(t => { if (!existing.has(t)) currentTags.push(t); });
+      renderTags();
+    }
+
+    // Update language chip — handles both auto-detect and multilingual
+    showDetectedLanguages(
+      data.detected_language,
+      data.languages_detected,
+      data.is_multilingual
+    );
+
+    setProgress("Done", 100);
+    setStep(3); await sleep(200); setStep(4); await sleep(300);
+
+    currentSessionId = data.session_id;
+    document.getElementById("done-meta").textContent =
+      (data.mom?.meeting_title || 'Meeting') + ' · ' + fmtDur(data.duration) +
+      (data.context_sessions_used > 0 ? ` · ${data.context_sessions_used} prev meeting${data.context_sessions_used > 1 ? 's' : ''} used as context` : '');
+    setPhase("phase-done");
+
+    let count = 3;
+    const countEl = document.getElementById("redirect-count");
+    const timer = setInterval(() => {
+      count--;
+      if (countEl) countEl.textContent = count;
+      if (count <= 0){ clearInterval(timer); goToHistory(); }
+    }, 1000);
+
+    loadSettings();
+  } catch(e){
+    setPhase("phase-upload"); setStep(1);
+    showError(e.message);
+  }
+}
+
+function showError(msg){
+  document.getElementById("error-msg").textContent = msg;
+  document.getElementById("error-box").style.display = "flex";
+}
+
+/* ── Language selection handler ── */
+const LANG_LABELS_FULL = {
+  en:'English', hi:'Hindi', mr:'Marathi', ta:'Tamil', te:'Telugu',
+  kn:'Kannada', gu:'Gujarati', bn:'Bengali', pa:'Punjabi', ml:'Malayalam',
+  mixed:'Mixed', hinglish:'Hinglish', auto:'Auto', multilingual:'Multilingual'
+};
+
+function onLangChange(val){
+  const hint = document.getElementById('multilingual-hint');
+  hint.style.display = (val === 'multilingual') ? 'flex' : 'none';
+  // Hide previous detection chip when user manually changes language
+  document.getElementById('lang-detected-chip').style.display = 'none';
+}
+
+function showDetectedLanguages(detectedLang, langsDetected, isMultilingual){
+  const chip = document.getElementById('lang-detected-chip');
+  if (!chip) return;
+
+  if (isMultilingual && langsDetected && langsDetected.length > 0) {
+    const names = langsDetected.map(l => LANG_LABELS_FULL[l] || l.toUpperCase());
+    chip.textContent = '🌐 ' + names.join(' + ');
+    chip.style.display = 'inline';
+    // Also update dropdown to 'multilingual' to reflect what was used
+    document.getElementById('language-select').value = 'multilingual';
+  } else if (detectedLang && detectedLang !== 'auto' && detectedLang !== 'multilingual') {
+    const sel = document.getElementById('language-select');
+    const optMatch = [...sel.options].find(o => o.value === detectedLang);
+    if (optMatch){
+      sel.value = detectedLang;
+      chip.textContent = 'Detected: ' + optMatch.text;
+      chip.style.display = 'inline';
+    }
+  }
+}
+
+/* ── Tags ── */
+function renderTags(){
+  const wrap = document.getElementById("tags-wrap");
+  const input = document.getElementById("tag-input");
+  wrap.querySelectorAll(".tag-pill").forEach(el => el.remove());
+  currentTags.forEach((t, i) => {
+    const pill = document.createElement("div");
+    pill.className = "tag-pill";
+    pill.innerHTML = `${t}<button onclick="removeTag(${i})">×</button>`;
+    wrap.insertBefore(pill, input);
+  });
+}
+function handleTagKey(e){
+  if (e.key === "Enter" || e.key === ","){
+    e.preventDefault();
+    const val = e.target.value.trim().replace(/,$/, "");
+    if (val && !currentTags.includes(val)){ currentTags.push(val); renderTags(); }
+    e.target.value = "";
+  }
+}
+function removeTag(i){ currentTags.splice(i,1); renderTags(); }
+
+/* ── Navigation helpers ── */
+function goToHistory(){
+  window.location.href = currentSessionId ? '/history?new=' + currentSessionId : '/history';
+}
+function fmtDur(sec){
+  const m = Math.floor(sec/60), s = Math.floor(sec%60);
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
+function resetTool(){
+  // Stop any active recording
+  if (isRecording) stopRecording(false);
+
+  currentFile = null; currentTranscript = ""; currentMOM = null; actionDoneState = {};
+  currentSessionId = null; currentTags = [];
+
+  // Reset record mode UI
+  document.getElementById("rec-preview").style.display = "none";
+  document.getElementById("rec-timer").textContent = "00:00";
+  document.getElementById("rec-timer").className = "rec-timer";
+  document.getElementById("rec-remaining").textContent = "30:00 remaining";
+  document.getElementById("rec-status").style.display = "none";
+  document.getElementById("rec-btn").classList.remove("recording");
+  document.getElementById("rec-btn-label").textContent = "Start Recording";
+  document.getElementById("recorder-card").classList.remove("recording-active");
+  document.getElementById("waveform-idle").style.display = "flex";
+  document.getElementById("waveform-idle").textContent = "Press Record to start";
+  clearWaveform();
+
+  // Reset upload mode UI
+  document.getElementById("drop-default").style.display = "block";
+  document.getElementById("drop-preview").style.display = "none";
+  document.getElementById("file-input").value = "";
+
+  // Reset shared
+  document.getElementById("error-box").style.display = "none";
+  document.getElementById("lang-detected-chip").style.display = "none";
+  document.getElementById("language-select").value = "auto";
+  document.getElementById("category-select").value = "";
+  renderTags();
+  setStep(1); setPhase("phase-upload");
+}
+
+// Init
+setStep(1);
+checkAuth();
+checkServer();
+loadSettings();
+</script>
+</body>
+</html>

@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Sign in · Minute</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  /* Editorial palette — deep navy authority + muted gold premium */
+  --ink:#0F1524;
+  --ink2:#4A5468;
+  --ink3:#8A93A8;
+  --ink4:#B8BFCC;
+  --paper:#FAF8F3;
+  --paper2:#F4F0E6;
+  --card:#FFFFFF;
+  --border:#E8E4D8;
+  --border-strong:#D4CFC0;
+
+  --navy:#0F1B3D;
+  --navy-h:#1F2D57;
+  --gold:#B8912A;
+  --gold-h:#C89A3D;
+  --gold-tint:rgba(184,145,42,0.10);
+  --gold-tint-strong:rgba(184,145,42,0.22);
+
+  --sage:#4A7C59;
+  --sage-tint:rgba(74,124,89,0.10);
+  --rust:#A0472E;
+  --rust-tint:rgba(160,71,46,0.10);
+
+  --shadow-1:0 1px 2px rgba(15,21,36,0.04),0 2px 6px rgba(15,21,36,0.03);
+  --shadow-2:0 4px 20px rgba(15,21,36,0.06),0 12px 48px rgba(15,21,36,0.06);
+  --shadow-lift:0 20px 60px -20px rgba(15,21,36,0.20),0 8px 24px -12px rgba(15,21,36,0.12);
+
+  --serif:'Instrument Serif',Georgia,serif;
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+}
+
+[data-theme="dark"]{
+  --ink:#F5F1E6;
+  --ink2:#B8B0A0;
+  --ink3:#6B6455;
+  --ink4:#3D3830;
+  --paper:#0C0D10;
+  --paper2:#141519;
+  --card:#161820;
+  --border:#25272F;
+  --border-strong:#333540;
+
+  --navy:#4A5B8C;
+  --navy-h:#6274AA;
+  --gold:#D4A94A;
+  --gold-h:#E8BC5A;
+  --gold-tint:rgba(212,169,74,0.10);
+  --gold-tint-strong:rgba(212,169,74,0.20);
+
+  --sage:#7BA88C;
+  --sage-tint:rgba(123,168,140,0.10);
+  --rust:#D07358;
+  --rust-tint:rgba(208,115,88,0.10);
+
+  --shadow-1:0 1px 2px rgba(0,0,0,0.3);
+  --shadow-2:0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lift:0 20px 60px -20px rgba(0,0,0,0.6),0 8px 24px -12px rgba(0,0,0,0.4);
+}
+
+body{
+  font-family:var(--sans);
+  background:var(--paper);
+  color:var(--ink);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:1rem;
+  font-feature-settings:'ss01','cv11';
+  transition:background 0.3s,color 0.3s;
+  overflow-x:hidden;
+  position:relative;
+}
+
+/* Ambient paper texture — subtle */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(ellipse 1200px 800px at 20% 10%,var(--gold-tint) 0%,transparent 50%),
+    radial-gradient(ellipse 1000px 600px at 80% 90%,rgba(15,27,61,0.04) 0%,transparent 50%);
+  pointer-events:none;
+  z-index:0;
+}
+[data-theme="dark"] body::before{
+  background:
+    radial-gradient(ellipse 1200px 800px at 20% 10%,rgba(212,169,74,0.05) 0%,transparent 50%),
+    radial-gradient(ellipse 1000px 600px at 80% 90%,rgba(74,91,140,0.06) 0%,transparent 50%);
+}
+
+/* ─── Theme toggle ───────────────────────────────────────── */
+.theme-toggle{
+  position:fixed;
+  top:1.25rem;
+  right:1.25rem;
+  z-index:100;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:7px 12px;
+  font-size:12px;
+  font-family:var(--mono);
+  font-weight:500;
+  color:var(--ink2);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  transition:all 0.2s;
+  letter-spacing:0.02em;
+  text-transform:uppercase;
+}
+.theme-toggle:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ─── Card ────────────────────────────────────────────────── */
+.login-frame{
+  width:100%;
+  max-width:440px;
+  position:relative;
+  z-index:1;
+}
+
+/* Wordmark above card */
+.wordmark{
+  text-align:center;
+  margin-bottom:1.75rem;
+}
+.wordmark-label{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-family:var(--mono);
+  font-size:10px;
+  font-weight:500;
+  color:var(--ink3);
+  letter-spacing:0.24em;
+  text-transform:uppercase;
+  margin-bottom:12px;
+}
+.wordmark-line{
+  width:24px;
+  height:1px;
+  background:var(--border-strong);
+}
+.wordmark-title{
+  font-family:var(--serif);
+  font-size:44px;
+  font-weight:400;
+  color:var(--ink);
+  line-height:1;
+  letter-spacing:-0.02em;
+  margin-bottom:6px;
+}
+.wordmark-title em{
+  font-style:italic;
+  color:var(--gold);
+  font-weight:400;
+}
+.wordmark-sub{
+  font-size:13px;
+  color:var(--ink2);
+  font-weight:400;
+}
+
+.login-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  box-shadow:var(--shadow-lift);
+  overflow:hidden;
+  position:relative;
+  transition:background 0.3s,border-color 0.3s;
+}
+/* Gold ribbon at top */
+.login-card::before{
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;
+  height:2px;
+  background:linear-gradient(90deg,transparent 0%,var(--gold) 20%,var(--gold-h) 50%,var(--gold) 80%,transparent 100%);
+  z-index:1;
+}
+
+.card-body{padding:2rem 2rem 1.75rem}
+
+/* ─── Banners ────────────────────────────────────────────── */
+.banner{
+  border-radius:8px;
+  padding:10px 12px;
+  font-size:13px;
+  display:none;
+  gap:8px;
+  align-items:flex-start;
+  margin-bottom:1.25rem;
+  line-height:1.45;
+  border-left:3px solid;
+}
+.banner.danger{background:var(--rust-tint);color:var(--rust);border-color:var(--rust)}
+.banner.success{background:var(--sage-tint);color:var(--sage);border-color:var(--sage)}
+.banner.show{display:flex}
+
+/* ─── Steps ──────────────────────────────────────────────── */
+.step{display:none;animation:slideIn 0.32s cubic-bezier(0.16,1,0.3,1)}
+.step.active{display:block}
+@keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.step-eyebrow{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:14px;
+}
+.step-num{
+  font-family:var(--mono);
+  font-size:11px;
+  font-weight:600;
+  color:var(--gold);
+  letter-spacing:0.06em;
+}
+.step-progress{
+  flex:1;
+  height:2px;
+  background:var(--border);
+  border-radius:2px;
+  overflow:hidden;
+  position:relative;
+}
+.step-progress::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:var(--gold);
+  transform-origin:left;
+  transform:scaleX(0.5);
+  transition:transform 0.5s cubic-bezier(0.16,1,0.3,1);
+}
+.step-progress.step-2::after{transform:scaleX(1)}
+
+.step-title{
+  font-family:var(--serif);
+  font-size:26px;
+  font-weight:400;
+  line-height:1.15;
+  letter-spacing:-0.01em;
+  margin-bottom:6px;
+  color:var(--ink);
+}
+.step-sub{
+  font-size:13px;
+  color:var(--ink2);
+  line-height:1.55;
+  margin-bottom:1.5rem;
+}
+
+/* ─── Google button ──────────────────────────────────────── */
+.btn-google{
+  width:100%;
+  padding:12px 14px;
+  border:1px solid var(--border-strong);
+  border-radius:8px;
+  background:var(--card);
+  font-size:14px;
+  font-weight:500;
+  color:var(--ink);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  transition:all 0.18s;
+  text-decoration:none;
+  font-family:inherit;
+}
+.btn-google:hover{
+  border-color:var(--ink);
+  background:var(--paper2);
+}
+.google-logo{width:18px;height:18px;flex-shrink:0}
+
+/* ─── Divider ────────────────────────────────────────────── */
+.divider{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin:1.25rem 0;
+}
+.divider::before,.divider::after{
+  content:"";flex:1;height:1px;background:var(--border);
+}
+.divider span{
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--ink3);
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+}
+
+/* ─── Fields ─────────────────────────────────────────────── */
+.field{margin-bottom:1rem}
+.field-label{
+  font-family:var(--mono);
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--ink3);
+  display:block;
+  margin-bottom:8px;
+}
+.field-input{
+  width:100%;
+  border:1px solid var(--border-strong);
+  border-radius:8px;
+  padding:12px 14px;
+  font-size:14px;
+  font-family:inherit;
+  outline:none;
+  transition:all 0.18s;
+  background:var(--paper);
+  color:var(--ink);
+}
+.field-input::placeholder{color:var(--ink3)}
+.field-input:focus{
+  border-color:var(--gold);
+  background:var(--card);
+  box-shadow:0 0 0 4px var(--gold-tint);
+}
+
+/* ─── Remember me ────────────────────────────────────────── */
+.remember-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:1.25rem;
+  padding:12px 14px;
+  border:1px dashed var(--border-strong);
+  border-radius:8px;
+  cursor:pointer;
+  user-select:none;
+  transition:border-color 0.15s;
+}
+.remember-row:hover{border-color:var(--gold);border-style:solid}
+.remember-row input[type="checkbox"]{
+  width:16px;height:16px;
+  accent-color:var(--gold);
+  cursor:pointer;
+  flex-shrink:0;
+}
+.remember-text{flex:1}
+.remember-label{
+  font-size:13px;
+  color:var(--ink);
+  font-weight:500;
+  display:block;
+}
+.remember-desc{
+  font-size:11px;
+  color:var(--ink3);
+  margin-top:2px;
+}
+.remember-badge{
+  font-family:var(--mono);
+  font-size:10px;
+  font-weight:600;
+  color:var(--gold);
+  background:var(--gold-tint);
+  padding:3px 8px;
+  border-radius:4px;
+  letter-spacing:0.05em;
+}
+
+/* ─── Primary button ─────────────────────────────────────── */
+.btn-primary{
+  width:100%;
+  padding:13px 16px;
+  font-size:14px;
+  font-weight:600;
+  background:var(--navy);
+  color:#FFFFFF;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  transition:all 0.18s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  font-family:inherit;
+  letter-spacing:0.01em;
+  position:relative;
+  overflow:hidden;
+}
+.btn-primary::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,transparent,var(--gold-tint-strong),transparent);
+  transform:translateX(-100%);
+  transition:transform 0.5s;
+}
+.btn-primary:hover:not(:disabled){background:var(--navy-h)}
+.btn-primary:hover:not(:disabled)::before{transform:translateX(100%)}
+.btn-primary:active:not(:disabled){transform:scale(0.99)}
+.btn-primary:disabled{background:var(--border);color:var(--ink3);cursor:not-allowed}
+
+.btn-arrow{
+  display:inline-flex;
+  align-items:center;
+  transition:transform 0.2s;
+}
+.btn-primary:hover:not(:disabled) .btn-arrow{transform:translateX(3px)}
+
+/* ─── OTP digits ─────────────────────────────────────────── */
+.otp-row{
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  margin-bottom:1.5rem;
+}
+.otp-digit{
+  width:44px;height:56px;
+  border:1px solid var(--border-strong);
+  border-radius:8px;
+  font-family:var(--mono);
+  font-size:22px;
+  font-weight:600;
+  text-align:center;
+  outline:none;
+  transition:all 0.18s;
+  background:var(--paper);
+  color:var(--ink);
+  caret-color:var(--gold);
+}
+.otp-digit:focus{
+  border-color:var(--gold);
+  background:var(--card);
+  box-shadow:0 0 0 4px var(--gold-tint);
+  transform:translateY(-1px);
+}
+.otp-digit.filled{
+  border-color:var(--gold);
+  color:var(--gold);
+  background:var(--gold-tint);
+}
+.otp-digit.error{
+  border-color:var(--rust)!important;
+  color:var(--rust)!important;
+  box-shadow:0 0 0 4px var(--rust-tint)!important;
+  animation:shake 0.4s;
+}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-6px)}
+  40%{transform:translateX(6px)}
+  60%{transform:translateX(-4px)}
+  80%{transform:translateX(4px)}
+}
+
+/* ─── Email tag ──────────────────────────────────────────── */
+.email-tag{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  background:var(--gold-tint);
+  border:1px solid var(--gold-tint-strong);
+  border-radius:999px;
+  padding:5px 14px 5px 11px;
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--gold);
+  margin-bottom:1.25rem;
+  word-break:break-all;
+  font-weight:500;
+}
+.email-tag .live-dot{
+  width:6px;height:6px;
+  background:var(--gold);
+  border-radius:50%;
+  flex-shrink:0;
+  animation:pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse{
+  0%,100%{opacity:1;transform:scale(1);box-shadow:0 0 0 0 var(--gold-tint-strong)}
+  50%{opacity:0.6;transform:scale(0.8);box-shadow:0 0 0 6px transparent}
+}
+
+/* ─── Resend / back ──────────────────────────────────────── */
+.resend-row{
+  text-align:center;
+  margin-top:1rem;
+  font-size:13px;
+  color:var(--ink3);
+}
+.resend-btn{
+  background:none;border:none;
+  color:var(--gold);
+  font-size:13px;
+  font-family:inherit;
+  cursor:pointer;
+  font-weight:500;
+  text-underline-offset:3px;
+  text-decoration:underline;
+  text-decoration-color:var(--gold-tint-strong);
+}
+.resend-btn:disabled{color:var(--ink3);text-decoration:none;cursor:not-allowed}
+.resend-timer{font-family:var(--mono);font-size:11px;margin-left:2px}
+
+.back-btn{
+  background:none;border:none;
+  font-size:13px;color:var(--ink3);
+  cursor:pointer;
+  display:flex;align-items:center;gap:6px;
+  margin:1rem auto 0;
+  padding:6px 12px;
+  border-radius:6px;
+  transition:all 0.15s;
+  font-family:inherit;
+}
+.back-btn:hover{color:var(--ink);background:var(--paper2)}
+
+/* ─── Feature marquee ────────────────────────────────────── */
+.feature-strip{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:1.5rem;
+  padding-top:1.25rem;
+  border-top:1px dashed var(--border-strong);
+}
+.feat-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-family:var(--mono);
+  font-size:10px;
+  font-weight:500;
+  color:var(--ink2);
+  padding:5px 10px;
+  border:1px solid var(--border);
+  border-radius:4px;
+  background:var(--paper);
+  letter-spacing:0.02em;
+}
+.feat-chip strong{color:var(--gold);font-weight:600}
+
+/* ─── Credit note ────────────────────────────────────────── */
+.credit-note{
+  background:linear-gradient(135deg,var(--gold-tint) 0%,transparent 100%);
+  border:1px solid var(--gold-tint-strong);
+  border-radius:8px;
+  padding:12px 14px;
+  font-size:12px;
+  color:var(--ink);
+  margin-top:1rem;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.credit-icon{
+  font-family:var(--serif);
+  font-style:italic;
+  font-size:22px;
+  color:var(--gold);
+  line-height:1;
+}
+.credit-content{flex:1}
+.credit-content strong{color:var(--gold);font-weight:600}
+
+/* ─── Footer ─────────────────────────────────────────────── */
+.card-footer{
+  border-top:1px solid var(--border);
+  padding:14px 2rem;
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--ink3);
+  text-align:center;
+  background:var(--paper);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+}
+.card-footer a{color:var(--ink3);text-decoration:none;transition:color 0.15s}
+.card-footer a:hover{color:var(--gold)}
+.sep{opacity:0.4}
+
+/* ─── Trust strip below card ─────────────────────────────── */
+.trust-row{
+  margin-top:1.5rem;
+  text-align:center;
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--ink3);
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+}
+.trust-row .dot{width:3px;height:3px;background:var(--ink3);border-radius:50%;opacity:0.5}
+
+@media(max-width:480px){
+  .wordmark-title{font-size:36px}
+  .card-body{padding:1.5rem}
+  .otp-digit{width:38px;height:52px;font-size:20px}
+}
+</style>
+</head>
+<body>
+
+<!-- Theme toggle -->
+<button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">
+  <span id="theme-icon">◐</span>
+  <span id="theme-label">DARK</span>
+</button>
+
+<div class="login-frame">
+
+  <!-- Wordmark -->
+  <div class="wordmark">
+    <div class="wordmark-label">
+      <span class="wordmark-line"></span>
+      <span>RMPS &amp; Co · AiExtensive</span>
+      <span class="wordmark-line"></span>
+    </div>
+    <h1 class="wordmark-title">Minute<em>.</em></h1>
+    <p class="wordmark-sub">Meeting recordings, formalised.</p>
+  </div>
+
+  <div class="login-card">
+
+    <div class="card-body">
+
+      <!-- Banners -->
+      <div class="banner danger" id="error-banner">
+        <span>⚠</span><span id="error-msg"></span>
+      </div>
+      <div class="banner success" id="success-banner">
+        <span>✓</span><span id="success-msg"></span>
+      </div>
+
+      <!-- ══ STEP 1 ══ -->
+      <div class="step active" id="step-choose">
+
+        <div class="step-eyebrow">
+          <span class="step-num">01 / 02</span>
+          <div class="step-progress"></div>
+        </div>
+
+        <h2 class="step-title">Sign in to your workspace</h2>
+        <p class="step-sub">Access transcripts and minutes from your past meetings.</p>
+
+        <a href="/auth/google" class="btn-google">
+          <svg class="google-logo" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Continue with Google
+        </a>
+
+        <div class="divider"><span>Or by email</span></div>
+
+        <div class="field">
+          <label class="field-label">Work email address</label>
+          <input type="email" class="field-input" id="email-input"
+            placeholder="you@company.com" autocomplete="email" autofocus
+            onkeydown="if(event.key==='Enter')requestOTP()"/>
+        </div>
+
+        <label class="remember-row">
+          <input type="checkbox" id="remember-me" checked/>
+          <div class="remember-text">
+            <span class="remember-label">Keep me signed in</span>
+            <div class="remember-desc">On this device</div>
+          </div>
+          <span class="remember-badge">30 DAYS</span>
+        </label>
+
+        <button class="btn-primary" onclick="requestOTP()" id="send-otp-btn">
+          <span>Send login code</span>
+          <span class="btn-arrow">→</span>
+        </button>
+
+        <div class="credit-note">
+          <span class="credit-icon">✦</span>
+          <div class="credit-content">
+            First-time users receive <strong>50 credits</strong> — roughly 2 to 3 full meetings.
+          </div>
+        </div>
+
+        <div class="feature-strip">
+          <span class="feat-chip">🎙 <strong>Audio</strong></span>
+          <span class="feat-chip">🎬 <strong>Video</strong></span>
+          <span class="feat-chip">🇮🇳 Hindi · English · +8</span>
+          <span class="feat-chip">🔒 India-hosted</span>
+        </div>
+      </div>
+
+      <!-- ══ STEP 2 ══ -->
+      <div class="step" id="step-otp">
+
+        <div class="step-eyebrow">
+          <span class="step-num">02 / 02</span>
+          <div class="step-progress step-2"></div>
+        </div>
+
+        <h2 class="step-title">Enter your code</h2>
+        <p class="step-sub">Check your inbox and enter the six-digit code sent to your address.</p>
+
+        <div class="email-tag">
+          <span class="live-dot"></span>
+          <span id="otp-email-display">your@email.com</span>
+        </div>
+
+        <div class="otp-row" id="otp-row">
+          <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]"
+            autocomplete="one-time-code"
+            oninput="otpInput(this,0)" onkeydown="otpKey(event,0)" onpaste="handlePaste(event)"/>
+          <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]"
+            oninput="otpInput(this,1)" onkeydown="otpKey(event,1)"/>
+          <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]"
+            oninput="otpInput(this,2)" onkeydown="otpKey(event,2)"/>
+          <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]"
+            oninput="otpInput(this,3)" onkeydown="otpKey(event,3)"/>
+          <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]"
+            oninput="otpInput(this,4)" onkeydown="otpKey(event,4)"/>
+          <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]"
+            oninput="otpInput(this,5)" onkeydown="otpKey(event,5)"/>
+        </div>
+
+        <button class="btn-primary" onclick="verifyOTP()" id="verify-btn">
+          <span>Verify and continue</span>
+          <span class="btn-arrow">✓</span>
+        </button>
+
+        <div class="resend-row">
+          Didn't receive it?
+          <button class="resend-btn" id="resend-btn" onclick="resendOTP()" disabled>
+            Resend<span class="resend-timer" id="resend-timer"> · 60s</span>
+          </button>
+        </div>
+
+        <button class="back-btn" onclick="goBack()">← Change email</button>
+      </div>
+
+    </div>
+
+    <div class="card-footer">
+      <span>Passwordless</span>
+      <span class="sep">·</span>
+      <a href="/privacy">Privacy</a>
+      <span class="sep">·</span>
+      <a href="/terms">Terms</a>
+    </div>
+
+  </div>
+
+  <div class="trust-row">
+    <span>SOC 2 ready</span>
+    <span class="dot"></span>
+    <span>Encrypted at rest</span>
+    <span class="dot"></span>
+    <span>India data residency</span>
+  </div>
+
+</div>
+
+<script>
+/* ─── Theme ─────────────────────────────────────────────── */
+(function(){applyTheme(localStorage.getItem("mom_theme")||"light",false);})();
+function applyTheme(t,save=true){
+  document.documentElement.setAttribute("data-theme",t);
+  const icon=document.getElementById("theme-icon"),label=document.getElementById("theme-label");
+  if(icon)  icon.textContent=t==="dark"?"◑":"◐";
+  if(label) label.textContent=t==="dark"?"LIGHT":"DARK";
+  if(save) localStorage.setItem("mom_theme",t);
+}
+function toggleTheme(){
+  const c=document.documentElement.getAttribute("data-theme");
+  applyTheme(c==="dark"?"light":"dark");
+}
+
+/* ─── State ─────────────────────────────────────────────── */
+let currentEmail="",resendInterval=null;
+const digits=()=>document.querySelectorAll(".otp-digit");
+
+const urlParams=new URLSearchParams(window.location.search);
+if(urlParams.get("error")) showError("Sign-in failed. Please try again or use email.");
+
+/* ─── Banners ───────────────────────────────────────────── */
+function showError(m){
+  document.getElementById("error-msg").textContent=m;
+  document.getElementById("error-banner").classList.add("show");
+  document.getElementById("success-banner").classList.remove("show");
+}
+function showSuccess(m){
+  document.getElementById("success-msg").textContent=m;
+  document.getElementById("success-banner").classList.add("show");
+  document.getElementById("error-banner").classList.remove("show");
+}
+function clearBanners(){
+  document.getElementById("error-banner").classList.remove("show");
+  document.getElementById("success-banner").classList.remove("show");
+}
+
+function showStep(id){
+  document.querySelectorAll(".step").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  clearBanners();
+}
+
+/* ─── Resend countdown ──────────────────────────────────── */
+function startResendTimer(sec=60){
+  const btn=document.getElementById("resend-btn"),t=document.getElementById("resend-timer");
+  btn.disabled=true;
+  let s=sec;
+  t.textContent=` · ${s}s`;
+  resendInterval=setInterval(()=>{
+    s--;
+    if(s<=0){clearInterval(resendInterval);btn.disabled=false;t.textContent="";}
+    else t.textContent=` · ${s}s`;
+  },1000);
+}
+
+/* ─── Request OTP ───────────────────────────────────────── */
+async function requestOTP(){
+  const email=document.getElementById("email-input").value.trim();
+  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    return showError("Please enter a valid email address.");
+  currentEmail=email;
+  document.getElementById("otp-email-display").textContent=email;
+
+  const btn=document.getElementById("send-otp-btn");
+  btn.disabled=true;
+  btn.innerHTML='<span>Sending…</span>';
+
+  try{
+    const res=await fetch("/auth/otp/request",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email})
+    });
+    const data=await res.json();
+    if(!res.ok) return showError(data.error||"Failed to send code.");
+
+    if(data.dev_otp){
+      showSuccess(`Dev mode — code is ${data.dev_otp}`);
+      setTimeout(()=>{
+        const d=String(data.dev_otp).split("");
+        digits().forEach((el,i)=>{el.value=d[i]||"";el.classList.toggle("filled",!!d[i]);});
+      },300);
+    } else {
+      showSuccess(`Code sent to ${email}`);
+    }
+    showStep("step-otp");
+    clearInterval(resendInterval);
+    startResendTimer(60);
+    setTimeout(()=>digits()[0].focus(),150);
+  } catch(e){showError("Network error — is the server running?");}
+  finally{
+    btn.disabled=false;
+    btn.innerHTML='<span>Send login code</span><span class="btn-arrow">→</span>';
+  }
+}
+
+/* ─── OTP handlers ──────────────────────────────────────── */
+function otpInput(el,idx){
+  el.value=el.value.replace(/\D/g,"").slice(-1);
+  el.classList.toggle("filled",!!el.value);
+  el.classList.remove("error");
+  if(el.value&&idx<5) digits()[idx+1].focus();
+  if(getOTP().length===6) verifyOTP();
+}
+function otpKey(e,idx){
+  if(e.key==="Backspace"){
+    if(!e.target.value&&idx>0){
+      digits()[idx-1].value="";
+      digits()[idx-1].classList.remove("filled","error");
+      digits()[idx-1].focus();
+    }
+  }
+  if(e.key==="ArrowLeft"&&idx>0) digits()[idx-1].focus();
+  if(e.key==="ArrowRight"&&idx<5) digits()[idx+1].focus();
+}
+function handlePaste(e){
+  e.preventDefault();
+  const p=(e.clipboardData||window.clipboardData).getData("text").replace(/\D/g,"").slice(0,6);
+  if(!p) return;
+  const ds=digits();
+  p.split("").forEach((c,i)=>{if(ds[i]){ds[i].value=c;ds[i].classList.add("filled");}});
+  const next=[...ds].findIndex(d=>!d.value);
+  (ds[next>=0?next:5]||ds[5]).focus();
+  if(p.length===6) setTimeout(verifyOTP,200);
+}
+function getOTP(){return [...digits()].map(d=>d.value).join("");}
+
+/* ─── Verify ────────────────────────────────────────────── */
+async function verifyOTP(){
+  const otp=getOTP();
+  if(otp.length<6) return;
+  const btn=document.getElementById("verify-btn");
+  btn.disabled=true;
+  btn.innerHTML='<span>Verifying…</span>';
+
+  const remember=document.getElementById("remember-me")?.checked??true;
+
+  try{
+    const res=await fetch("/auth/otp/verify",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email:currentEmail,otp,remember})
+    });
+    const data=await res.json();
+    if(!res.ok){
+      digits().forEach(d=>{d.value="";d.classList.remove("filled");d.classList.add("error");});
+      setTimeout(()=>digits().forEach(d=>d.classList.remove("error")),700);
+      digits()[0].focus();
+      showError(data.error||"Incorrect code. Please try again.");
+      return;
+    }
+    showSuccess("Signed in. Redirecting…");
+    setTimeout(()=>window.location.href="/",700);
+  } catch(e){showError("Network error.");}
+  finally{
+    btn.disabled=false;
+    btn.innerHTML='<span>Verify and continue</span><span class="btn-arrow">✓</span>';
+  }
+}
+
+async function resendOTP(){
+  clearBanners();
+  digits().forEach(d=>{d.value="";d.classList.remove("filled","error");});
+  digits()[0].focus();
+  clearInterval(resendInterval);
+  startResendTimer(60);
+  await requestOTP();
+}
+function goBack(){
+  showStep("step-choose");
+  currentEmail="";
+  clearInterval(resendInterval);
+  setTimeout(()=>document.getElementById("email-input").focus(),100);
+}
+
+window.addEventListener("load",()=>document.getElementById("email-input")?.focus());
+</script>
+</body>
+</html>
