@@ -55,6 +55,9 @@
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  // ── Trust Render/Heroku reverse proxy so secure cookies work over HTTPS ───────
+  app.set('trust proxy', 1);
+
   // ── Session — 30 days rolling (fixes logout bug) ──────────────────────────────
   app.use(session({
     secret:            process.env.SESSION_SECRET || 'mom-generator-change-in-prod',
