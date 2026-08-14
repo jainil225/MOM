@@ -55,7 +55,7 @@
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // ── Trust Render/Heroku reverse proxy so secure cookies work over HTTPS ───────
+  // ── Trust Render reverse proxy so secure cookies work over HTTPS ─────────────
   app.set('trust proxy', 1);
 
   // ── Session — 30 days rolling (fixes logout bug) ──────────────────────────────
@@ -221,7 +221,7 @@
       host:   process.env.SMTP_HOST,
       port:   parseInt(process.env.SMTP_PORT || '587'),
       secure: process.env.SMTP_PORT === '465',
-      family: 4,   // force IPv4 — Render IPv6 → Gmail times out
+      family: 4,
       auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
       tls:  { rejectUnauthorized: false }
     });
@@ -863,19 +863,49 @@ ${MOM_JSON_SCHEMA}${extra}`;
     console.log(`[transcribe] Lang : ${langInput}`);
 
     try {
-      // ── Fetch user (for free tier + custom prompt) ────────────────
-      const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [req.session.user.email]);
-      const user       = userResult.rows[0];
-      const filesUsed  = user?.free_files_used || 0;
+      // ══════════════════════════════════════════════════════════════════
+      //  FREE TIER — STRICT ENFORCEMENT
+      //  1. Atomic DB reservation (prevents race condition / dual uploads)
+      //  2. Duration hard-limit: 30 min after WAV conversion
+      //  Both enforced server-side, independent of any client-side checks.
+      // ══════════════════════════════════════════════════════════════════
 
-      // ── Free tier check ───────────────────────────────────────────
-      const FREE_FILES = 1;
-      if (filesUsed >= FREE_FILES) {
+      const FREE_FILES   = 1;
+      const FREE_MINUTES = parseInt(process.env.FREE_MINUTES_LIMIT || '30');
+      const FREE_SECONDS = FREE_MINUTES * 60;
+
+      // ── Atomic slot reservation ───────────────────────────────────────
+      // UPDATE only succeeds if free_files_used < FREE_FILES.
+      // If two requests arrive simultaneously, only ONE gets RETURNING rows.
+      // The other gets rowCount=0 and is rejected immediately.
+      const reserve = await pool.query(
+        `UPDATE users
+            SET free_files_used = free_files_used + 1
+          WHERE email = $1
+            AND free_files_used < $2
+          RETURNING id`,
+        [req.session.user.email, FREE_FILES]
+      );
+
+      if (reserve.rowCount === 0) {
+        // Slot already used (or concurrent request beat this one)
         return res.status(402).json({
-          error: 'Your free recording has been used. Contact us to upgrade.',
+          error: `You have used your ${FREE_FILES} free recording. Contact us to upgrade.`,
           free_tier_exhausted: true,
           upgrade_needed: true
         });
+      }
+
+      // Slot reserved — if anything fails below, we roll it back
+      let slotRolledBack = false;
+      async function rollbackSlot() {
+        if (!slotRolledBack) {
+          slotRolledBack = true;
+          await pool.query(
+            'UPDATE users SET free_files_used = GREATEST(free_files_used - 1, 0) WHERE email = $1',
+            [req.session.user.email]
+          ).catch(e => console.error('[free-tier] Rollback failed:', e.message));
+        }
       }
 
       // ── Step 1: Extract audio from video (if needed) ──────────────
@@ -888,13 +918,13 @@ ${MOM_JSON_SCHEMA}${extra}`;
       const durationSeconds = getWavDuration(wavPath);
       console.log(`[transcribe] Duration: ${durationSeconds.toFixed(1)}s`);
 
-      // ── Free tier duration check (30 min max) ────────────────────
-      const FREE_MINUTES = parseInt(process.env.FREE_MINUTES_LIMIT || '30');
-      const FREE_SECONDS = FREE_MINUTES * 60;
+      // ── Strict duration check: 30-min hard limit ──────────────────
       if (durationSeconds > FREE_SECONDS) {
+        await rollbackSlot(); // release the reserved slot
         return res.status(402).json({
-          error: `File exceeds the ${FREE_MINUTES}-minute free limit (this file: ${Math.ceil(durationSeconds/60)} min). Contact us to upgrade.`,
-          free_tier_exhausted: true
+          error: `Recording exceeds the ${FREE_MINUTES}-minute limit (your file: ${Math.ceil(durationSeconds / 60)} min). Please trim it and try again.`,
+          free_tier_exhausted: false,  // slot rolled back — they can retry with a shorter file
+          duration_exceeded: true
         });
       }
 
@@ -1008,9 +1038,9 @@ ${MOM_JSON_SCHEMA}${extra}`;
       const saved = dbResult.rows[0];
       console.log(`[db] Saved as session #${saved.id}`);
 
-      // ── Step 8: Increment free tier usage ─────────────────────────
+      // ── Step 8: Record minutes used (files already incremented atomically at start) ──
       await pool.query(
-        'UPDATE users SET free_files_used = free_files_used + 1, free_minutes_used = free_minutes_used + $1 WHERE email = $2',
+        'UPDATE users SET free_minutes_used = free_minutes_used + $1 WHERE email = $2',
         [durationSeconds, req.session.user.email]
       );
 
