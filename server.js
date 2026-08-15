@@ -17,7 +17,6 @@
   const Anthropic      = require('@anthropic-ai/sdk');
   const { Pool }       = require('pg');
   const session        = require('express-session');
-  const pgSession      = require('connect-pg-simple')(session);
   const passport       = require('passport');
   const GoogleStrategy = require('passport-google-oauth20').Strategy;
   const nodemailer     = require('nodemailer');
@@ -29,11 +28,11 @@
   const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 
   // ─── Anthropic client ────────────────────────────────────────────────────────
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || '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' });
 
   // ─── PostgreSQL pool — Neon (DATABASE_URL) or local fallback ─────────────────
   const NEON_URL = process.env.DATABASE_URL ||
-    'postgresql://neondb_owner:npg_VBbtpMP0dY4K@ep-rapid-flower-ammnsym7-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require&uselibpqcompat=true';
+    'postgresql://neondb_owner:npg_VBbtpMP0dY4K@ep-rapid-flower-ammnsym7-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require';
 
   const pool = new Pool({
     connectionString:        NEON_URL,
@@ -42,12 +41,6 @@
     idleTimeoutMillis:       30000,
     connectionTimeoutMillis: 5000,
   });
-
-  // Sanitised DB label for startup log (never log credentials)
-  const DB_DISPLAY = (() => {
-    try { const u = new URL(NEON_URL); return `${u.hostname}/${u.pathname.replace('/','')}`; }
-    catch { return 'configured'; }
-  })();
 
   // ─── In-memory OTP store ─────────────────────────────────────────────────────
   const otpStore = new Map();
@@ -65,22 +58,17 @@
   // ── Trust Render/Heroku reverse proxy so secure cookies work over HTTPS ───────
   app.set('trust proxy', 1);
 
-  // ── Session — PostgreSQL-backed store (no memory leak, survives restarts) ──────
+  // ── Session — 30 days rolling (fixes logout bug) ──────────────────────────────
   app.use(session({
-    store: new pgSession({
-      pool,
-      tableName:       'user_sessions',
-      createTableIfMissing: true,   // auto-creates session table on first boot
-    }),
     secret:            process.env.SESSION_SECRET || 'mom-generator-change-in-prod',
-    resave:            false,        // pg store handles persistence — no need to resave
-    rolling:           true,         // reset cookie expiry on every request
+    resave:            true,           // re-save on every request → keeps session alive
+    rolling:           true,           // reset cookie expiry on every request
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
       secure:   process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge:   30 * 24 * 60 * 60 * 1000   // 30 days
+      maxAge:   30 * 24 * 60 * 60 * 1000   // 30 days always (no more 1-day default)
     }
   }));
 
@@ -875,50 +863,20 @@ ${MOM_JSON_SCHEMA}${extra}`;
     console.log(`[transcribe] Lang : ${langInput}`);
 
     try {
-      // ══════════════════════════════════════════════════════════════════
-      //  FREE TIER — STRICT SERVER-SIDE ENFORCEMENT
-      //  1. Atomic DB reservation — prevents race condition / dual uploads
-      //  2. Duration hard-limit: 30 min after WAV conversion
-      //  3. Slot rolled back if duration exceeded — user can retry shorter file
-      // ══════════════════════════════════════════════════════════════════
-      const FREE_FILES   = 1;
-      const FREE_MINUTES = parseInt(process.env.FREE_MINUTES_LIMIT || '30');
-      const FREE_SECONDS = FREE_MINUTES * 60;
+      // ── Fetch user (for free tier + custom prompt) ────────────────
+      const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [req.session.user.email]);
+      const user       = userResult.rows[0];
+      const filesUsed  = user?.free_files_used || 0;
 
-      // Atomic: only succeeds if free_files_used < FREE_FILES
-      // Two simultaneous requests → only ONE gets rowCount=1
-      const reserve = await pool.query(
-        `UPDATE users
-            SET free_files_used = free_files_used + 1
-          WHERE email = $1
-            AND free_files_used < $2
-          RETURNING id`,
-        [req.session.user.email, FREE_FILES]
-      );
-
-      if (reserve.rowCount === 0) {
+      // ── Free tier check ───────────────────────────────────────────
+      const FREE_FILES = 1;
+      if (filesUsed >= FREE_FILES) {
         return res.status(402).json({
-          error: `You have used your ${FREE_FILES} free recording. Contact us to upgrade.`,
+          error: 'Your free recording has been used. Contact us to upgrade.',
           free_tier_exhausted: true,
           upgrade_needed: true
         });
       }
-
-      // Rollback helper — releases reserved slot if something fails downstream
-      let slotRolledBack = false;
-      async function rollbackSlot() {
-        if (!slotRolledBack) {
-          slotRolledBack = true;
-          await pool.query(
-            'UPDATE users SET free_files_used = GREATEST(free_files_used - 1, 0) WHERE email = $1',
-            [req.session.user.email]
-          ).catch(e => console.error('[free-tier] Rollback failed:', e.message));
-        }
-      }
-
-      // ── Fetch user for custom prompt + AI provider ────────────────
-      const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [req.session.user.email]);
-      const user       = userResult.rows[0];
 
       // ── Step 1: Extract audio from video (if needed) ──────────────
       workingPath = await extractAudioFromVideo(workingPath);
@@ -930,13 +888,13 @@ ${MOM_JSON_SCHEMA}${extra}`;
       const durationSeconds = getWavDuration(wavPath);
       console.log(`[transcribe] Duration: ${durationSeconds.toFixed(1)}s`);
 
-      // ── Free tier duration check (30 min hard limit) ──────────────
+      // ── Free tier duration check (30 min max) ────────────────────
+      const FREE_MINUTES = parseInt(process.env.FREE_MINUTES_LIMIT || '30');
+      const FREE_SECONDS = FREE_MINUTES * 60;
       if (durationSeconds > FREE_SECONDS) {
-        await rollbackSlot(); // release slot — user can retry with shorter file
         return res.status(402).json({
-          error: `Recording exceeds the ${FREE_MINUTES}-minute limit (your file: ${Math.ceil(durationSeconds / 60)} min). Please trim it and try again.`,
-          free_tier_exhausted: false,
-          duration_exceeded: true
+          error: `File exceeds the ${FREE_MINUTES}-minute free limit (this file: ${Math.ceil(durationSeconds/60)} min). Contact us to upgrade.`,
+          free_tier_exhausted: true
         });
       }
 
@@ -1050,9 +1008,9 @@ ${MOM_JSON_SCHEMA}${extra}`;
       const saved = dbResult.rows[0];
       console.log(`[db] Saved as session #${saved.id}`);
 
-      // ── Step 8: Record minutes used (file slot already reserved atomically at start) ──
+      // ── Step 8: Increment free tier usage ─────────────────────────
       await pool.query(
-        'UPDATE users SET free_minutes_used = free_minutes_used + $1 WHERE email = $2',
+        'UPDATE users SET free_files_used = free_files_used + 1, free_minutes_used = free_minutes_used + $1 WHERE email = $2',
         [durationSeconds, req.session.user.email]
       );
 
@@ -1304,7 +1262,7 @@ ${MOM_JSON_SCHEMA}${extra}`;
         console.log(`      OpenAI     : ${process.env.OPENAI_API_KEY    ? '✓ key set' : '— not configured (ChatGPT provider unavailable)'}`);
         console.log(`      Google     : ${process.env.GOOGLE_CLIENT_ID  ? '✓ configured' : '— not configured'}`);
         console.log(`      SMTP       : ${DEV_MODE ? '⚠️  DEV MODE — OTP logged to console' : '✓ configured'}`);
-        console.log(`      DB         : ${DB_DISPLAY}`);
+        console.log(`      DB         : postgres://${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || '5432'}/${process.env.DB_NAME || 'postgres'}`);
         console.log(`      Sessions   : 30-day rolling (auto-logout fix active)`);
         console.log('');
       });
