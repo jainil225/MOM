@@ -27,8 +27,8 @@
   // ─── FFmpeg ──────────────────────────────────────────────────────────────────
   const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 
-  // ─── Anthropic client ────────────────────────────────────────────────────────
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || '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' });
+  // ─── Anthropic client (default — overridden per-user if they set their own key) ──
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || '' });
 
   // ─── PostgreSQL pool — Neon (DATABASE_URL) or local fallback ─────────────────
   const NEON_URL = process.env.DATABASE_URL ||
@@ -98,6 +98,7 @@
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT`,
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT`,
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS openai_api_key TEXT`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS anthropic_api_key TEXT`,
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_prompt TEXT`,
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_prompt_openai TEXT`,
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_provider TEXT DEFAULT 'claude'`,
@@ -626,7 +627,8 @@ CRITICAL — NAME CONSISTENCY: Indian names are frequently transcribed inconsist
   // ════════════════════════════════════════════════════════════════════════════
 
   // ── Claude MOM generation ────────────────────────────────────────────────────
-  async function generateMOMClaude(transcript, fileName, customPrompt = null, contextStr = null) {
+  async function generateMOMClaude(transcript, fileName, customPrompt = null, contextStr = null, apiKey = null) {
+    const client  = apiKey ? new Anthropic({ apiKey }) : anthropic;
     const extra   = customPrompt ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${customPrompt}` : '';
     const ctxBlock = contextStr ? contextStr : '';
     const prompt = `${MOM_SYSTEM_ROLE}
@@ -640,8 +642,8 @@ ${transcript}
 
 ${MOM_JSON_SCHEMA}${extra}`;
 
-    const response = await anthropic.messages.create({
-      model:      'claude-sonnet-4-6',
+    const response = await client.messages.create({
+      model:      'claude-sonnet-4-5',
       max_tokens: 4096,
       messages: [{ role: 'user', content: prompt }]
     });
@@ -702,7 +704,8 @@ ${MOM_JSON_SCHEMA}${extra}`;
   // ── Provider router — picks Claude or OpenAI based on user settings ──────────
   async function generateMOM(transcript, fileName, user, contextStr = null) {
     const provider     = user?.ai_provider || 'claude';
-    const openaiKey    = process.env.OPENAI_API_KEY;   // from .env — shared key
+    const openaiKey    = process.env.OPENAI_API_KEY;
+    const anthropicKey = user?.anthropic_api_key || process.env.ANTHROPIC_API_KEY || '';
     const claudePrompt = user?.custom_prompt       || null;
     const openaiPrompt = user?.custom_prompt_openai || null;
 
@@ -712,10 +715,12 @@ ${MOM_JSON_SCHEMA}${extra}`;
     }
 
     if (provider === 'openai' && !openaiKey) {
-      console.warn('[mom] OpenAI selected but OPENAI_API_KEY not set in .env — falling back to Claude');
+      console.warn('[mom] OpenAI selected but OPENAI_API_KEY not set — falling back to Claude');
     }
-    console.log('[mom] Provider: Claude claude-sonnet-4-6 (with context)');
-    return generateMOMClaude(transcript, fileName, claudePrompt, contextStr);
+
+    if (!anthropicKey) throw new Error('No Anthropic API key configured. Add your key in Settings.');
+    console.log(`[mom] Provider: Claude claude-sonnet-4-5 | key: ${user?.anthropic_api_key ? 'user-key' : 'env-key'} | context: ${contextStr ? 'yes' : 'no'}`);
+    return generateMOMClaude(transcript, fileName, claudePrompt, contextStr, anthropicKey);
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -727,13 +732,16 @@ ${MOM_JSON_SCHEMA}${extra}`;
     try {
       const result = await pool.query(
         `SELECT custom_prompt, custom_prompt_openai,
-                ai_provider, free_files_used, free_minutes_used
+                ai_provider, free_files_used, free_minutes_used,
+                anthropic_api_key
         FROM users WHERE email = $1`,
         [req.session.user.email]
       );
       const u = result.rows[0] || {};
       res.json({
-        has_openai_key:       !!process.env.OPENAI_API_KEY,  // from .env
+        has_openai_key:       !!process.env.OPENAI_API_KEY,
+        has_anthropic_key:    !!(u.anthropic_api_key || process.env.ANTHROPIC_API_KEY),
+        has_user_anthropic_key: !!u.anthropic_api_key,
         custom_prompt:        u.custom_prompt        || '',
         custom_prompt_openai: u.custom_prompt_openai || '',
         ai_provider:          u.ai_provider          || 'claude',
@@ -750,31 +758,39 @@ ${MOM_JSON_SCHEMA}${extra}`;
   // POST /api/user/settings
   app.post('/api/user/settings', requireAuth, async (req, res) => {
     try {
-      const { custom_prompt, custom_prompt_openai, ai_provider } = req.body;
+      const { custom_prompt, custom_prompt_openai, ai_provider, anthropic_api_key } = req.body;
       const validProviders = ['claude', 'openai'];
       const provider = validProviders.includes(ai_provider) ? ai_provider : 'claude';
 
-      // If OpenAI selected but key not in .env, fall back to claude
       const effectiveProvider = (provider === 'openai' && !process.env.OPENAI_API_KEY)
         ? 'claude' : provider;
+
+      // Validate anthropic key format if provided
+      const cleanAnthropicKey = anthropic_api_key?.trim() || null;
+      if (cleanAnthropicKey && !cleanAnthropicKey.startsWith('sk-ant-')) {
+        return res.status(400).json({ error: 'Invalid Anthropic key format. Must start with sk-ant-' });
+      }
 
       await pool.query(
         `UPDATE users SET
           custom_prompt         = $1,
           custom_prompt_openai  = $2,
-          ai_provider           = $3
-        WHERE email = $4`,
+          ai_provider           = $3,
+          anthropic_api_key     = COALESCE($4, anthropic_api_key)
+        WHERE email = $5`,
         [
           custom_prompt        || null,
           custom_prompt_openai || null,
           effectiveProvider,
+          cleanAnthropicKey,
           req.session.user.email
         ]
       );
       res.json({
-        success:    true,
-        ai_provider: effectiveProvider,
-        openai_available: !!process.env.OPENAI_API_KEY
+        success:              true,
+        ai_provider:          effectiveProvider,
+        openai_available:     !!process.env.OPENAI_API_KEY,
+        anthropic_key_saved:  !!cleanAnthropicKey
       });
     } catch (err) {
       res.status(500).json({ error: err.message });

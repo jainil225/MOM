@@ -185,24 +185,9 @@ input.native::placeholder{color:var(--ink3)}
 @keyframes spin{to{transform:rotate(360deg)}}
 .proc-title{font-family:var(--serif);font-size:24px;color:var(--ink);margin-bottom:8px;letter-spacing:-0.01em}
 .proc-msg{font-family:var(--mono);font-size:12px;color:var(--ink2);margin-bottom:24px;min-height:20px;letter-spacing:0.02em}
-.progress-track{background:var(--paper2);border-radius:3px;height:6px;max-width:360px;margin:0 auto 6px;overflow:hidden;position:relative}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-h));border-radius:3px;transition:width 0.4s ease-out;position:relative;overflow:hidden}
-.progress-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.35) 50%,transparent 100%);animation:shimmer 1.4s infinite;transform:translateX(-100%)}
-@keyframes shimmer{to{transform:translateX(300%)}}
-.progress-pct{font-family:var(--mono);font-size:11px;color:var(--gold);font-weight:600;margin-bottom:24px}
-.stage-track{display:flex;align-items:flex-start;justify-content:center;max-width:360px;margin:0 auto}
-.stage-item{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;position:relative}
-.stage-connector{position:absolute;top:4px;left:50%;width:100%;height:1px;background:var(--border);transition:background 0.4s;z-index:0}
-.stage-connector.done{background:var(--gold)}
-.stage-item:last-child .stage-connector{display:none}
-.stage-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--border);background:var(--card);transition:all 0.4s;position:relative;z-index:1}
-.stage-dot.active{border-color:var(--gold);background:var(--gold);box-shadow:0 0 0 4px var(--gold-tint)}
-.stage-dot.done{border-color:var(--sage);background:var(--sage)}
-.stage-dot.active::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid var(--gold-tint-strong);animation:pulse-dot 1.2s ease-in-out infinite}
-@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(1.4)}}
-.stage-label{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink3);transition:color 0.4s;white-space:nowrap}
-.stage-label.active{color:var(--gold)}
-.stage-label.done{color:var(--sage)}
+.progress-track{background:var(--paper2);border-radius:3px;height:4px;max-width:320px;margin:0 auto 8px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-h));border-radius:3px;transition:width 0.5s ease}
+.progress-pct{font-family:var(--mono);font-size:11px;color:var(--gold);font-weight:600}
 
 /* SETTINGS MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(15,21,36,0.6);z-index:1000;display:none;align-items:center;justify-content:center;padding:1rem}
@@ -254,6 +239,16 @@ input.native::placeholder{color:var(--ink3)}
   <div class="modal">
     <div class="modal-title">Settings</div>
     <div class="modal-sub">Preferences saved per account · Applied to all future MOMs</div>
+
+    <!-- Anthropic API Key -->
+    <div class="modal-section">
+      <div class="modal-label">Anthropic API Key <span class="key-status" id="ant-key-status">Not set</span></div>
+      <input type="password" class="modal-input" id="anthropic-api-key"
+        placeholder="sk-ant-api03-..."
+        autocomplete="off" spellcheck="false"
+        style="font-family:var(--mono);font-size:12px;letter-spacing:0.05em"/>
+      <div class="modal-hint">Your personal Anthropic key — used for MOM generation. Get one at <a href="https://console.anthropic.com" target="_blank" style="color:var(--gold)">console.anthropic.com</a>. Leave blank to keep existing key.</div>
+    </div>
 
     <!-- AI Provider toggle -->
     <div class="modal-section">
@@ -520,34 +515,8 @@ input.native::placeholder{color:var(--ink3)}
       </div>
       <div class="proc-title">Preparing your minute</div>
       <div class="proc-msg" id="proc-msg">Starting…</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;max-width:360px;margin:0 auto 4px;padding:0 2px">
-        <span style="font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:0.1em;text-transform:uppercase">PROCESSING</span>
-        <span class="progress-pct" id="progress-pct" style="margin-bottom:0">0%</span>
-      </div>
-      <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
-      <!-- Stage dots -->
-      <div class="stage-track" style="margin-top:20px">
-        <div class="stage-item">
-          <div class="stage-dot active" id="sdot-upload"></div>
-          <div class="stage-connector" id="scon-upload"></div>
-          <div class="stage-label active" id="slbl-upload">Upload</div>
-        </div>
-        <div class="stage-item">
-          <div class="stage-dot" id="sdot-transcribe"></div>
-          <div class="stage-connector" id="scon-transcribe"></div>
-          <div class="stage-label" id="slbl-transcribe">Transcribe</div>
-        </div>
-        <div class="stage-item">
-          <div class="stage-dot" id="sdot-analyse"></div>
-          <div class="stage-connector" id="scon-analyse"></div>
-          <div class="stage-label" id="slbl-analyse">Analyse</div>
-        </div>
-        <div class="stage-item">
-          <div class="stage-dot" id="sdot-structure"></div>
-          <div class="stage-connector" id="scon-structure"></div>
-          <div class="stage-label" id="slbl-structure">Structure</div>
-        </div>
-      </div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:5%"></div></div>
+      <div class="progress-pct" id="progress-pct">5%</div>
     </div>
   </div>
 
@@ -655,6 +624,12 @@ async function loadSettings(){
 
     document.getElementById("custom-prompt-claude").value = d.custom_prompt || "";
     document.getElementById("custom-prompt-openai").value = d.custom_prompt_openai || "";
+
+    // Anthropic key status
+    const antKs = document.getElementById("ant-key-status");
+    antKs.textContent  = d.has_user_anthropic_key ? "Your key ✓" : (d.has_anthropic_key ? "Server key ✓" : "Not set ⚠");
+    antKs.className    = "key-status " + (d.has_anthropic_key ? "key-set" : "key-unset");
+
     const ks = document.getElementById("oai-key-status");
     ks.textContent = d.has_openai_key ? "Configured ✓" : "Not configured";
     ks.className   = "key-status " + (d.has_openai_key ? "key-set" : "key-unset");
@@ -714,25 +689,36 @@ document.getElementById("settings-modal").addEventListener("click", function(e){
   if (e.target === this) closeSettings();
 });
 async function saveSettings(){
-  const promptClaude = document.getElementById("custom-prompt-claude").value.trim();
-  const promptOpenAI = document.getElementById("custom-prompt-openai").value.trim();
+  const promptClaude  = document.getElementById("custom-prompt-claude").value.trim();
+  const promptOpenAI  = document.getElementById("custom-prompt-openai").value.trim();
+  const anthropicKey  = document.getElementById("anthropic-api-key").value.trim();
+
+  if (anthropicKey && !anthropicKey.startsWith('sk-ant-')) {
+    alert("Invalid Anthropic key. Must start with sk-ant-"); return;
+  }
+
   try{
     const r = await fetch("/api/user/settings", {
       method: "POST", credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        custom_prompt:        promptClaude || undefined,
-        custom_prompt_openai: promptOpenAI || undefined,
-        ai_provider:          activeProvider
+        custom_prompt:        promptClaude   || undefined,
+        custom_prompt_openai: promptOpenAI   || undefined,
+        ai_provider:          activeProvider,
+        anthropic_api_key:    anthropicKey   || undefined
       })
     });
     if (r.ok){
       const d = await r.json();
-      if (d.ai_provider !== activeProvider) {
-        // Server fell back (OpenAI key not in .env)
-        setProvider(d.ai_provider, true);
+      if (d.anthropic_key_saved) {
+        document.getElementById("anthropic-api-key").value = "";
+        document.getElementById("anthropic-api-key").placeholder = "Key saved ✓ — leave blank to keep";
       }
+      if (d.ai_provider !== activeProvider) setProvider(d.ai_provider, true);
       closeSettings(); loadSettings();
+    } else {
+      const e = await r.json();
+      alert("Save failed: " + (e.error || "Unknown error"));
     }
   } catch(e){ alert("Save failed: " + e.message); }
 }
@@ -985,71 +971,11 @@ function setStep(n){
     el.className = "ledger-step" + (i<n?" done":i===n?" active":"");
   }
 }
-/* ─── Smooth Progress Engine ─────────────────────────────────── */
-let _progCurrent = 0, _progTarget = 0, _progRaf = null;
-
-function _animProg(){
-  const diff = _progTarget - _progCurrent;
-  if (Math.abs(diff) < 0.05){
-    _progCurrent = _progTarget;
-    _progRaf = null;
-  } else {
-    // ease-out: move faster when far, slower when close
-    _progCurrent += diff * 0.04;
-    _progRaf = requestAnimationFrame(_animProg);
-  }
-  const pct = Math.min(Math.round(_progCurrent), 100);
-  document.getElementById("progress-fill").style.width = _progCurrent + "%";
+function setProgress(msg, pct){
+  document.getElementById("proc-msg").textContent = msg;
+  document.getElementById("progress-fill").style.width = pct + "%";
   document.getElementById("progress-pct").textContent = pct + "%";
 }
-
-function setProgress(msg, pct){
-  if (msg) document.getElementById("proc-msg").textContent = msg;
-  _progTarget = Math.max(_progTarget, pct); // never go backwards
-  if (!_progRaf) _progRaf = requestAnimationFrame(_animProg);
-}
-
-function resetProgress(){
-  _progCurrent = 0; _progTarget = 0;
-  if (_progRaf){ cancelAnimationFrame(_progRaf); _progRaf = null; }
-  document.getElementById("progress-fill").style.width = "0%";
-  document.getElementById("progress-pct").textContent = "0%";
-}
-
-/* ─── Stage Dot Manager ──────────────────────────────────────── */
-const STAGES = ['upload','transcribe','analyse','structure'];
-
-function setStage(activeStage){
-  const idx = STAGES.indexOf(activeStage);
-  STAGES.forEach((s, i) => {
-    const dot  = document.getElementById('sdot-' + s);
-    const lbl  = document.getElementById('slbl-' + s);
-    const con  = document.getElementById('scon-' + s);
-    if (!dot) return;
-    dot.classList.remove('active','done');
-    lbl.classList.remove('active','done');
-    if (con) con.classList.remove('done');
-    if (i < idx)      { dot.classList.add('done'); lbl.classList.add('done'); if(con) con.classList.add('done'); }
-    else if (i === idx){ dot.classList.add('active'); lbl.classList.add('active'); }
-  });
-}
-
-/* ─── Trickle: slowly drip progress during long API wait ─────── */
-let _trickleTimer = null;
-
-function startTrickle(from, ceiling, msPerStep){
-  stopTrickle();
-  setProgress(null, from);
-  _trickleTimer = setInterval(() => {
-    if (_progTarget < ceiling) setProgress(null, _progTarget + 0.4);
-    else stopTrickle();
-  }, msPerStep);
-}
-
-function stopTrickle(){
-  if (_trickleTimer){ clearInterval(_trickleTimer); _trickleTimer = null; }
-}
-
 function setPhase(id){
   ["phase-upload","phase-processing","phase-done"].forEach(p =>
     document.getElementById(p).classList.toggle("active", p === id));
@@ -1065,7 +991,7 @@ async function handleProcess(){
   // If still recording, auto-stop first then wait for blob
   if (inputMode === 'record' && isRecording){
     stopRecording(false);
-    await sleep(600);
+    await sleep(600); // wait for onstop to fire and currentFile to be set
   }
 
   if (!currentFile){
@@ -1077,15 +1003,9 @@ async function handleProcess(){
     return showError("Free recording already used. Contact us to upgrade.");
   }
 
-  resetProgress();
   setPhase("phase-processing"); setStep(2);
-
   try{
-    // ── Stage 1: Upload ───────────────────────────────────────
-    setStage('upload');
-    setProgress("Uploading recording…", 5);
-    startTrickle(5, 18, 120); // slowly move 5→18% while uploading
-
+    setProgress("Uploading recording…", 10);
     const fd = new FormData();
     fd.append("file", currentFile, currentFile.name);
     fd.append("language", document.getElementById("language-select").value);
@@ -1094,41 +1014,16 @@ async function handleProcess(){
 
     const langVal = document.getElementById("language-select").value;
     const isAuto = (langVal === "auto" || langVal === "multilingual");
+    if (isAuto) setProgress("Uploading + detecting language…", 12);
 
-    // Kick off the fetch — long running (transcription can take 1–4 min)
-    const fetchPromise = fetch("/api/transcribe", {
+    const res = await fetch("/api/transcribe", {
       method: "POST", credentials: "same-origin", body: fd
     });
 
-    // ── Stage 2: Transcribe ───────────────────────────────────
-    await sleep(1200); // brief pause so upload stage is visible
-    stopTrickle();
-    setStage('transcribe');
-    setProgress("Transcribing audio…", 20);
-    startTrickle(20, 62, 180); // slowly 20→62% during transcription
-
-    // ── Stage 3: Analyse — triggered at ~62% ──────────────────
-    // We don't know when transcription ends so we switch stage at a time estimate
-    // Typical: 1 min audio ~15s, 30 min audio ~3-4 min
-    const fileSizeMB = (currentFile.size / 1024 / 1024);
-    const estTranscribeSec = Math.max(8000, Math.min(fileSizeMB * 800, 90000));
-    setTimeout(() => {
-      if (_progTarget >= 20 && _progTarget < 65){
-        stopTrickle();
-        setStage('analyse');
-        setProgress("Analysing content…", 65);
-        startTrickle(65, 82, 200);
-      }
-    }, estTranscribeSec);
-
-    const res = await fetchPromise;
-
-    // ── Stage 4: Structure ────────────────────────────────────
-    stopTrickle();
-    setStage('structure');
-    setProgress("Structuring the minute…", 84);
-    startTrickle(84, 96, 80);
-    await sleep(400);
+    setProgress("Transcribing audio…", 40);
+    await sleep(300);
+    setProgress("Structuring the minute…", 72);
+    await sleep(300);
 
     const data = await res.json();
     if (!res.ok){
@@ -1167,15 +1062,6 @@ async function handleProcess(){
       data.is_multilingual
     );
 
-    stopTrickle();
-    setStage('structure'); // mark all done
-    STAGES.forEach(s => {
-      document.getElementById('sdot-'+s)?.classList.replace('active','done') ||
-      document.getElementById('sdot-'+s)?.classList.add('done');
-      document.getElementById('slbl-'+s)?.classList.replace('active','done') ||
-      document.getElementById('slbl-'+s)?.classList.add('done');
-      document.getElementById('scon-'+s)?.classList.add('done');
-    });
     setProgress("Done", 100);
     setStep(3); await sleep(200); setStep(4); await sleep(300);
 
@@ -1195,8 +1081,6 @@ async function handleProcess(){
 
     loadSettings();
   } catch(e){
-    stopTrickle();
-    resetProgress();
     setPhase("phase-upload"); setStep(1);
     showError(e.message);
   }
