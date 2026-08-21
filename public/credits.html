@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>API Credits · Minute</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0F1524;--ink2:#4A5468;--ink3:#8A93A8;--ink4:#B8BFCC;
+  --paper:#FAF8F3;--paper2:#F4F0E6;--card:#FFFFFF;
+  --border:#E8E4D8;--border-strong:#D4CFC0;
+  --navy:#0F1B3D;--navy-h:#1F2D57;
+  --gold:#B8912A;--gold-h:#C89A3D;
+  --gold-tint:rgba(184,145,42,0.10);--gold-tint-strong:rgba(184,145,42,0.22);
+  --sage:#4A7C59;--sage-tint:rgba(74,124,89,0.10);
+  --rust:#A0472E;--rust-tint:rgba(160,71,46,0.10);
+  --shadow-1:0 1px 2px rgba(15,21,36,0.04),0 2px 6px rgba(15,21,36,0.03);
+  --shadow-2:0 4px 20px rgba(15,21,36,0.06),0 12px 48px rgba(15,21,36,0.06);
+  --serif:'Instrument Serif',Georgia,serif;
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+[data-theme="dark"]{
+  --ink:#F5F1E6;--ink2:#B8B0A0;--ink3:#6B6455;--ink4:#3D3830;
+  --paper:#0C0D10;--paper2:#141519;--card:#161820;
+  --border:#25272F;--border-strong:#333540;
+  --navy:#4A5B8C;--navy-h:#6274AA;
+  --gold:#D4A94A;--gold-tint:rgba(212,169,74,0.10);--gold-tint-strong:rgba(212,169,74,0.20);
+  --sage:#7BA88C;--sage-tint:rgba(123,168,140,0.10);
+  --rust:#D07358;--rust-tint:rgba(208,115,88,0.10);
+  --shadow-2:0 4px 20px rgba(0,0,0,0.4);
+}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;transition:background 0.3s,color 0.3s}
+
+/* NAV */
+.nav{background:var(--card);border-bottom:1px solid var(--border);height:60px;padding:0 1.75rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-brand{display:flex;align-items:center;gap:12px}
+.nav-mark{width:32px;height:32px;background:var(--navy);color:var(--gold);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-size:20px;padding-bottom:3px}
+.nav-title{font-family:var(--serif);font-size:20px;letter-spacing:-0.01em}
+.nav-title em{font-style:italic;color:var(--gold)}
+.nav-sub{font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:0.14em;text-transform:uppercase;margin-top:1px}
+.nav-right{display:flex;align-items:center;gap:8px}
+.btn-nav{padding:7px 12px;font-size:12px;font-weight:500;background:var(--card);color:var(--ink2);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all 0.15s}
+.btn-nav:hover{border-color:var(--gold);color:var(--gold)}
+
+.page{max-width:1100px;margin:0 auto;padding:2rem 1rem 4rem}
+
+/* Page header */
+.page-eyebrow{font-family:var(--mono);font-size:10px;color:var(--gold);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:6px}
+.page-title{font-family:var(--serif);font-size:36px;line-height:1.1;letter-spacing:-0.01em;margin-bottom:1.75rem}
+.page-title em{font-style:italic;color:var(--gold)}
+
+/* Stat cards ledger */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--card);margin-bottom:1.75rem}
+.stat-card{padding:18px 20px;border-right:1px solid var(--border)}
+.stat-card:last-child{border-right:none}
+.stat-label{font-family:var(--mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:var(--ink3);margin-bottom:8px}
+.stat-val{font-family:var(--serif);font-size:30px;color:var(--ink);line-height:1;letter-spacing:-0.02em}
+.stat-val em{font-style:italic;color:var(--gold)}
+.stat-sub{font-size:11px;color:var(--ink3);margin-top:4px}
+
+/* Section */
+.section{margin-bottom:2rem}
+.section-title{font-family:var(--mono);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:var(--gold);margin-bottom:12px}
+
+/* Service breakdown cards */
+.service-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem}
+.service-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden}
+.service-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px}
+.service-card.sarvam::before{background:linear-gradient(90deg,#7C3AED,#A855F7)}
+.service-card.claude::before{background:linear-gradient(90deg,#B8912A,#D4A94A)}
+.service-card.openai::before{background:linear-gradient(90deg,#10B981,#34D399)}
+.svc-name{font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--ink3);margin-bottom:10px}
+.svc-cost{font-family:var(--serif);font-size:28px;color:var(--ink);letter-spacing:-0.02em;margin-bottom:4px}
+.svc-meta{display:flex;gap:12px;flex-wrap:wrap}
+.svc-chip{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:3px;background:var(--paper2);color:var(--ink2)}
+
+/* Table */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-1)}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--paper2);padding:10px 16px;text-align:left;font-family:var(--mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:var(--ink3);border-bottom:1px solid var(--border);white-space:nowrap}
+thead th:first-child{padding-left:20px}
+tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--gold-tint)}
+tbody td{padding:11px 16px;font-size:13px;color:var(--ink);vertical-align:middle}
+tbody td:first-child{padding-left:20px}
+.mono{font-family:var(--mono);font-size:11px}
+.cost-cell{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--gold)}
+.service-badge{font-family:var(--mono);font-size:9px;font-weight:600;padding:2px 7px;border-radius:3px;text-transform:uppercase;letter-spacing:0.08em}
+.service-badge.sarvam{background:rgba(124,58,237,0.12);color:#7C3AED}
+.service-badge.claude{background:var(--gold-tint);color:var(--gold)}
+.service-badge.openai{background:rgba(16,185,129,0.12);color:#10B981}
+
+/* Period selector */
+.period-row{display:flex;align-items:center;gap:8px;margin-bottom:1rem}
+.period-btn{font-family:var(--mono);font-size:11px;padding:5px 12px;border:1px solid var(--border);border-radius:5px;background:var(--card);color:var(--ink2);cursor:pointer;transition:all 0.15s}
+.period-btn.active{background:var(--navy);color:var(--gold);border-color:var(--navy)}
+.period-btn:hover:not(.active){border-color:var(--gold);color:var(--gold)}
+
+/* Email action */
+.action-bar{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem;flex-wrap:wrap}
+.btn-action{padding:9px 18px;font-size:13px;font-weight:600;background:var(--navy);color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;transition:background 0.15s;display:inline-flex;align-items:center;gap:6px}
+.btn-action:hover{background:var(--navy-h)}
+.btn-action.secondary{background:var(--card);color:var(--ink2);border:1px solid var(--border)}
+.btn-action.secondary:hover{border-color:var(--gold);color:var(--gold);background:var(--card)}
+.toast{font-family:var(--mono);font-size:11px;padding:6px 12px;border-radius:5px;background:var(--sage-tint);color:var(--sage);border:1px solid var(--sage);display:none}
+
+/* Loading / empty */
+.loading-state{padding:3rem;text-align:center;color:var(--ink3);font-family:var(--mono);font-size:12px;letter-spacing:0.06em}
+.no-data{padding:2rem;text-align:center;color:var(--ink3);font-size:13px}
+
+/* Pricing note */
+.pricing-note{background:var(--gold-tint);border:1px solid var(--gold-tint-strong);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:10px;color:var(--ink2);letter-spacing:0.04em;margin-bottom:1.5rem;line-height:1.6}
+.pricing-note strong{color:var(--gold)}
+
+@media(max-width:800px){
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .stat-card:nth-child(-n+2){border-bottom:1px solid var(--border)}
+  .stat-card:nth-child(2n){border-right:none}
+  .service-grid{grid-template-columns:1fr}
+  .page-title{font-size:26px}
+}
+@media(max-width:480px){
+  .nav{padding:0 1rem}
+  .nav-sub{display:none}
+  .page{padding:1rem 0.75rem 3rem}
+  thead th{padding:9px 12px;font-size:8px}
+  tbody td{padding:9px 12px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-mark">M</div>
+    <div>
+      <div class="nav-title">Minute<em>.</em></div>
+      <div class="nav-sub">API Credits</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <button class="btn-nav" onclick="toggleTheme()" id="theme-btn">◐</button>
+    <a href="/" class="btn-nav">← Generator</a>
+    <a href="/history" class="btn-nav">Archive</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div class="page-eyebrow">— Internal · Admin</div>
+  <h1 class="page-title">API <em>credit</em> usage</h1>
+
+  <div class="pricing-note">
+    <strong>Estimated costs</strong> — Sarvam AI saarika:v2.5 ~$0.0002/sec · Claude claude-sonnet-4-6 $3/$15 per MTok in/out · OpenAI GPT-4o $5/$15 per MTok in/out.
+    Verify against current provider dashboards for billing accuracy. INR ≈ cost × 84.
+  </div>
+
+  <!-- All-time stats -->
+  <div class="stat-grid" id="stat-grid">
+    <div class="stat-card"><div class="stat-label">All-time cost</div><div class="stat-val" id="s-total">—</div><div class="stat-sub">USD estimated</div></div>
+    <div class="stat-card"><div class="stat-label">Total API calls</div><div class="stat-val" id="s-calls">—</div><div class="stat-sub">across all services</div></div>
+    <div class="stat-card"><div class="stat-label">Meetings processed</div><div class="stat-val" id="s-meetings">—</div><div class="stat-sub">all time</div></div>
+    <div class="stat-card"><div class="stat-label">Tracking since</div><div class="stat-val" id="s-since" style="font-size:18px;margin-top:4px">—</div><div class="stat-sub">first API call logged</div></div>
+  </div>
+
+  <!-- Action bar -->
+  <div class="action-bar">
+    <button class="btn-action" onclick="sendEmail('daily')">📧 Email daily report</button>
+    <button class="btn-action secondary" onclick="sendEmail('weekly')">📧 Email weekly report</button>
+    <button class="btn-action secondary" onclick="loadData()">↺ Refresh</button>
+    <span class="toast" id="toast">✓ Email sent</span>
+  </div>
+
+  <!-- By service -->
+  <div class="section">
+    <div class="section-title">By service — all time</div>
+    <div class="service-grid" id="service-grid">
+      <div class="loading-state">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Period filter -->
+  <div class="period-row">
+    <div class="section-title" style="margin:0">Daily breakdown —</div>
+    <button class="period-btn active" onclick="setPeriod(7)"  id="p7">7 days</button>
+    <button class="period-btn"        onclick="setPeriod(30)" id="p30">30 days</button>
+    <button class="period-btn"        onclick="setPeriod(90)" id="p90">90 days</button>
+  </div>
+
+  <!-- Daily table -->
+  <div class="section">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Service</th>
+            <th>Calls</th>
+            <th>Units</th>
+            <th>Cost (USD)</th>
+            <th>Cost (INR ~84×)</th>
+          </tr>
+        </thead>
+        <tbody id="daily-tbody"><tr><td colspan="6" class="loading-state">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Per-user breakdown -->
+  <div class="section">
+    <div class="section-title">Top users — selected period</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>API Calls</th>
+            <th>Cost (USD)</th>
+            <th>Cost (INR)</th>
+          </tr>
+        </thead>
+        <tbody id="user-tbody"><tr><td colspan="4" class="loading-state">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Monthly summary -->
+  <div class="section">
+    <div class="section-title">Monthly totals</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Cost (USD)</th>
+            <th>Cost (INR ~84×)</th>
+          </tr>
+        </thead>
+        <tbody id="monthly-tbody"><tr><td colspan="3" class="loading-state">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Theme ─────────────────────────────────────────────────────────────────────
+(function(){ applyTheme(localStorage.getItem('mom_theme') || 'light', false); })();
+function applyTheme(t, save=true) {
+  document.documentElement.setAttribute('data-theme', t);
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = t === 'dark' ? '◑' : '◐';
+  if (save) localStorage.setItem('mom_theme', t);
+}
+function toggleTheme() {
+  const c = document.documentElement.getAttribute('data-theme');
+  applyTheme(c === 'dark' ? 'light' : 'dark');
+}
+
+// ── Admin secret from URL ─────────────────────────────────────────────────────
+const urlParams  = new URLSearchParams(window.location.search);
+const adminSecret = urlParams.get('secret') || '';
+
+let currentPeriod = 7;
+
+function setPeriod(days) {
+  currentPeriod = days;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('p' + days)?.classList.add('active');
+  loadData();
+}
+
+// ── Load data ─────────────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const res = await fetch(`/api/admin/usage?days=${currentPeriod}&secret=${adminSecret}`, {
+      headers: { 'x-admin-secret': adminSecret }
+    });
+    if (!res.ok) {
+      if (res.status === 403) { document.body.innerHTML = '<div style="padding:4rem;text-align:center;font-family:monospace;color:#A0472E">Access denied — append ?secret=YOUR_ADMIN_SECRET to the URL</div>'; return; }
+      throw new Error(await res.text());
+    }
+    const data = await res.json();
+    renderStats(data);
+    renderServices(data.by_service);
+    renderDaily(data.daily);
+    renderUsers(data.per_user);
+    renderMonthly(data.monthly);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function fmt$(v) { return '$' + parseFloat(v || 0).toFixed(4); }
+function fmtINR(v) { return '₹' + (parseFloat(v || 0) * 84).toFixed(2); }
+function fmtNum(v) { return parseFloat(v || 0).toLocaleString('en-IN'); }
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function renderStats(data) {
+  const t = data.totals || {};
+  document.getElementById('s-total').innerHTML    = `<em>${fmt$(t.grand_total_usd)}</em>`;
+  document.getElementById('s-calls').innerHTML    = `<em>${fmtNum(t.total_calls)}</em>`;
+  document.getElementById('s-meetings').innerHTML = `<em>${fmtNum(data.meetings)}</em>`;
+  document.getElementById('s-since').textContent  = t.since ? fmtDate(t.since) : 'No data yet';
+}
+
+function renderServices(rows) {
+  const grid = document.getElementById('service-grid');
+  if (!rows || !rows.length) {
+    grid.innerHTML = '<div class="no-data">No API calls logged yet. Process a meeting to start tracking.</div>';
+    return;
+  }
+  const services = { sarvam: null, claude: null, openai: null };
+  rows.forEach(r => { services[r.service] = r; });
+
+  grid.innerHTML = Object.entries(services).map(([svc, r]) => {
+    if (!r) return `
+      <div class="service-card ${svc}">
+        <div class="svc-name">${svc}</div>
+        <div class="svc-cost" style="color:var(--ink3);font-size:20px">No usage</div>
+      </div>`;
+
+    const unitLabel = svc === 'sarvam' ? 'seconds' : 'tokens';
+    return `
+      <div class="service-card ${svc}">
+        <div class="svc-name">${svc.toUpperCase()}</div>
+        <div class="svc-cost">${fmt$(r.total_cost_usd)}</div>
+        <div class="svc-meta">
+          <span class="svc-chip">${fmtNum(r.calls)} calls</span>
+          <span class="svc-chip">${fmtNum(r.total_units)} ${unitLabel}</span>
+          <span class="svc-chip">${fmtINR(r.total_cost_usd)}</span>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--ink3);margin-top:10px">
+          Last: ${fmtDate(r.last_call)}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderDaily(rows) {
+  const tbody = document.getElementById('daily-tbody');
+  if (!rows || !rows.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="no-data">No data for this period.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td class="mono">${r.day}</td>
+      <td><span class="service-badge ${r.service}">${r.service}</span></td>
+      <td class="mono">${fmtNum(r.calls)}</td>
+      <td class="mono">${parseFloat(r.units).toFixed(1)}</td>
+      <td class="cost-cell">${fmt$(r.cost_usd)}</td>
+      <td class="mono">${fmtINR(r.cost_usd)}</td>
+    </tr>`).join('');
+}
+
+function renderUsers(rows) {
+  const tbody = document.getElementById('user-tbody');
+  if (!rows || !rows.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="no-data">No per-user data.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td class="mono" style="font-size:12px">${r.user_email || '—'}</td>
+      <td class="mono">${fmtNum(r.calls)}</td>
+      <td class="cost-cell">${fmt$(r.total_cost_usd)}</td>
+      <td class="mono">${fmtINR(r.total_cost_usd)}</td>
+    </tr>`).join('');
+}
+
+function renderMonthly(rows) {
+  const tbody = document.getElementById('monthly-tbody');
+  if (!rows || !rows.length) {
+    tbody.innerHTML = '<tr><td colspan="3" class="no-data">No monthly data yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td class="mono">${r.month}</td>
+      <td class="cost-cell">${fmt$(r.cost_usd)}</td>
+      <td class="mono">${fmtINR(r.cost_usd)}</td>
+    </tr>`).join('');
+}
+
+// ── Send email ────────────────────────────────────────────────────────────────
+async function sendEmail(period) {
+  try {
+    const res = await fetch('/api/admin/send-usage-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+      body: JSON.stringify({ period })
+    });
+    const data = await res.json();
+    const toast = document.getElementById('toast');
+    toast.textContent = res.ok ? '✓ ' + data.message : '✗ ' + data.error;
+    toast.style.display = 'inline-block';
+    toast.style.background = res.ok ? 'var(--sage-tint)' : 'var(--rust-tint)';
+    toast.style.color = res.ok ? 'var(--sage)' : 'var(--rust)';
+    toast.style.border = `1px solid ${res.ok ? 'var(--sage)' : 'var(--rust)'}`;
+    setTimeout(() => toast.style.display = 'none', 4000);
+  } catch (err) {
+    alert('Failed: ' + err.message);
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>

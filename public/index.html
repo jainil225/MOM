@@ -56,7 +56,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height
 .status-dot{width:6px;height:6px;border-radius:50%;background:var(--ink4)}
 .status-dot.online{background:var(--sage);box-shadow:0 0 0 3px var(--sage-tint)}
 .status-dot.error{background:var(--rust);box-shadow:0 0 0 3px var(--rust-tint)}
-.free-chip{font-family:var(--mono);font-size:10px;padding:5px 10px;background:var(--gold-tint);border:1px solid var(--gold-tint-strong);border-radius:999px;color:var(--gold);letter-spacing:0.04em;cursor:default}
+
 .user-badge{font-family:var(--mono);font-size:11px;color:var(--ink2);padding:0 6px}
 .btn-nav{padding:7px 12px;font-size:12px;font-weight:500;background:var(--card);color:var(--ink2);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all 0.15s}
 .btn-nav:hover{border-color:var(--gold);color:var(--gold)}
@@ -171,9 +171,7 @@ input.native::placeholder{color:var(--ink3)}
 .free-tier-bar{background:var(--gold-tint);border:1px solid var(--gold-tint-strong);border-radius:8px;padding:10px 14px;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .free-tier-text{font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:0.04em}
 .free-tier-used{font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:0.04em}
-.free-exhausted-bar{background:var(--rust-tint);border:1px solid var(--rust);border-radius:8px;padding:12px 14px;margin-bottom:1rem;display:none}
-.free-exhausted-bar .feh-title{font-weight:600;color:var(--rust);margin-bottom:4px;font-size:13px}
-.free-exhausted-bar .feh-body{font-size:12px;color:var(--ink2)}
+
 
 /* PROCESSING */
 .processing-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:3.5rem 2rem;text-align:center;box-shadow:var(--shadow-2);position:relative;overflow:hidden}
@@ -223,12 +221,91 @@ input.native::placeholder{color:var(--ink3)}
   .status-chip,.nav-right,.section-hd,.mom-topbar,.modal-overlay{display:none!important}
   body{background:#fff}.page{padding:0}
 }
-@media(max-width:520px){
-  .settings-row,.settings-row-3{grid-template-columns:1fr}
+
+/* ── Mobile nav: collapse secondary items ── */
+@media(max-width:640px){
+  .nav{padding:0 1rem;height:56px}
+  .nav-sub{display:none}
+  .user-badge{display:none}
+  .status-chip{display:none}
+  /* Only show: Archive, Settings, Theme, Sign out → collapse to icon-only or hide label */
+  .btn-nav{padding:6px 10px;font-size:11px}
+  /* Hide "Sign out" text label on very narrow, keep as icon via JS — but we hide it here */
+}
+@media(max-width:480px){
+  .nav-right{gap:4px}
+  /* Hide full "Archive →" text, shrink buttons */
+  .btn-nav{padding:6px 8px;font-size:11px}
+}
+
+/* ── Mobile layout ── */
+@media(max-width:640px){
+  .page{padding:1rem 0.75rem 3rem}
+
+  /* Progress ledger: 2×2 on mobile */
   .progress-ledger{grid-template-columns:repeat(2,1fr)}
   .ledger-step:nth-child(-n+2){border-bottom:1px solid var(--border)}
-  .ledger-step:nth-child(2n){border-right:none}
-  .rec-timer{font-size:36px}
+  .ledger-step:nth-child(2){border-right:none}
+  .ledger-step:nth-child(4){border-right:none}
+  .ledger-step{padding:10px 12px}
+  .ledger-name{font-size:14px}
+
+  /* Section heading */
+  .section-hd-title{font-size:22px}
+
+  /* Input mode tabs */
+  .tab-btn-mode{font-size:10px;padding:9px 10px}
+
+  /* Recorder card */
+  .recorder-card{padding:1.25rem 1rem}
+  .rec-timer{font-size:38px}
+  .rec-btn{padding:12px 22px;font-size:12px}
+  .waveform-wrap{height:60px}
+  #waveform-canvas{height:60px}
+
+  /* Dropzone */
+  .dropzone{padding:1.75rem 1rem}
+  .dropzone h3{font-size:17px}
+
+  /* Settings rows: always single column on mobile */
+  .settings-row,.settings-row-3{grid-template-columns:1fr}
+  .setting-box{padding:10px 12px}
+
+  /* Free tier bar: stack on mobile */
+  .free-tier-bar{flex-direction:column;align-items:flex-start;gap:4px}
+
+  /* Banner text */
+  .banner{font-size:12px}
+
+  /* Primary button */
+  .btn-primary{padding:13px;font-size:14px}
+
+  /* Processing card */
+  .processing-card{padding:2.5rem 1.25rem}
+  .proc-title{font-size:20px}
+
+  /* Done card */
+  #phase-done > div{padding:2rem 1rem}
+
+  /* Modal */
+  .modal{padding:1.5rem 1.25rem;border-radius:12px}
+  .modal-title{font-size:18px}
+  .modal-footer{flex-direction:column-reverse}
+  .modal-footer button{width:100%}
+  .provider-btn{padding:8px 10px;gap:8px}
+
+  /* Attendees chip input */
+  .tags-input-wrap{min-height:32px}
+
+  /* Multilingual hint */
+  .banner.info span:last-child{font-size:12px}
+}
+
+@media(max-width:380px){
+  .rec-timer{font-size:32px}
+  .section-hd-title{font-size:20px}
+  .tab-btn-mode{font-size:9px;letter-spacing:0.04em}
+  .nav-title{font-size:17px}
 }
 </style>
 </head>
@@ -334,7 +411,7 @@ input.native::placeholder{color:var(--ink3)}
       <span class="status-dot" id="server-dot"></span>
       <span id="server-label">Connecting</span>
     </div>
-    <div class="free-chip" id="free-chip" title="Free tier">1 File · 30 min free</div>
+
     <span class="user-badge" id="nav-user"></span>
     <a href="/history" class="btn-nav">Archive →</a>
     <button class="btn-nav" onclick="openSettings()" title="Settings">⚙</button>
@@ -360,12 +437,6 @@ input.native::placeholder{color:var(--ink3)}
       <h1 class="section-hd-title">Record your <em>meeting</em></h1>
     </div>
 
-    <!-- Free tier exhausted notice -->
-    <div class="free-exhausted-bar" id="free-exhausted-bar">
-      <div class="feh-title">⚠ Free recording used</div>
-      <div class="feh-body">You have used your 1 free recording (up to 30 min). Contact us to unlock more recordings.</div>
-    </div>
-
     <!-- Input Mode Tabs -->
     <div class="input-tabs">
       <button class="tab-btn-mode active" id="tab-mode-record" onclick="switchInputMode('record')">🎙 Record Live</button>
@@ -384,8 +455,7 @@ input.native::placeholder{color:var(--ink3)}
         <!-- Timer -->
         <div class="rec-timer" id="rec-timer">00:00</div>
         <div class="rec-limit-row">
-          <span class="rec-limit-note">max 30:00 ·</span>
-          <span class="rec-remaining" id="rec-remaining">30:00 remaining</span>
+          <span class="rec-remaining" id="rec-remaining"></span>
         </div>
 
         <!-- Record button -->
@@ -503,7 +573,7 @@ input.native::placeholder{color:var(--ink3)}
       <span>Generate Minute</span>
       <span>→</span>
     </button>
-    <p class="btn-note" id="btn-note-txt">Sarvam AI transcription · Claude structured output · 1 free recording · 30 min limit</p>
+    <p class="btn-note" id="btn-note-txt">Sarvam AI transcription · Claude structured output · Unlimited</p>
   </div>
 
   <!-- ═══ PROCESSING ═══ -->
@@ -562,7 +632,6 @@ let inputMode = 'record'; // 'record' | 'upload'
 let mediaRecorder = null, audioChunks = [], audioStream = null;
 let audioContext = null, analyser = null, animFrame = null;
 let recordingTimer = null, recordedSeconds = 0, isRecording = false;
-const MAX_REC_SECONDS = 1800; // 30 minutes
 
 /* ── Theme ── */
 (function(){ applyTheme(localStorage.getItem("mom_theme") || "light", false); })();
@@ -609,19 +678,6 @@ async function loadSettings(){
     const d = await r.json();
     userSettings = d;
 
-    const chip = document.getElementById("free-chip");
-    if (d.free_files_used >= 1){
-      chip.textContent = "Free used ✓";
-      chip.style.background = "var(--rust-tint)";
-      chip.style.color = "var(--rust)";
-      chip.style.borderColor = "var(--rust)";
-      document.getElementById("free-exhausted-bar").style.display = "block";
-      document.getElementById("process-btn").disabled = true;
-      document.getElementById("btn-note-txt").textContent = "Free recording used · Contact us to upgrade";
-    } else {
-      chip.textContent = "1 File · 30 min free";
-    }
-
     document.getElementById("custom-prompt-claude").value = d.custom_prompt || "";
     document.getElementById("custom-prompt-openai").value = d.custom_prompt_openai || "";
 
@@ -657,9 +713,9 @@ function setProvider(p, updateBtn=true){
     : "Claude is used by default — no additional setup needed.";
   switchPromptTab(p);
   const note = document.getElementById("btn-note-txt");
-  if (note && userSettings.free_files_used < 1) note.textContent = isOai
-    ? "OpenAI GPT-4o (your key) · Sarvam transcription · 1 free recording · 30 min"
-    : "Sarvam AI transcription · Claude · 1 free recording · 30 min";
+  if (note) note.textContent = isOai
+    ? "OpenAI GPT-4o · Sarvam AI transcription · Unlimited"
+    : "Sarvam AI transcription · Claude structured output · Unlimited";
 }
 
 /* ── Prompt tabs ── */
@@ -849,9 +905,6 @@ async function startRecording(){
   recordingTimer = setInterval(() => {
     recordedSeconds++;
     updateTimerDisplay(recordedSeconds);
-    if (recordedSeconds >= MAX_REC_SECONDS){
-      stopRecording(true); // auto-stop at 30 min
-    }
   }, 1000);
 
   // UI
@@ -862,7 +915,7 @@ async function startRecording(){
   setRecStatus('recording', '⏺ Recording…');
 }
 
-function stopRecording(autoStopped = false){
+function stopRecording(){
   if (recordingTimer){ clearInterval(recordingTimer); recordingTimer = null; }
   isRecording = false;
 
@@ -880,14 +933,9 @@ function stopRecording(autoStopped = false){
   document.getElementById("rec-btn-label").textContent = "Record Again";
   document.getElementById("recorder-card").classList.remove("recording-active");
   document.getElementById("waveform-idle").style.display = "flex";
-  document.getElementById("waveform-idle").textContent = autoStopped
-    ? "⏹ 30-min limit reached — recording ready"
-    : "⏹ Stopped — recording ready";
+  document.getElementById("waveform-idle").textContent = "⏹ Stopped — recording ready";
 
-  setRecStatus('done', autoStopped ? '⏹ 30 min reached' : '✓ Recording complete');
-  if (autoStopped){
-    showError("Recording auto-stopped at 30 minutes. Click Generate Minute to proceed.");
-  }
+  setRecStatus('done', '✓ Recording complete');
 }
 
 function setRecStatus(type, text){
@@ -898,18 +946,19 @@ function setRecStatus(type, text){
 }
 
 function updateTimerDisplay(seconds){
-  const m = Math.floor(seconds / 60);
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
-  const remaining = MAX_REC_SECONDS - seconds;
-  const rm = Math.floor(remaining / 60);
-  const rs = remaining % 60;
 
   const timerEl = document.getElementById("rec-timer");
-  timerEl.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  timerEl.className = "rec-timer" + (remaining <= 300 ? " warning" : "");
+  if (h > 0) {
+    timerEl.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  } else {
+    timerEl.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+  timerEl.className = "rec-timer";
 
-  document.getElementById("rec-remaining").textContent =
-    `${String(rm).padStart(2,'0')}:${String(rs).padStart(2,'0')} remaining`;
+  document.getElementById("rec-remaining").textContent = "";
 }
 
 function startWaveform(){
@@ -991,7 +1040,7 @@ async function handleProcess(){
   // If still recording, auto-stop first then wait for blob
   if (inputMode === 'record' && isRecording){
     stopRecording(false);
-    await sleep(600); // wait for onstop to fire and currentFile to be set
+    await sleep(600);
   }
 
   if (!currentFile){
@@ -999,43 +1048,83 @@ async function handleProcess(){
       ? "Please record audio first, then click Generate Minute."
       : "Please upload a recording first.");
   }
-  if (userSettings.free_files_used >= 1){
-    return showError("Free recording already used. Contact us to upgrade.");
-  }
 
   setPhase("phase-processing"); setStep(2);
   try{
-    setProgress("Uploading recording…", 10);
-    const fd = new FormData();
-    fd.append("file", currentFile, currentFile.name);
-    fd.append("language", document.getElementById("language-select").value);
-    fd.append("category", document.getElementById("category-select").value);
-    fd.append("tags", currentTags.join(","));
+    const language = document.getElementById("language-select").value;
+    const category = document.getElementById("category-select").value;
+    const tags     = currentTags.join(",");
+    const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB per chunk
+    let data;
 
-    const langVal = document.getElementById("language-select").value;
-    const isAuto = (langVal === "auto" || langVal === "multilingual");
-    if (isAuto) setProgress("Uploading + detecting language…", 12);
+    if (currentFile.size > 20 * 1024 * 1024) {
+      // ── CHUNKED UPLOAD for files > 20MB ──────────────────────────
+      const totalChunks = Math.ceil(currentFile.size / CHUNK_SIZE);
+      const uploadId    = Date.now() + '_' + Math.random().toString(36).slice(2, 8);
 
-    const res = await fetch("/api/transcribe", {
-      method: "POST", credentials: "same-origin", body: fd
-    });
+      setProgress(`Uploading… (0 of ${totalChunks} parts)`, 5);
 
-    setProgress("Transcribing audio…", 40);
-    await sleep(300);
-    setProgress("Structuring the minute…", 72);
-    await sleep(300);
+      for (let i = 0; i < totalChunks; i++) {
+        const start  = i * CHUNK_SIZE;
+        const end    = Math.min(start + CHUNK_SIZE, currentFile.size);
+        const chunk  = currentFile.slice(start, end);
+        const pct    = Math.round(5 + (i / totalChunks) * 30);
 
-    const data = await res.json();
-    if (!res.ok){
-      if (data.free_tier_exhausted){
-        setPhase("phase-upload"); setStep(1);
-        document.getElementById("free-exhausted-bar").style.display = "block";
-        document.getElementById("process-btn").disabled = true;
-        showError(data.error);
-        loadSettings();
-        return;
+        setProgress(`Uploading part ${i + 1} of ${totalChunks}…`, pct);
+
+        const fd = new FormData();
+        fd.append('chunk',       chunk);
+        fd.append('uploadId',    uploadId);
+        fd.append('chunkIndex',  i);
+        fd.append('totalChunks', totalChunks);
+
+        const r = await fetch(`/api/upload/chunk?uploadId=${uploadId}&chunkIndex=${i}&totalChunks=${totalChunks}`, {
+          method: 'POST', credentials: 'same-origin', body: fd
+        });
+        if (!r.ok) {
+          const e = await r.json();
+          throw new Error('Upload failed at part ' + (i+1) + ': ' + (e.error || 'Unknown'));
+        }
       }
-      throw new Error(data.error || "Processing failed");
+
+      setProgress('Upload complete — transcribing audio…', 38);
+
+      // Trigger assembly + processing
+      const res = await fetch('/api/upload/complete', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uploadId, originalName: currentFile.name,
+          totalChunks, language, category, tags
+        })
+      });
+
+      setProgress('Structuring the minute…', 75);
+      data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Processing failed');
+
+    } else {
+      // ── DIRECT UPLOAD for small files ────────────────────────────
+      const isAuto = (language === 'auto' || language === 'multilingual');
+      setProgress(isAuto ? 'Uploading + detecting language…' : 'Uploading recording…', 12);
+
+      const fd = new FormData();
+      fd.append('file', currentFile, currentFile.name);
+      fd.append('language', language);
+      fd.append('category', category);
+      fd.append('tags', tags);
+
+      const res = await fetch('/api/transcribe', {
+        method: 'POST', credentials: 'same-origin', body: fd
+      });
+
+      setProgress('Transcribing audio…', 40);
+      await sleep(300);
+      setProgress('Structuring the minute…', 72);
+      await sleep(300);
+
+      data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Processing failed');
     }
     if (!data.transcript || data.transcript.trim().length < 5)
       throw new Error("No speech detected — check audio quality and language setting.");
@@ -1168,7 +1257,7 @@ function resetTool(){
   document.getElementById("rec-preview").style.display = "none";
   document.getElementById("rec-timer").textContent = "00:00";
   document.getElementById("rec-timer").className = "rec-timer";
-  document.getElementById("rec-remaining").textContent = "30:00 remaining";
+  document.getElementById("rec-remaining").textContent = "";
   document.getElementById("rec-status").style.display = "none";
   document.getElementById("rec-btn").classList.remove("recording");
   document.getElementById("rec-btn-label").textContent = "Start Recording";

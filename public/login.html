@@ -621,7 +621,28 @@ body::before{
 @media(max-width:480px){
   .wordmark-title{font-size:36px}
   .card-body{padding:1.5rem}
-  .otp-digit{width:38px;height:52px;font-size:20px}
+  /* OTP: make digits fill available width for easy tap */
+  .otp-row{gap:6px}
+  .otp-digit{
+    flex:1;min-width:0;
+    width:auto;height:52px;
+    font-size:20px;border-radius:8px;
+  }
+  /* Trust strip: wrap gracefully */
+  .trust-row{gap:6px;flex-wrap:wrap}
+  .trust-row .dot{display:none}
+  /* Feature chips: slightly smaller */
+  .feat-chip{font-size:9px;padding:4px 8px}
+  /* Step title smaller */
+  .step-title{font-size:22px}
+  .wordmark-sub{font-size:12px}
+}
+
+@media(max-width:360px){
+  .wordmark-title{font-size:30px}
+  .card-body{padding:1.25rem}
+  .otp-digit{height:46px;font-size:18px}
+  .btn-primary{padding:12px}
 }
 </style>
 </head>
@@ -680,34 +701,34 @@ body::before{
         </a>
 
         <div class="divider"><span>Or by email</span></div>
-
+<!-- 
         <div class="field">
           <label class="field-label">Work email address</label>
           <input type="email" class="field-input" id="email-input"
             placeholder="you@company.com" autocomplete="email" autofocus
             onkeydown="if(event.key==='Enter')requestOTP()"/>
-        </div>
+        </div> -->
 
-        <label class="remember-row">
+        <!-- <label class="remember-row">
           <input type="checkbox" id="remember-me" checked/>
           <div class="remember-text">
             <span class="remember-label">Keep me signed in</span>
             <div class="remember-desc">On this device</div>
           </div>
           <span class="remember-badge">30 DAYS</span>
-        </label>
+        </label> -->
 
-        <button class="btn-primary" onclick="requestOTP()" id="send-otp-btn">
+        <!-- <button class="btn-primary" onclick="requestOTP()" id="send-otp-btn">
           <span>Send login code</span>
           <span class="btn-arrow">→</span>
-        </button>
+        </button> -->
 
-        <div class="credit-note">
+        <!-- <div class="credit-note">
           <span class="credit-icon">✦</span>
           <div class="credit-content">
             First-time users receive <strong>50 credits</strong> — roughly 2 to 3 full meetings.
           </div>
-        </div>
+        </div> -->
 
         <div class="feature-strip">
           <span class="feat-chip">🎙 <strong>Audio</strong></span>

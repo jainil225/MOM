@@ -141,6 +141,21 @@
     ];
     for (const q of sessionCols) await pool.query(q);
 
+    // ── API usage log table ──────────────────────────────────────────────────
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS api_usage_log (
+        id            SERIAL PRIMARY KEY,
+        service       TEXT NOT NULL,
+        user_email    TEXT,
+        session_id    INTEGER,
+        detail        TEXT,
+        units         NUMERIC DEFAULT 0,
+        unit_type     TEXT DEFAULT '',
+        cost_usd      NUMERIC(12,6) DEFAULT 0,
+        created_at    TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
     console.log('[db] Tables ready');
   }
 
@@ -486,6 +501,34 @@
   };
 
   // ════════════════════════════════════════════════════════════════════════════
+  //  API USAGE LOGGING — cost tracking for Sarvam + Claude + OpenAI
+  // ════════════════════════════════════════════════════════════════════════════
+
+  // Pricing constants (verify against current provider pricing pages)
+  const COST = {
+    // Sarvam AI saarika:v2.5 — ~₹1 per minute = ~/bin/sh.012/min = /bin/sh.0002/sec (approx)
+    sarvam_per_second: 0.000200,
+    // Anthropic claude-sonnet-4-6 — /MTok input, 5/MTok output (as of mid-2025)
+    claude_input_per_token:  0.000003,
+    claude_output_per_token: 0.000015,
+    // OpenAI GPT-4o — /MTok input, 5/MTok output
+    openai_input_per_token:  0.000005,
+    openai_output_per_token: 0.000015,
+  };
+
+  async function logUsage({ service, userEmail, sessionId, detail, units, unitType, costUsd }) {
+    try {
+      await pool.query(
+        `INSERT INTO api_usage_log (service, user_email, session_id, detail, units, unit_type, cost_usd)
+         VALUES (, , , , , , )`,
+        [service, userEmail || null, sessionId || null, detail || '', units || 0, unitType || '', costUsd || 0]
+      );
+    } catch (err) {
+      console.error('[usage-log] Failed to write log:', err.message);
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
   //  MEETING CONTEXT — fetch previous MOMs to give AI running memory
   // ════════════════════════════════════════════════════════════════════════════
 
@@ -746,9 +789,7 @@ ${MOM_JSON_SCHEMA}${extra}`;
         custom_prompt_openai: u.custom_prompt_openai || '',
         ai_provider:          u.ai_provider          || 'claude',
         free_files_used:      u.free_files_used      || 0,
-        free_minutes_used:    parseFloat(u.free_minutes_used || 0),
-        free_files_limit:     1,
-        free_minutes_limit:   parseInt(process.env.FREE_MINUTES_LIMIT || '30') * 60
+        free_minutes_used:    parseFloat(u.free_minutes_used || 0)
       });
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -855,6 +896,185 @@ ${MOM_JSON_SCHEMA}${extra}`;
   });
 
   // ════════════════════════════════════════════════════════════════════════════
+  //  API — CHUNKED UPLOAD (for large files > 50MB)
+  //  POST /api/upload/chunk  — upload one chunk at a time
+  //  POST /api/upload/complete — assemble chunks and trigger transcription
+  // ════════════════════════════════════════════════════════════════════════════
+
+  const chunkUpload = multer({
+    storage: multer.diskStorage({
+      destination: (req, file, cb) => {
+        // req.body is NOT yet populated when multer's destination/filename run
+        // (multer parses the stream first). Read uploadId from query params instead.
+        const uploadId = req.query.uploadId || req.body.uploadId || 'unknown';
+        const dir = path.join(__dirname, 'uploads', 'chunks', uploadId);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+      },
+      filename: (req, file, cb) => {
+        const chunkIndex = req.query.chunkIndex !== undefined ? req.query.chunkIndex : (req.body.chunkIndex || 'unknown');
+        cb(null, `chunk_${chunkIndex}`);
+      }
+    }),
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB per chunk
+  });
+
+  app.post('/api/upload/chunk', requireAuth, chunkUpload.single('chunk'), async (req, res) => {
+    try {
+      // Accept from either query params (sent by frontend) or body (fallback)
+      const uploadId    = req.query.uploadId    || req.body.uploadId;
+      const chunkIndex  = req.query.chunkIndex  !== undefined ? req.query.chunkIndex  : req.body.chunkIndex;
+      const totalChunks = req.query.totalChunks !== undefined ? req.query.totalChunks : req.body.totalChunks;
+      if (!uploadId || chunkIndex === undefined || !totalChunks)
+        return res.status(400).json({ error: 'Missing uploadId, chunkIndex or totalChunks' });
+      console.log(`[chunk-upload] ${uploadId} chunk ${chunkIndex}/${totalChunks}`);
+      res.json({ ok: true, chunkIndex: parseInt(chunkIndex) });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/upload/complete', requireAuth, async (req, res) => {
+    const { uploadId, originalName, totalChunks, language, tags, category } = req.body;
+    if (!uploadId || !originalName || !totalChunks)
+      return res.status(400).json({ error: 'Missing required fields' });
+
+    const chunksDir  = path.join(__dirname, 'uploads', 'chunks', uploadId);
+    const ext        = path.extname(originalName).toLowerCase();
+    const finalName  = `${Date.now()}_assembled${ext}`;
+    const finalPath  = path.join(__dirname, 'uploads', finalName);
+
+    try {
+      // Assemble chunks in order
+      console.log(`[chunk-upload] Assembling ${totalChunks} chunks for ${originalName}…`);
+      const writeStream = fs.createWriteStream(finalPath);
+      for (let i = 0; i < parseInt(totalChunks); i++) {
+        const chunkPath = path.join(chunksDir, `chunk_${i}`);
+        if (!fs.existsSync(chunkPath))
+          return res.status(400).json({ error: `Missing chunk ${i}` });
+        const data = fs.readFileSync(chunkPath);
+        writeStream.write(data);
+      }
+      writeStream.end();
+      await new Promise((resolve, reject) => {
+        writeStream.on('finish', resolve);
+        writeStream.on('error', reject);
+      });
+
+      // Clean up chunk directory
+      try {
+        fs.readdirSync(chunksDir).forEach(f => fs.unlinkSync(path.join(chunksDir, f)));
+        fs.rmdirSync(chunksDir);
+      } catch (_) {}
+
+      const fileSizeBytes = fs.statSync(finalPath).size;
+      console.log(`[chunk-upload] Assembled: ${finalName} (${(fileSizeBytes/1024/1024).toFixed(2)} MB)`);
+
+      // Now run the same pipeline as /api/transcribe
+      const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [req.session.user.email]);
+      const user       = userResult.rows[0];
+      const langInput  = language || 'auto';
+      const fileType   = ext.replace('.', '');
+
+      let workingPath = finalPath;
+      let wavPath     = null;
+      let chunksDirWav = null;
+
+      console.log(`\n[transcribe] ── START (chunked) ──────────────────`);
+      console.log(`[transcribe] File : ${originalName}`);
+      console.log(`[transcribe] Size : ${(fileSizeBytes/1024/1024).toFixed(2)} MB`);
+
+      workingPath = await extractAudioFromVideo(workingPath);
+      wavPath     = await convertToWav(workingPath);
+      const durationSeconds = getWavDuration(wavPath);
+      console.log(`[transcribe] Duration: ${durationSeconds.toFixed(1)}s`);
+
+      const chunks = await chunkWavFile(wavPath);
+      chunksDirWav = chunks.length > 0 ? path.dirname(chunks[0]) : null;
+
+      const isMultilingual = langInput === 'multilingual';
+      const isAutoDetect   = langInput === 'auto' || langInput === 'unknown' || isMultilingual;
+      const sarvamCode     = isAutoDetect ? 'unknown' : (LANG_TO_SARVAM[langInput] || 'hi-IN');
+
+      let fullTranscript   = '';
+      let detectedLanguage = langInput;
+      const langPerChunk   = [];
+
+      for (let i = 0; i < chunks.length; i++) {
+        console.log(`[sarvam] Chunk ${i + 1}/${chunks.length}…`);
+        const result = await transcribeChunk(chunks[i], sarvamCode);
+        fullTranscript += (fullTranscript ? ' ' : '') + result.transcript;
+        if (isAutoDetect && result.transcript.trim().length > 10) {
+          const chunkLang = result.detectedLang || detectLangFromText(result.transcript);
+          if (isMultilingual) { langPerChunk.push(chunkLang); }
+          else if (i === 0)   { detectedLanguage = chunkLang; console.log(`[lang] Auto-detected: ${detectedLanguage}`); }
+        }
+      }
+
+      // Multilingual resolve
+      if (isMultilingual) {
+        const uniqueLangs = [...new Set(langPerChunk)];
+        detectedLanguage  = uniqueLangs.length > 1 ? 'mixed' : (uniqueLangs[0] || 'en');
+      }
+
+      console.log(`[sarvam] Transcript: ${fullTranscript.length} chars`);
+      const { contextStr, count: contextCount } = await buildMeetingContext(req.session.user.email);
+
+      const langHint = isMultilingual
+        ? `\n[NOTE: MULTILINGUAL recording. Languages: ${[...new Set(langPerChunk)].join(', ')}. Translate to English.]\n` : '';
+      const annotatedTranscript = langHint + fullTranscript;
+
+      console.log(`[mom] Generating MOM via Claude…`);
+      const mom = await generateMOM(annotatedTranscript, originalName, user, contextStr);
+
+      if (isAutoDetect && detectedLanguage && detectedLanguage !== 'auto') mom.language = mom.language || detectedLanguage;
+      if (isMultilingual) { mom.language = mom.language || detectedLanguage; mom.languages_detected = mom.languages_detected || [...new Set(langPerChunk)]; }
+
+      const autoTags   = (mom.suggested_tags || []).map(t => t.trim()).filter(Boolean);
+      const userTags   = (tags || '').split(',').map(t => t.trim()).filter(Boolean);
+      const mergedTags = [...new Set([...userTags, ...autoTags])].slice(0, 10);
+      const finalTags  = mergedTags.join(',');
+      const langsDetectedArr = mom.languages_detected || (isMultilingual ? [...new Set(langPerChunk)] : []);
+
+      const dbResult = await pool.query(`
+        INSERT INTO mom_sessions
+          (user_email, file_name, file_size, file_type, duration_seconds,
+          transcript, meeting_title, meeting_date, meeting_time,
+          attendees, agenda, discussion_points, decisions, action_items,
+          next_meeting, summary, language, tags, category, detected_language, languages_detected)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+        RETURNING id, created_at
+      `, [
+        req.session.user.email, originalName, fileSizeBytes, fileType, durationSeconds,
+        fullTranscript, mom.meeting_title||'', mom.meeting_date||'', mom.meeting_time||'',
+        JSON.stringify(mom.attendees||[]), JSON.stringify(mom.agenda||[]),
+        JSON.stringify(mom.discussion_points||[]), JSON.stringify(mom.decisions||[]),
+        JSON.stringify(mom.action_items||[]), mom.next_meeting||'', mom.summary||'',
+        mom.language||'en', finalTags, category||'', detectedLanguage,
+        JSON.stringify(langsDetectedArr)
+      ]);
+
+      const saved = dbResult.rows[0];
+      console.log(`[db] Saved as session #${saved.id}`);
+      console.log(`[transcribe] ── DONE (chunked) ──────────────────\n`);
+
+      res.json({
+        success: true, session_id: saved.id, created_at: saved.created_at,
+        transcript: fullTranscript, duration: durationSeconds,
+        detected_language: detectedLanguage, languages_detected: langsDetectedArr,
+        is_multilingual: isMultilingual, context_sessions_used: contextCount,
+        suggested_tags: autoTags, merged_tags: mergedTags, mom
+      });
+
+    } catch (err) {
+      console.error('[chunk-upload error]', err.message);
+      res.status(500).json({ error: err.message });
+    } finally {
+      [finalPath].forEach(p => { try { if (p && fs.existsSync(p)) fs.unlinkSync(p); } catch (_) {} });
+    }
+  });
+
+  // ════════════════════════════════════════════════════════════════════════════
   //  API — POST /api/transcribe  (main pipeline)
   // ════════════════════════════════════════════════════════════════════════════
 
@@ -884,16 +1104,6 @@ ${MOM_JSON_SCHEMA}${extra}`;
       const user       = userResult.rows[0];
       const filesUsed  = user?.free_files_used || 0;
 
-      // ── Free tier check ───────────────────────────────────────────
-      const FREE_FILES = 1;
-      if (filesUsed >= FREE_FILES) {
-        return res.status(402).json({
-          error: 'Your free recording has been used. Contact us to upgrade.',
-          free_tier_exhausted: true,
-          upgrade_needed: true
-        });
-      }
-
       // ── Step 1: Extract audio from video (if needed) ──────────────
       workingPath = await extractAudioFromVideo(workingPath);
 
@@ -903,16 +1113,6 @@ ${MOM_JSON_SCHEMA}${extra}`;
       // ── Step 3: Calculate duration ───────────────────────────────
       const durationSeconds = getWavDuration(wavPath);
       console.log(`[transcribe] Duration: ${durationSeconds.toFixed(1)}s`);
-
-      // ── Free tier duration check (30 min max) ────────────────────
-      const FREE_MINUTES = parseInt(process.env.FREE_MINUTES_LIMIT || '30');
-      const FREE_SECONDS = FREE_MINUTES * 60;
-      if (durationSeconds > FREE_SECONDS) {
-        return res.status(402).json({
-          error: `File exceeds the ${FREE_MINUTES}-minute free limit (this file: ${Math.ceil(durationSeconds/60)} min). Contact us to upgrade.`,
-          free_tier_exhausted: true
-        });
-      }
 
       // ── Step 4: Chunk into ≤25-second segments ────────────────────
       const chunks = await chunkWavFile(wavPath);
@@ -1232,6 +1432,180 @@ ${MOM_JSON_SCHEMA}${extra}`;
     }
   });
 
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  API CREDITS DASHBOARD — /credits  (admin-protected)
+  // ════════════════════════════════════════════════════════════════════════════
+
+  function requireAdmin(req, res, next) {
+    const secret = req.headers['x-admin-secret'] || req.query.secret;
+    if (!process.env.ADMIN_SECRET || secret !== process.env.ADMIN_SECRET) {
+      return res.status(403).json({ error: 'Admin access required.' });
+    }
+    next();
+  }
+
+  app.get('/credits', (req, res) => {
+    const secret = req.query.secret;
+    if (!req.session?.user && (!process.env.ADMIN_SECRET || secret !== process.env.ADMIN_SECRET)) {
+      return res.redirect('/login.html');
+    }
+    res.sendFile(path.join(__dirname, 'public', 'credits.html'));
+  });
+
+  app.get('/api/admin/usage', requireAdmin, async (req, res) => {
+    try {
+      const { days = 30 } = req.query;
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+      const byService = await pool.query(`
+        SELECT service,
+               SUM(cost_usd)::NUMERIC(12,4) AS total_cost_usd,
+               SUM(units)::NUMERIC(14,2)    AS total_units,
+               COUNT(*)                     AS calls,
+               MIN(created_at)              AS first_call,
+               MAX(created_at)              AS last_call
+        FROM api_usage_log
+        GROUP BY service ORDER BY total_cost_usd DESC
+      `);
+
+      const daily = await pool.query(`
+        SELECT DATE(created_at) AS day,
+               service,
+               SUM(cost_usd)::NUMERIC(12,4) AS cost_usd,
+               SUM(units)::NUMERIC(12,2)    AS units,
+               COUNT(*) AS calls
+        FROM api_usage_log
+        WHERE created_at >= $1
+        GROUP BY day, service
+        ORDER BY day DESC, service
+      `, [since]);
+
+      const perUser = await pool.query(`
+        SELECT user_email,
+               SUM(cost_usd)::NUMERIC(12,4) AS total_cost_usd,
+               COUNT(*) AS calls
+        FROM api_usage_log
+        WHERE created_at >= $1 AND user_email IS NOT NULL
+        GROUP BY user_email
+        ORDER BY total_cost_usd DESC
+        LIMIT 20
+      `, [since]);
+
+      const monthly = await pool.query(`
+        SELECT TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') AS month,
+               SUM(cost_usd)::NUMERIC(12,4) AS cost_usd
+        FROM api_usage_log
+        GROUP BY month ORDER BY month DESC LIMIT 12
+      `);
+
+      const totals = await pool.query(`
+        SELECT SUM(cost_usd)::NUMERIC(12,4) AS grand_total_usd,
+               COUNT(*) AS total_calls,
+               MIN(created_at) AS since
+        FROM api_usage_log
+      `);
+
+      const meetings = await pool.query('SELECT COUNT(*) AS total FROM mom_sessions');
+
+      res.json({
+        by_service: byService.rows,
+        daily:      daily.rows,
+        per_user:   perUser.rows,
+        monthly:    monthly.rows,
+        totals:     totals.rows[0],
+        meetings:   meetings.rows[0].total,
+        days:       parseInt(days),
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  const ALERT_EMAIL = process.env.ALERT_EMAIL || 'jainildoshi22@gmail.com';
+
+  async function sendUsageEmail(period = 'daily') {
+    if (DEV_MODE) { console.log('[usage-email] DEV MODE — skipping email'); return; }
+    try {
+      const since = period === 'daily'
+        ? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        : new Date(Date.now() - 7  * 24 * 60 * 60 * 1000).toISOString();
+
+      const byService = await pool.query(`
+        SELECT service, SUM(cost_usd)::NUMERIC(12,4) AS cost_usd,
+               SUM(units)::NUMERIC(12,2) AS units, COUNT(*) AS calls
+        FROM api_usage_log WHERE created_at >= $1
+        GROUP BY service ORDER BY cost_usd DESC
+      `, [since]);
+
+      const allTime = await pool.query('SELECT SUM(cost_usd)::NUMERIC(12,4) AS total FROM api_usage_log');
+      const rows         = byService.rows;
+      const period_total = rows.reduce((s, r) => s + parseFloat(r.cost_usd || 0), 0);
+      const all_total    = parseFloat(allTime.rows[0]?.total || 0);
+
+      if (period_total === 0 && period === 'daily') {
+        console.log('[usage-email] No usage in last 24h — skipping'); return;
+      }
+
+      const tableRows = rows.map(r => `
+        <tr>
+          <td style="padding:8px 12px;border-bottom:1px solid #eee;font-family:monospace">${r.service.toUpperCase()}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right">${parseFloat(r.calls)}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right;font-family:monospace">${parseFloat(r.units).toFixed(1)}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right;font-weight:600;color:#B8912A">$${parseFloat(r.cost_usd).toFixed(4)}</td>
+        </tr>`).join('');
+
+      const periodLabel = period === 'daily' ? 'Last 24 hours' : 'Last 7 days';
+      const appUrl      = process.env.APP_URL || 'http://localhost:3000';
+      const adminSecret = process.env.ADMIN_SECRET || '';
+
+      await transporter.sendMail({
+        from:    process.env.SMTP_FROM || `"Minute. System" <${process.env.SMTP_USER}>`,
+        to:      ALERT_EMAIL,
+        subject: `[Minute.] API Usage — ${periodLabel} — $${period_total.toFixed(4)}`,
+        html: `<div style="font-family:-apple-system,sans-serif;max-width:600px;margin:auto;padding:32px 24px">
+          <div style="margin-bottom:20px"><strong style="font-size:18px;color:#0F1524">Minute. · API Usage</strong></div>
+          <div style="background:#F4F0E6;border-radius:10px;padding:16px 20px;margin-bottom:20px">
+            <div style="font-size:11px;text-transform:uppercase;color:#8A93A8;margin-bottom:6px">${periodLabel}</div>
+            <div style="font-size:32px;font-weight:700;color:#B8912A">$${period_total.toFixed(4)}</div>
+            <div style="font-size:12px;color:#4A5468;margin-top:4px">All-time total: <strong>$${all_total.toFixed(4)}</strong></div>
+          </div>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+            <thead><tr style="background:#F4F0E6">
+              <th style="padding:8px 12px;text-align:left;font-size:11px;color:#8A93A8">SERVICE</th>
+              <th style="padding:8px 12px;text-align:right;font-size:11px;color:#8A93A8">CALLS</th>
+              <th style="padding:8px 12px;text-align:right;font-size:11px;color:#8A93A8">UNITS</th>
+              <th style="padding:8px 12px;text-align:right;font-size:11px;color:#8A93A8">COST</th>
+            </tr></thead>
+            <tbody>${tableRows || '<tr><td colspan="4" style="padding:12px;text-align:center;color:#8A93A8">No usage recorded</td></tr>'}</tbody>
+          </table>
+          <p style="font-size:11px;color:#9BA5BE">
+            <a href="${appUrl}/credits?secret=${adminSecret}" style="color:#B8912A">Open Credits Dashboard →</a>
+          </p>
+        </div>`
+      });
+      console.log(`[usage-email] ${periodLabel} report sent to ${ALERT_EMAIL}`);
+    } catch (err) { console.error('[usage-email] Failed:', err.message); }
+  }
+
+  app.post('/api/admin/send-usage-email', requireAdmin, async (req, res) => {
+    const { period = 'daily' } = req.body;
+    await sendUsageEmail(period);
+    res.json({ success: true, message: `Usage email sent to ${ALERT_EMAIL}` });
+  });
+
+  function scheduleDailyEmail() {
+    function msUntil0230UTC() {
+      const now = new Date(), next = new Date(now);
+      next.setUTCHours(2, 30, 0, 0);
+      if (next <= now) next.setUTCDate(next.getUTCDate() + 1);
+      return next - now;
+    }
+    function tick() { sendUsageEmail('daily'); setTimeout(tick, 24 * 60 * 60 * 1000); }
+    setTimeout(tick, msUntil0230UTC());
+    console.log(`[usage-email] Scheduled daily digest → ${ALERT_EMAIL} at 08:00 IST`);
+  }
+
   // ════════════════════════════════════════════════════════════════════════════
   //  HEALTH CHECK
   // ════════════════════════════════════════════════════════════════════════════
@@ -1280,7 +1654,9 @@ ${MOM_JSON_SCHEMA}${extra}`;
         console.log(`      SMTP       : ${DEV_MODE ? '⚠️  DEV MODE — OTP logged to console' : '✓ configured'}`);
         console.log(`      DB         : postgres://${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || '5432'}/${process.env.DB_NAME || 'postgres'}`);
         console.log(`      Sessions   : 30-day rolling (auto-logout fix active)`);
+        console.log(`      Credits    : /credits page + daily email to ${ALERT_EMAIL}`);
         console.log('');
       });
+      scheduleDailyEmail();
     })
     .catch(err => { console.error('❌  DB init failed:', err.message); process.exit(1); });
