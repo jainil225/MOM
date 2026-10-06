@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<script src="/js/theme.js"></script>
+<title>Admin Dashboard · AiX Track</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0F1524;--ink2:#4A5468;--ink3:#8A93A8;--ink4:#B8BFCC;
+  --paper:#FAF8F3;--paper2:#F4F0E6;--card:#FFFFFF;
+  --border:#E8E4D8;--border-strong:#D4CFC0;
+  --navy:#0F1B3D;--navy-h:#1F2D57;
+  --gold:#B8912A;--gold-h:#C89A3D;--gold-tint:rgba(184,145,42,0.10);
+  --sage:#4A7C59;--sage-tint:rgba(74,124,89,0.10);
+  --rust:#A0472E;--rust-tint:rgba(160,71,46,0.10);
+  --shadow-1:0 1px 2px rgba(15,21,36,0.04),0 2px 6px rgba(15,21,36,0.03);
+  --shadow-2:0 4px 20px rgba(15,21,36,0.06),0 12px 48px rgba(15,21,36,0.06);
+  --serif:'Roboto',Georgia,serif;
+  --sans:'Roboto',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'Roboto Mono',ui-monospace,monospace;
+}
+[data-theme="dark"]{
+  --ink:#F5F1E6;--ink2:#B8B0A0;--ink3:#6B6455;--ink4:#3D3830;
+  --paper:#0C0D10;--paper2:#141519;--card:#161820;
+  --border:#25272F;--border-strong:#333540;
+  --navy:#4A5B8C;--gold:#D4A94A;--gold-tint:rgba(212,169,74,0.10);
+  --sage:#7BA88C;--rust:#D07358;
+  --shadow-2:0 4px 20px rgba(0,0,0,0.4);
+}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh}
+
+.nav{background:var(--card);border-bottom:1px solid var(--border);height:60px;padding:0 1.75rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit}
+.nav-mark{width:32px;height:32px;background:var(--navy);color:var(--gold);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-size:20px;padding-bottom:3px}
+.nav-title{font-family:var(--serif);font-size:20px;letter-spacing:-0.01em}
+.nav-title em{font-style:italic;color:var(--gold)}
+.nav-badge{font-family:var(--mono);font-size:9px;background:var(--navy);color:var(--gold);padding:2px 7px;border-radius:4px;margin-left:6px;letter-spacing:0.08em;vertical-align:middle}
+.nav-right{display:flex;align-items:center;gap:8px}
+.btn-nav{padding:7px 12px;font-size:12px;font-weight:500;background:var(--card);color:var(--ink2);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all 0.15s}
+.btn-nav:hover{border-color:var(--gold);color:var(--gold)}
+.btn-nav.active{background:var(--navy);color:var(--gold);border-color:var(--navy)}
+
+.page{max-width:1200px;margin:0 auto;padding:2rem 1.25rem 5rem}
+.page-eyebrow{font-family:var(--mono);font-size:10px;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px}
+.page-title{font-family:var(--serif);font-size:28px;letter-spacing:-.01em;margin-bottom:8px}
+.page-title em{font-style:italic;color:var(--gold)}
+.page-sub{font-size:13px;color:var(--ink3);margin-bottom:2rem}
+
+/* Period selector */
+.period-bar{display:flex;align-items:center;gap:8px;margin-bottom:2rem;flex-wrap:wrap}
+.period-btn{font-family:var(--mono);font-size:11px;padding:6px 12px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:var(--card);color:var(--ink2);transition:all .15s}
+.period-btn.active{background:var(--navy);color:var(--gold);border-color:var(--navy)}
+.period-label{font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:.08em;text-transform:uppercase;margin-right:4px}
+
+/* KPI cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:2rem}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;box-shadow:var(--shadow-1);position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.kpi-label{font-family:var(--mono);font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px}
+.kpi-val{font-family:var(--serif);font-size:2rem;font-style:italic;color:var(--navy);line-height:1.1}
+.kpi-sub{font-size:11px;color:var(--ink3);margin-top:4px}
+.kpi.green .kpi-val{color:var(--sage)}
+.kpi.gold .kpi-val{color:var(--gold)}
+.kpi.rust .kpi-val{color:var(--rust)}
+
+/* Profit margin card */
+.margin-bar{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:2rem;box-shadow:var(--shadow-1)}
+.margin-title{font-size:13px;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:6px}
+.margin-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem}
+.margin-item{background:var(--paper2);border-radius:8px;padding:12px 14px;text-align:center}
+.margin-item-label{font-family:var(--mono);font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+.margin-item-val{font-size:1.3rem;font-weight:700;color:var(--navy)}
+.margin-item-val.green{color:var(--sage)}
+.margin-item-val.rust{color:var(--rust)}
+.margin-note{font-size:11px;color:var(--ink3);margin-top:10px}
+
+/* Tables */
+.section{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:1.5rem;box-shadow:var(--shadow-1)}
+.section-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.section-head-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.section-head-meta{font-family:var(--mono);font-size:10px;color:var(--ink3)}
+table{width:100%;border-collapse:collapse}
+th{font-family:var(--mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);padding:10px 16px;background:var(--paper2);text-align:left;border-bottom:1px solid var(--border)}
+td{padding:10px 16px;font-size:13px;border-bottom:1px solid var(--border);color:var(--ink)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--paper2)}
+.mono{font-family:var(--mono);font-size:11px}
+.right{text-align:right}
+.center{text-align:center}
+
+/* Role badge */
+.role-badge{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.06em;text-transform:uppercase}
+.role-admin{background:var(--navy);color:var(--gold)}
+.role-user{background:var(--paper2);color:var(--ink3);border:1px solid var(--border)}
+.role-developer{background:var(--sage-tint);color:var(--sage);border:1px solid var(--sage)}
+
+/* Status dot */
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
+.dot.green{background:var(--sage)}
+.dot.grey{background:var(--ink4)}
+
+/* Loading / empty */
+.loading{padding:2rem;text-align:center;color:var(--ink3);font-family:var(--mono);font-size:12px}
+.empty{padding:2rem;text-align:center;color:var(--ink4);font-size:13px}
+
+/* Credit adjust */
+.inline-form{display:flex;gap:6px;align-items:center}
+.inline-input{border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:12px;font-family:var(--mono);width:80px;background:var(--card);color:var(--ink)}
+.btn-xs{font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-family:inherit;background:var(--card);color:var(--ink2);transition:all .15s}
+.btn-xs:hover{border-color:var(--gold);color:var(--gold)}
+.btn-xs.danger:hover{border-color:var(--rust);color:var(--rust)}
+
+@media(max-width:700px){
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .margin-row{grid-template-columns:1fr 1fr}
+  .page{padding:1.5rem 1rem 4rem}
+}
+</style>
+<link rel="stylesheet" href="/css/theme-dark.css">
+<link rel="stylesheet" href="/css/aix-uniform.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-brand" href="/">
+    <div class="nav-mark">R</div>
+    <div>
+      <div class="nav-title"><em>AiX Track</em> <span class="nav-badge">ADMIN</span></div>
+    </div>
+  </a>
+  <div class="nav-right">
+    <a href="/" class="btn-nav">Dashboard</a>
+    <a href="/pricing" class="btn-nav">Pricing</a>
+    <button class="btn-nav" onclick="toggleTheme()" id="theme-btn">☾</button>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div class="page-eyebrow">Admin · Business Intelligence</div>
+  <div class="page-title"><em>Business Dashboard</em></div>
+  <div class="page-sub">Real-time view of users, usage, cost, revenue, and margin</div>
+
+  <!-- Period selector -->
+  <div class="period-bar">
+    <span class="period-label">Period:</span>
+    <button class="period-btn active" onclick="setPeriod(7,this)">7 days</button>
+    <button class="period-btn" onclick="setPeriod(30,this)">30 days</button>
+    <button class="period-btn" onclick="setPeriod(90,this)">90 days</button>
+    <button class="period-btn" onclick="setPeriod(0,this)">All time</button>
+    <span style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink3)" id="lastRefreshed"></span>
+    <button class="btn-nav" onclick="loadAll()">↻ Refresh</button>
+  </div>
+
+  <!-- KPI grid -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">Total Users</div>
+      <div class="kpi-val" id="kpi-users">—</div>
+      <div class="kpi-sub" id="kpi-users-sub">registered accounts</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Active (period)</div>
+      <div class="kpi-val" id="kpi-active">—</div>
+      <div class="kpi-sub">users generated a MOC</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">MOCs Generated</div>
+      <div class="kpi-val" id="kpi-mocs">—</div>
+      <div class="kpi-sub">in selected period</div>
+    </div>
+    <div class="kpi gold">
+      <div class="kpi-label">Revenue Collected</div>
+      <div class="kpi-val" id="kpi-revenue">—</div>
+      <div class="kpi-sub" id="kpi-revenue-sub">incl. GST</div>
+    </div>
+    <div class="kpi rust">
+      <div class="kpi-label">API Cost (USD)</div>
+      <div class="kpi-val" id="kpi-cost-usd">—</div>
+      <div class="kpi-sub" id="kpi-cost-inr">converting…</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">Gross Margin</div>
+      <div class="kpi-val" id="kpi-margin">—</div>
+      <div class="kpi-sub" id="kpi-margin-sub">revenue minus API cost</div>
+    </div>
+  </div>
+
+  <!-- Profit breakdown -->
+  <div class="margin-bar">
+    <div class="margin-title">💹 Revenue vs Cost Breakdown</div>
+    <div class="margin-row">
+      <div class="margin-item">
+        <div class="margin-item-label">Revenue ex-GST</div>
+        <div class="margin-item-val" id="mb-rev-exgst">—</div>
+      </div>
+      <div class="margin-item">
+        <div class="margin-item-label">GST Collected</div>
+        <div class="margin-item-val" id="mb-gst">—</div>
+      </div>
+      <div class="margin-item">
+        <div class="margin-item-label">Sarvam AI Cost</div>
+        <div class="margin-item-val rust" id="mb-sarvam">—</div>
+      </div>
+      <div class="margin-item">
+        <div class="margin-item-label">Claude AI Cost</div>
+        <div class="margin-item-val rust" id="mb-claude">—</div>
+      </div>
+      <div class="margin-item">
+        <div class="margin-item-label">Total API Cost</div>
+        <div class="margin-item-val rust" id="mb-api-total">—</div>
+      </div>
+      <div class="margin-item">
+        <div class="margin-item-label">Net Profit (est.)</div>
+        <div class="margin-item-val green" id="mb-profit">—</div>
+      </div>
+    </div>
+    <div class="margin-note">* Revenue shown is from Razorpay orders in the DB. API cost is from api_usage_log. USD → INR at ₹84. Server cost (VPS ~₹1,600/mo) not included.</div>
+  </div>
+
+  <!-- Users table -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-head-title">👥 All Users</div>
+      <div class="section-head-meta" id="users-count">Loading…</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Role</th>
+            <th class="center">Credits</th>
+            <th class="center">Credits Used</th>
+            <th class="center">MOCs</th>
+            <th>Last Login</th>
+            <th>Joined</th>
+            <th>Adjust Credits</th>
+          </tr>
+        </thead>
+        <tbody id="usersTable"><tr><td colspan="8" class="loading">Loading users…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent payments -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-head-title">💳 Credit Purchases</div>
+      <div class="section-head-meta" id="orders-count"></div>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Plan</th>
+            <th class="center">Credits</th>
+            <th class="right">Amount (incl. GST)</th>
+            <th class="right">Ex-GST</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Payment ID</th>
+          </tr>
+        </thead>
+        <tbody id="ordersTable"><tr><td colspan="8" class="loading">Loading orders…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent MOC sessions -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-head-title">📋 Recent MOC Sessions</div>
+      <div class="section-head-meta" id="sessions-count"></div>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>User</th>
+            <th class="center">Duration</th>
+            <th class="right">API Cost (₹)</th>
+            <th class="right">Credits Used</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="sessionsTable"><tr><td colspan="6" class="loading">Loading sessions…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- API usage by service -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-head-title">⚙️ API Usage by Service</div>
+      <div class="section-head-meta">All time</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th class="right">Calls</th>
+            <th class="right">Units</th>
+            <th class="right">Cost (USD)</th>
+            <th class="right">Cost (₹)</th>
+          </tr>
+        </thead>
+        <tbody id="apiTable"><tr><td colspan="5" class="loading">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let currentDays = 7;
+const USD_TO_INR = 84;
+
+async function setPeriod(days, btn) {
+  currentDays = days;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  await loadAll();
+}
+
+async function loadAll() {
+  document.getElementById('lastRefreshed').textContent = 'Loading…';
+  await Promise.all([loadKPIs(), loadUsers(), loadOrders(), loadSessions(), loadApiUsage()]);
+  document.getElementById('lastRefreshed').textContent = 'Updated ' + new Date().toLocaleTimeString('en-IN');
+}
+
+// ── KPIs ───────────────────────────────────────────────────────────────────
+async function loadKPIs() {
+  try {
+    const [usageRes, usersRes, ordersRes] = await Promise.all([
+      fetch(`/api/admin/usage?days=${currentDays}`).then(r => r.json()),
+      fetch('/api/admin/users').then(r => r.json()),
+      fetch(`/api/admin/orders?days=${currentDays}`).then(r => r.json()),
+    ]);
+
+    // Users
+    const totalUsers = usersRes.users?.length || 0;
+    document.getElementById('kpi-users').textContent = totalUsers;
+    const adminCount = (usersRes.users || []).filter(u => u.role === 'admin').length;
+    document.getElementById('kpi-users-sub').textContent = adminCount + ' admin' + (adminCount !== 1 ? 's' : '');
+
+    // Active users (had MOC in period)
+    const activeUsers = usageRes.per_user?.length || 0;
+    document.getElementById('kpi-active').textContent = activeUsers;
+
+    // MOCs
+    const mocs = usageRes.total_sessions || usageRes.meetings || 0;
+    document.getElementById('kpi-mocs').textContent = mocs;
+
+    // Revenue
+    const orders = ordersRes.orders || [];
+    const paidOrders = orders.filter(o => o.status === 'paid');
+    const totalRevInr = paidOrders.reduce((s, o) => s + parseFloat(o.amount_inr || 0), 0);
+    const revExGst    = totalRevInr / 1.18;
+    const gst         = totalRevInr - revExGst;
+    document.getElementById('kpi-revenue').textContent = '₹' + fmt(totalRevInr);
+    document.getElementById('kpi-revenue-sub').textContent = paidOrders.length + ' order' + (paidOrders.length !== 1 ? 's' : '');
+
+    // API cost
+    const apiCostUsd = parseFloat(usageRes.totals?.grand_total_usd || 0);
+    const apiCostInr = apiCostUsd * USD_TO_INR;
+    document.getElementById('kpi-cost-usd').textContent = '$' + apiCostUsd.toFixed(3);
+    document.getElementById('kpi-cost-inr').textContent = '≈ ₹' + fmt(apiCostInr);
+
+    // Gross margin
+    const netRevenue = revExGst;
+    const profit     = netRevenue - apiCostInr;
+    const marginPct  = netRevenue > 0 ? (profit / netRevenue) * 100 : 0;
+    document.getElementById('kpi-margin').textContent = marginPct.toFixed(1) + '%';
+    document.getElementById('kpi-margin-sub').textContent = 'Net ₹' + fmt(profit);
+
+    // Breakdown
+    document.getElementById('mb-rev-exgst').textContent = '₹' + fmt(revExGst);
+    document.getElementById('mb-gst').textContent = '₹' + fmt(gst);
+
+    const sarvamCost = (usageRes.by_service || []).find(s => s.service === 'sarvam');
+    const claudeCost = (usageRes.by_service || []).find(s => s.service === 'claude');
+    const sarvamInr  = parseFloat(sarvamCost?.total_cost_usd || 0) * USD_TO_INR;
+    const claudeInr  = parseFloat(claudeCost?.total_cost_usd || 0) * USD_TO_INR;
+    document.getElementById('mb-sarvam').textContent = '₹' + fmt(sarvamInr);
+    document.getElementById('mb-claude').textContent = '₹' + fmt(claudeInr);
+    document.getElementById('mb-api-total').textContent = '₹' + fmt(apiCostInr);
+    const profitEl = document.getElementById('mb-profit');
+    profitEl.textContent = '₹' + fmt(profit);
+    profitEl.className = 'margin-item-val ' + (profit >= 0 ? 'green' : 'rust');
+
+  } catch(e) { console.error('KPI load:', e); }
+}
+
+// ── Users table ────────────────────────────────────────────────────────────
+async function loadUsers() {
+  const tbody = document.getElementById('usersTable');
+  try {
+    const [usersRes, momsRes] = await Promise.all([
+      fetch('/api/admin/users').then(r => r.json()),
+      fetch(`/api/admin/usage-per-session?days=${currentDays}`).then(r => r.json()),
+    ]);
+
+    const users = usersRes.users || [];
+    const mocCounts = momsRes.meeting_counts || {};
+    document.getElementById('users-count').textContent = users.length + ' accounts';
+
+    if (!users.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty">No users found</td></tr>'; return; }
+
+    tbody.innerHTML = users.map(u => {
+      const mocs    = mocCounts[u.email] || 0;
+      const lastLog = u.last_login ? new Date(u.last_login).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      const joined  = u.created_at ? new Date(u.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      const roleBadge = `<span class="role-badge role-${u.role||'user'}">${u.role||'user'}</span>`;
+      const active = u.last_login && (Date.now() - new Date(u.last_login)) < 7*24*3600*1000;
+      return `<tr>
+        <td>
+          <div style="font-weight:500">${esc(u.name||'—')}</div>
+          <div class="mono" style="color:var(--ink3)">${esc(u.email)}</div>
+        </td>
+        <td>${roleBadge}</td>
+        <td class="center mono" style="color:var(--gold);font-weight:600">${(u.credits||0).toLocaleString('en-IN')}</td>
+        <td class="center mono" style="color:var(--ink3)">${(u.credits_used||0).toLocaleString('en-IN')}</td>
+        <td class="center" style="font-weight:600">${mocs}</td>
+        <td><span class="dot ${active?'green':'grey'}"></span>${lastLog}</td>
+        <td class="mono" style="color:var(--ink3);font-size:11px">${joined}</td>
+        <td>
+          <div class="inline-form">
+            <input type="number" class="inline-input" id="cr-${u.email}" placeholder="±cr" min="-9999" max="99999" step="100">
+            <button class="btn-xs" onclick="adjustCredits('${u.email}')">Apply</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">Error loading users</td></tr>';
+  }
+}
+
+async function adjustCredits(email) {
+  const inp = document.getElementById('cr-' + email);
+  const delta = parseInt(inp.value);
+  if (isNaN(delta) || delta === 0) { alert('Enter a non-zero credit amount (e.g. +500 or -100)'); return; }
+  const note = prompt(`Reason for ${delta > 0 ? '+' + delta : delta} credits to ${email}:`, 'Manual adjustment');
+  if (note === null) return;
+  try {
+    const r = await fetch(`/api/admin/users/${encodeURIComponent(email)}/credits`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ delta, note })
+    });
+    const d = await r.json();
+    if (r.ok) {
+      alert(`Done! New balance for ${email}: ${d.new_balance.toLocaleString('en-IN')} credits`);
+      inp.value = '';
+      loadUsers();
+      loadKPIs();
+    } else {
+      alert('Error: ' + (d.error || 'Unknown'));
+    }
+  } catch(e) { alert('Network error: ' + e.message); }
+}
+
+// ── Orders table ───────────────────────────────────────────────────────────
+async function loadOrders() {
+  const tbody = document.getElementById('ordersTable');
+  try {
+    const res = await fetch(`/api/admin/orders?days=${currentDays}`).then(r => r.json());
+    const orders = res.orders || [];
+    document.getElementById('orders-count').textContent = orders.length + ' orders';
+
+    if (!orders.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty">No orders in this period</td></tr>'; return; }
+
+    const planLabel = { starter:'Starter',growth:'Growth',pro:'Pro',enterprise:'Enterprise' };
+    tbody.innerHTML = orders.map(o => {
+      const amt     = parseFloat(o.amount_inr || 0);
+      const exGst   = amt / 1.18;
+      const date    = o.paid_at || o.created_at;
+      const dateStr = date ? new Date(date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      const statusColor = o.status === 'paid' ? 'var(--sage)' : o.status === 'created' ? 'var(--gold)' : 'var(--rust)';
+      return `<tr>
+        <td class="mono" style="font-size:11px">${esc(o.user_email)}</td>
+        <td>${planLabel[o.plan] || o.plan || '—'}</td>
+        <td class="center mono" style="color:var(--gold);font-weight:600">${(o.credits||0).toLocaleString('en-IN')}</td>
+        <td class="right mono" style="font-weight:600">₹${fmt(amt)}</td>
+        <td class="right mono" style="color:var(--ink3)">₹${fmt(exGst)}</td>
+        <td><span style="color:${statusColor};font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase">${o.status||'—'}</span></td>
+        <td class="mono" style="font-size:11px">${dateStr}</td>
+        <td class="mono" style="font-size:10px;color:var(--ink3);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(o.razorpay_payment_id||'')}">${o.razorpay_payment_id ? o.razorpay_payment_id.slice(-10) : '—'}</td>
+      </tr>`;
+    }).join('');
+
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">Error loading orders</td></tr>';
+  }
+}
+
+// ── Sessions table ─────────────────────────────────────────────────────────
+async function loadSessions() {
+  const tbody = document.getElementById('sessionsTable');
+  try {
+    const res = await fetch(`/api/admin/usage-per-session?days=${currentDays}`).then(r => r.json());
+    const sessions = res.sessions || [];
+    document.getElementById('sessions-count').textContent = sessions.length + ' sessions';
+
+    if (!sessions.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">No sessions in this period</td></tr>'; return; }
+
+    tbody.innerHTML = sessions.map(s => {
+      const dur   = s.duration_seconds ? Math.round(s.duration_seconds / 60) + 'm' : '—';
+      const cost  = parseFloat(s.total_cost || 0);
+      const costInr = cost * USD_TO_INR;
+      const creditsUsed = Math.round((s.duration_seconds || 0) / 60 * 2 + 8);
+      const dateStr = s.created_at ? new Date(s.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}) : '—';
+      return `<tr>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.meeting_title||'Untitled')}</td>
+        <td class="mono" style="font-size:11px;color:var(--ink3)">${(s.user_email||'').split('@')[0]}</td>
+        <td class="center mono">${dur}</td>
+        <td class="right mono" style="color:var(--rust)">${cost > 0 ? '₹' + fmt(costInr) : '—'}</td>
+        <td class="right mono" style="color:var(--ink2)">${creditsUsed}</td>
+        <td class="mono" style="font-size:11px;color:var(--ink3)">${dateStr}</td>
+      </tr>`;
+    }).join('');
+
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">Error loading sessions</td></tr>';
+  }
+}
+
+// ── API usage by service ───────────────────────────────────────────────────
+async function loadApiUsage() {
+  const tbody = document.getElementById('apiTable');
+  try {
+    const res = await fetch('/api/admin/usage').then(r => r.json());
+    const services = res.by_service || [];
+
+    if (!services.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">No API usage logged</td></tr>'; return; }
+
+    const svcColor = { sarvam:'#7C3AED', claude:'#B8912A', openai:'#10B981' };
+    tbody.innerHTML = services.map(s => {
+      const costUsd = parseFloat(s.total_cost_usd || 0);
+      const costInr = costUsd * USD_TO_INR;
+      const unitLabel = s.service === 'sarvam' ? 'sec' : 'tokens';
+      return `<tr>
+        <td><span style="font-family:var(--mono);font-size:12px;font-weight:700;color:${svcColor[s.service]||'var(--ink2)'}">${s.service.toUpperCase()}</span></td>
+        <td class="right mono">${parseInt(s.calls||0).toLocaleString('en-IN')}</td>
+        <td class="right mono">${parseFloat(s.total_units||0).toFixed(0)} ${unitLabel}</td>
+        <td class="right mono" style="color:var(--rust);font-weight:600">$${costUsd.toFixed(4)}</td>
+        <td class="right mono" style="color:var(--ink2)">₹${fmt(costInr)}</td>
+      </tr>`;
+    }).join('');
+
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Error loading API data</td></tr>';
+  }
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function fmt(n) {
+  const num = parseFloat(n || 0);
+  return num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+/* Theme: handled by /js/theme.js */
+
+// ── Auth check + load ──────────────────────────────────────────────────────
+async function init() {
+  try {
+    const me = await fetch('/auth/me').then(r => r.json());
+    if (!me.user) { window.location.href = '/login.html'; return; }
+    // Admin check
+    const role = me.user.role;
+    if (role !== 'admin' && role !== 'developer') {
+      document.body.innerHTML = '<div style="text-align:center;padding:4rem;font-family:sans-serif"><h2>Access denied</h2><p>This page is for admins only.</p><a href="/">← Go back</a></div>';
+      return;
+    }
+    loadAll();
+  } catch(e) {
+    window.location.href = '/login.html';
+  }
+}
+
+init();
+</script>
+</body>
+</html> 

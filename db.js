@@ -1,15 +1,15 @@
-// db.js — MOM Tool PostgreSQL integration
+// db.js — MOC Tool PostgreSQL integration
 // Place this file in your mom-tool/ folder alongside server.js
 // Run: npm install pg
 
 const { Pool } = require("pg");
 
 const pool = new Pool({
-  host:     "localhost",
-  port:     5432,
-  database: "postgres",
-  user:     "postgres",
-  password: "postgres123",
+  host:     process.env.DB_HOST || "localhost",
+  port:     Number(process.env.DB_PORT) || 5432,
+  database: process.env.DB_NAME || "postgres",
+  user:     process.env.DB_USER || "postgres",
+  password: process.env.DB_PASSWORD,
 });
 
 // Test connection on startup
@@ -34,7 +34,7 @@ async function initDB() {
       transcript        TEXT,
       transcript_chars  INTEGER,
 
-      -- MOM fields
+      -- MOC fields
       meeting_title     TEXT,
       meeting_date      TEXT,
       duration          TEXT,
@@ -58,7 +58,7 @@ async function initDB() {
   console.log("[DB] ✅ Tables ready");
 }
 
-// ── SAVE MOM ────────────────────────────────────────────────────────────────
+// ── SAVE MOC ────────────────────────────────────────────────────────────────
 async function saveMOM({ fileName, fileSizeMB, languageCode, transcript, mom }) {
   const result = await pool.query(
     `INSERT INTO mom_sessions (
@@ -86,11 +86,11 @@ async function saveMOM({ fileName, fileSizeMB, languageCode, transcript, mom }) 
       JSON.stringify(mom.nextSteps      || []),
     ]
   );
-  console.log(`[DB] ✅ Saved MOM id=${result.rows[0].id}`);
+  console.log(`[DB] ✅ Saved MOC id=${result.rows[0].id}`);
   return result.rows[0];
 }
 
-// ── GET ALL MOMs (list view) ─────────────────────────────────────────────────
+// ── GET ALL MOCs (list view) ─────────────────────────────────────────────────
 async function listMOMs(limit = 50) {
   const result = await pool.query(
     `SELECT id, created_at, meeting_title, meeting_date, duration,
@@ -104,7 +104,7 @@ async function listMOMs(limit = 50) {
   return result.rows;
 }
 
-// ── GET ONE MOM (full detail) ────────────────────────────────────────────────
+// ── GET ONE MOC (full detail) ────────────────────────────────────────────────
 async function getMOM(id) {
   const result = await pool.query(
     `SELECT * FROM mom_sessions WHERE id = $1`,
@@ -113,10 +113,10 @@ async function getMOM(id) {
   return result.rows[0] || null;
 }
 
-// ── DELETE MOM ───────────────────────────────────────────────────────────────
+// ── DELETE MOC ───────────────────────────────────────────────────────────────
 async function deleteMOM(id) {
   await pool.query(`DELETE FROM mom_sessions WHERE id = $1`, [id]);
-  console.log(`[DB] Deleted MOM id=${id}`);
+  console.log(`[DB] Deleted MOC id=${id}`);
 }
 
 module.exports = { initDB, saveMOM, listMOMs, getMOM, deleteMOM };

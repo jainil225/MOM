@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<script src="/js/theme.js"></script>
+<script src="/js/rates.js"></script>
+<script src="/js/referral.js"></script>
+<title>Credits & Pricing · AiX Track</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;overflow-y:scroll;overflow-x:hidden;background:#F0EDE6}
+:root{
+  --ink:#18182C;--ink2:#44445E;--ink3:#7878A0;--ink4:#ABABC0;
+  --paper:#F0EDE6;--paper2:#E8E4DA;--card:rgba(255,255,255,0.92);
+  --border:rgba(24,18,12,0.09);--border-strong:rgba(24,18,12,0.18);
+  --navy:#18182C;--navy-h:#2C2A44;
+  --gold:#E0621A;--gold-h:#C8540E;
+  --gold-tint:rgba(224,98,26,0.09);
+  --gold-tint-strong:rgba(224,98,26,0.20);
+  --sage:#1A9A5A;--sage-tint:rgba(26,154,90,0.10);--sage-strong:rgba(26,154,90,0.22);
+  --rust:#C03030;--rust-tint:rgba(192,48,48,0.10);--rust-strong:rgba(192,48,48,0.22);
+  --plum:#7C5FA0;--plum-tint:rgba(124,95,160,0.10);
+  --sky:#2870C0;--sky-tint:rgba(40,112,192,0.10);
+  --violet:#7C5FA0;--violet-tint:rgba(124,95,160,0.10);
+  --green:#1A9A5A;--green-tint:rgba(26,154,90,0.10);
+  --shadow-1:0 1px 3px rgba(24,18,12,0.06),0 2px 12px rgba(24,18,12,0.05);
+  --shadow-2:0 4px 28px rgba(24,18,12,0.10),0 16px 48px rgba(24,18,12,0.08);
+  --shadow-lift:0 20px 60px -20px rgba(24,18,12,0.20),0 8px 24px -12px rgba(24,18,12,0.12);
+  --serif:'Roboto',Georgia,serif;
+  --sans:'Roboto',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'Roboto Mono',ui-monospace,monospace;
+  --sidebar-w:224px;
+  --right-w:260px;
+}
+body{font-family:var(--sans);background:radial-gradient(ellipse 90% 56% at 50% -4%, #D05810 0%, #E88030 22%, rgba(232,128,48,0) 58%),radial-gradient(ellipse 58% 50% at 8%  90%, rgba(176,194,224,0.44) 0%, transparent 68%),radial-gradient(ellipse 52% 46% at 93% 86%, rgba(186,202,230,0.34) 0%, transparent 65%),#F0EDE6;background-attachment:fixed;color:var(--ink);min-height:100vh;transition:background .3s,color .3s}
+
+/* NAV */
+.nav{background:var(--card);border-bottom:1px solid var(--border);height:60px;padding:0 1.75rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;transition:background 0.3s}
+
+.nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit}
+.nav-mark{width:34px;height:34px;background:linear-gradient(135deg,#E0621A,#F08030);color:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-size:20px;line-height:1;padding-bottom:2px;flex-shrink:0;box-shadow:0 2px 10px rgba(224,98,26,0.35)}
+.nav-title{font-family:var(--serif);font-size:20px;letter-spacing:-0.01em;color:var(--ink)}
+.nav-title em{font-style:italic;color:var(--gold)}
+.nav-sub{font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:0.14em;text-transform:uppercase;margin-top:1px}
+.credit-pill{font-family:var(--mono);font-size:11px;background:var(--gold-tint);color:var(--gold);border:1px solid var(--gold-tint-strong);border-radius:999px;padding:5px 12px;font-weight:600;letter-spacing:0.06em}
+.nav-right{display:flex;align-items:center;gap:8px}
+.btn-nav{padding:7px 12px;font-size:12px;font-weight:500;background:var(--card);color:var(--ink2);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all 0.15s}
+.btn-nav:hover{border-color:var(--gold);color:var(--gold)}
+.credits-chip{font-family:var(--mono);font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid;font-weight:600}
+.credits-chip.green{background:var(--sage-tint);color:var(--sage);border-color:var(--sage-strong)}
+.credits-chip.yellow{background:var(--gold-tint);color:var(--gold);border-color:var(--gold)}
+.credits-chip.red{background:var(--rust-tint);color:var(--rust);border-color:var(--rust)}
+
+/* SIDEBAR */
+.app-layout{display:flex;min-height:calc(100vh - 60px)}
+.sidebar{width:56px;flex-shrink:0;background:rgba(240,237,230,0.76);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid rgba(24,18,12,0.08);display:flex;flex-direction:column;position:sticky;top:60px;height:calc(100vh - 60px);overflow:hidden;transition:width 0.22s cubic-bezier(0.4,0,0.2,1);z-index:50}
+
+.sidebar:hover{width:200px}
+.sidebar-section{padding:10px 6px 4px}
+.sidebar-nav-btn{display:flex;align-items:center;padding:5px 6px;margin:1px 2px;border-radius:8px;cursor:pointer;transition:background .15s,color .15s;text-decoration:none;color:var(--ink3);border:none;background:transparent;width:calc(100% - 4px);white-space:nowrap;overflow:hidden}
+.sidebar-nav-btn:hover{background:rgba(224,98,26,0.09);color:var(--gold)}.sidebar-nav-btn.active{color:var(--gold);position:relative}.sidebar-nav-btn.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;border-radius:0 3px 3px 0;background:linear-gradient(135deg,#E0621A,#F08030)}
+.sidebar-nav-btn .nav-icon{width:44px;height:38px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:inherit;transition:color .15s}
+.sidebar-nav-btn .nav-label{font-size:13px;font-weight:500;opacity:0;transition:opacity .12s .06s;overflow:hidden;white-space:nowrap}
+.sidebar:hover .sidebar-nav-btn .nav-label{opacity:1}
+.sidebar-main{flex:1;min-width:0}
+
+/* PAGE */
+.page{max-width:100%;margin:0 auto;padding:1.5rem 1.5rem 3rem}
+
+/* HERO */
+.hero{position:relative;padding:3rem 0 2.25rem;overflow:hidden;border-bottom:1px solid rgba(24,18,12,0.08);margin-bottom:2rem}
+.hero-bg{position:absolute;inset:0;pointer-events:none}
+.hero-bg::before{content:"";position:absolute;inset:0;background:linear-gradient(130deg,rgba(224,98,26,0.12) 0%,transparent 55%);opacity:1}
+.hero-bg::after{content:"";position:absolute;top:-100px;right:-100px;width:450px;height:450px;border-radius:50%;background:radial-gradient(circle,var(--gold-tint-strong),transparent 65%);opacity:.9}
+.hero-label{font-family:var(--mono);font-size:10px;color:var(--gold);letter-spacing:.18em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;position:relative;z-index:1}.hero-label::before{content:"";width:22px;height:1px;background:var(--gold)}
+.hero-title{font-family:var(--serif);font-size:3rem;line-height:1.02;letter-spacing:-.03em;color:var(--ink);position:relative;z-index:1;margin-bottom:0}
+
+.hero-sub{position:relative;z-index:1;font-size:15px;color:var(--ink2);margin-top:10px;line-height:1.6;max-width:520px}
+
+/* BALANCE BAR */
+.balance-bar{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.75rem;display:flex;align-items:center;justify-content:space-between;margin:0 0 2rem;box-shadow:var(--shadow-1);display:none}
+
+.balance-info{display:flex;align-items:center;gap:1rem}
+.balance-icon{width:48px;height:48px;background:var(--gold-tint);border:1px solid var(--gold-tint-strong);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.balance-label{font-family:var(--mono);font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px}
+.balance-val{font-family:var(--serif);font-size:1.8rem;color:var(--ink);line-height:1;letter-spacing:-0.02em}
+.balance-sub{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:4px}
+
+/* NO PAYMENT */
+.no-payment-notice{background:var(--rust-tint);border:1px solid var(--rust);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--rust);margin-bottom:2rem;display:none;align-items:center;gap:10px}
+
+/* HOW CREDITS WORK */
+.explainer{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.75rem;margin-bottom:2.5rem;box-shadow:var(--shadow-1)}
+
+.explainer-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:1.25rem;display:flex;align-items:center;gap:8px}
+.explainer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.explain-item{background:var(--paper2);border-radius:10px;padding:16px;text-align:center;border:1px solid var(--border);transition:border-color .15s,background .15s}
+.explain-item:hover{border-color:var(--gold);background:var(--gold-tint)}
+.explain-icon{font-size:1.6rem;margin-bottom:8px}
+.explain-text{font-size:11px;color:var(--ink2);line-height:1.4;margin-bottom:6px}
+.explain-val{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--ink)}
+
+
+/* PLANS */
+.plans-section-label{font-family:var(--mono);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:0.16em;margin-bottom:1.25rem;display:flex;align-items:center;gap:8px}
+.plans-section-label::before{content:'';width:20px;height:1px;background:var(--gold)}
+.plans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:2.5rem}
+.plan{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;position:relative;transition:box-shadow .2s,border-color .2s;overflow:hidden}
+
+.plan::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--border-strong),transparent);opacity:0;transition:opacity .2s}
+.plan:hover{box-shadow:var(--shadow-2);border-color:var(--border-strong)}
+.plan:hover::before{opacity:1}
+.plan.popular{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),var(--shadow-2)}
+.plan.popular::before{background:linear-gradient(90deg,transparent,var(--gold),var(--gold-h),var(--gold),transparent);opacity:1}
+.plan-badge{position:absolute;top:-1px;left:50%;transform:translateX(-50%);background:var(--gold);color:#fff;font-family:var(--mono);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;padding:4px 14px;border-radius:0 0 8px 8px;white-space:nowrap}
+.plan-name{font-family:var(--mono);font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.16em;margin-bottom:12px}
+.plan-credits{font-family:var(--serif);font-size:2.8rem;color:var(--ink);line-height:1;letter-spacing:-0.03em}
+.plan-credits span{font-size:1.1rem;font-weight:400;color:var(--ink3);font-family:var(--sans)}
+.plan-bonus{font-family:var(--mono);font-size:10px;background:var(--sage-tint);color:var(--sage);border:1px solid var(--sage-strong);padding:3px 10px;border-radius:5px;display:inline-block;margin:8px 0 4px}
+.plan-bonus.hidden{visibility:hidden}
+.plan-price{margin:16px 0;padding:16px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.plan-inr{font-family:var(--serif);font-size:2.2rem;color:var(--ink);line-height:1;letter-spacing:-0.02em}
+.plan-gst{font-family:var(--mono);font-size:9px;color:var(--ink3);margin-top:4px}
+.plan-per{font-family:var(--mono);font-size:10px;color:var(--sage);margin-top:4px;font-weight:600}
+.plan-meetings{font-family:var(--mono);font-size:11px;color:var(--ink2);margin:12px 0;padding:9px 12px;background:var(--paper2);border-radius:7px;border:1px solid var(--border)}
+.plan-features{list-style:none;margin:14px 0;display:flex;flex-direction:column;gap:8px}
+.plan-features li{font-size:12px;color:var(--ink2);display:flex;align-items:flex-start;gap:8px;line-height:1.4}
+.plan-features li::before{content:'✓';color:var(--sage);font-weight:700;flex-shrink:0;margin-top:1px}
+.plan-btn{width:100%;padding:12px;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .18s;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:6px}
+.plan-btn.primary{background:var(--navy);color:#fff}
+.plan-btn.primary:hover:not(:disabled){background:#2C2A44;transform:translateY(-1px);box-shadow:0 4px 16px rgba(24,18,12,0.22)}
+.plan-btn.outlined{background:transparent;border:1.5px solid var(--gold);color:var(--gold)}
+.plan-btn.outlined:hover:not(:disabled){background:var(--gold-tint);transform:translateY(-1px)}
+.plan-btn:disabled{opacity:0.45;cursor:not-allowed;transform:none!important}
+
+/* NOTE */
+.note{background:var(--gold-tint);border:1px solid var(--gold-tint-strong);border-radius:12px;padding:1rem 1.25rem;font-size:12px;color:var(--ink2);line-height:1.7;margin-bottom:2.5rem}
+.note strong{color:var(--gold)}
+
+/* FAQ */
+.section-label{font-family:var(--mono);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:0.16em;margin-bottom:1.25rem;display:flex;align-items:center;gap:8px}
+.section-label::before{content:'';width:14px;height:1px;background:var(--gold)}
+.faq{display:flex;flex-direction:column;gap:8px;margin-bottom:2.5rem}
+.faq-item{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .15s}
+
+.faq-item:hover{border-color:var(--gold-tint-strong)}
+.faq-q{padding:15px 18px;font-size:13px;font-weight:500;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none}
+.faq-q:hover{background:var(--paper2)}
+.faq-a{padding:0 18px;font-size:12px;color:var(--ink2);line-height:1.7;max-height:0;overflow:hidden;transition:max-height .3s,padding .3s}
+.faq-item.open .faq-a{max-height:200px;padding:0 18px 16px}
+.faq-chevron{transition:transform .2s;color:var(--ink3);font-size:11px}
+.faq-item.open .faq-chevron{transform:rotate(180deg)}
+.faq-item.open{border-color:var(--gold-tint-strong)}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(15,21,36,0.5);backdrop-filter:blur(6px);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2.5rem;max-width:420px;width:90%;text-align:center;box-shadow:var(--shadow-2)}
+.modal-icon{font-size:3rem;margin-bottom:12px}
+.modal-title{font-family:var(--serif);font-size:1.6rem;font-style:italic;color:var(--navy);margin-bottom:8px}
+
+.modal-body{font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:1.5rem}
+.modal-credits{font-family:var(--serif);font-size:2.8rem;color:var(--gold);margin:12px 0;letter-spacing:-0.02em}
+.modal-btn{padding:12px 28px;background:#18182C;color:#fff;border:none;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s}
+.modal-btn:hover{background:#2C2A44}
+
+/* SPINNER */
+.btn-spin{width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* BOTTOM NAV */
+.bottom-nav{display:none}
+@media(max-width:767px){
+  .sidebar{display:none!important}.sidebar-main{width:100%}.app-layout{display:block}
+  .bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(240,237,230,0.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--border);height:56px;align-items:stretch;padding-bottom:env(safe-area-inset-bottom,0px)}
+  .bottom-nav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:var(--ink3);font-size:9px;font-family:var(--mono);letter-spacing:0.06em;padding:6px 0;transition:color .15s}
+  .bottom-nav a.active{color:#E0621A}
+  .bottom-nav a svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .page{padding:1rem 1rem 80px!important}
+  .plans-grid{grid-template-columns:1fr!important}
+  .explainer-grid{grid-template-columns:repeat(2,1fr)!important}
+  .hero-title{font-size:2rem!important}
+  .balance-bar{flex-direction:column!important;gap:12px!important}
+}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:10px}
+.legal-links{text-align:center;font-size:12px;color:var(--ink3);margin:-1rem 0 2rem}
+.legal-links a{color:var(--ink2);margin:0 8px}
+</style>
+<link rel="stylesheet" href="/css/theme-dark.css">
+<link rel="stylesheet" href="/css/aix-uniform.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-brand" href="/">
+    <img src="/aix-logo.png" alt="AiX" style="width:32px;height:32px;object-fit:contain;border-radius:7px" onerror="this.style.display='none';document.getElementById('pricing-fb').style.display='flex'">
+    <div id="pricing-fb" class="nav-mark" style="display:none">A</div>
+    <div>
+      <div class="nav-title">AiX <em>Track</em></div>
+      <div class="nav-sub">Credits &amp; Pricing · AiExtensive</div>
+    </div>
+  </a>
+  <div class="nav-right">
+    <span class="credits-chip" id="navCreditsChip" style="display:none"></span>
+    <a href="/" class="btn-nav">← Dashboard</a>
+    <button class="btn-nav" onclick="toggleTheme()" id="theme-btn">◑</button>
+  </div>
+</nav>
+
+<div class="app-layout">
+<aside class="sidebar">
+  <div class="sidebar-section" style="padding-top:12px">
+    <a href="/" class="sidebar-nav-btn" title="New MOC"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span><span class="nav-label">New MOC</span></a>
+    <a href="/history" class="sidebar-nav-btn" title="Records"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span><span class="nav-label">Records</span></a>
+    <a href="/actions" class="sidebar-nav-btn" title="Action Items"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span class="nav-label">Action Items</span></a>
+    <a href="/pricing" class="sidebar-nav-btn active" title="Credits"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><span class="nav-label">Credits</span></a>
+    <a href="/logging" class="sidebar-nav-btn" title="Usage"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="nav-label">Usage</span></a>
+    <a href="/profile.html" class="sidebar-nav-btn" title="Profile"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="nav-label">Profile</span></a>
+  </div>
+</aside>
+<div class="sidebar-main">
+<div class="page">
+
+  <!-- HERO -->
+  
+    <div class="hero-bg"></div>
+    <div class="hero-label">Credits &amp; Pricing</div>
+    <div class="hero-title">Pay only for what you use</div>
+    <div class="hero-sub">Credits power every conversation — transcription, MOC generation, and more. Top up any time, they never expire.</div>
+ 
+
+  <!-- NO PAYMENT NOTICE -->
+  <div class="no-payment-notice" id="noPaymentNotice">
+    ⚠️ Payment gateway not configured. Contact your administrator to activate Razorpay.
+  </div>
+
+  <!-- BALANCE BAR -->
+  <div class="balance-bar" id="balanceBar">
+    <div class="balance-info">
+      <div class="balance-icon">💳</div>
+      <div>
+        <div class="balance-label">Your balance</div>
+        <div class="balance-val" id="balanceVal">—</div>
+        <div class="balance-sub" id="balanceSub">Loading…</div>
+      </div>
+    </div>
+    <div>
+      <a href="/logging" class="btn-nav">Usage &amp; history →</a>
+    </div>
+  </div>
+
+
+  <!-- REFERRAL -->
+  <div id="referral-card"></div>
+
+  <!-- PLANS -->
+  <div class="plans-section-label">Choose a plan</div>
+  <div class="plans-grid">
+
+    <!-- Starter -->
+    <div class="plan">
+      <div class="plan-name">Starter</div>
+      <div class="plan-credits">86 <span>credits</span></div>
+      <div class="plan-bonus hidden">—</div>
+      <div class="plan-price">
+        <div class="plan-inr">₹86</div>
+        <div class="plan-gst">+ 18% GST = ₹101.48 billed</div>
+        <div class="plan-per">₹1.00 per credit</div>
+      </div>
+      <div class="plan-meetings" data-plan-credits="86">≈ 43 min of diarized conversations</div>
+      <ul class="plan-features">
+        <li>All audio &amp; video formats</li>
+        <li>Hindi, English, Gujarati, Tamil &amp; more</li>
+        <li>Word export + email delivery</li>
+        <li>Credits never expire</li>
+      </ul>
+      <button class="plan-btn outlined" onclick="initiatePurchase('starter',86,86,'Starter — 86 Credits')" id="btn-starter">Buy Starter</button>
+    </div>
+
+    <!-- Growth -->
+    <div class="plan popular">
+      <div class="plan-badge">Most popular</div>
+      <div class="plan-name">Growth</div>
+      <div class="plan-credits">886 <span>credits</span></div>
+      <div class="plan-bonus">+ 86 bonus = 972 total</div>
+      <div class="plan-price">
+        <div class="plan-inr">₹886</div>
+        <div class="plan-gst">+ 18% GST = ₹1,045.48 billed</div>
+        <div class="plan-per">₹0.91 per credit</div>
+      </div>
+      <div class="plan-meetings" data-plan-credits="972">≈ 8 hours of diarized conversations</div>
+      <ul class="plan-features">
+        <li>972 credits total (incl. 86 bonus)</li>
+        <li>Priority transcription queue</li>
+        <li>WhatsApp delivery</li>
+        <li>Credits never expire</li>
+      </ul>
+      <button class="plan-btn primary" onclick="initiatePurchase('growth',972,886,'Growth — 972 Credits')" id="btn-growth">Buy Growth</button>
+    </div>
+
+    <!-- Enterprise -->
+    <div class="plan">
+      <div class="plan-name">Enterprise</div>
+      <div class="plan-credits">8,886 <span>credits</span></div>
+      <div class="plan-bonus">+ 1,986 bonus = 10,872 total</div>
+      <div class="plan-price">
+        <div class="plan-inr">₹8,886</div>
+        <div class="plan-gst">+ 18% GST = ₹10,485.48 billed</div>
+        <div class="plan-per">₹0.82 per credit</div>
+      </div>
+      <div class="plan-meetings" data-plan-credits="10872">≈ 90 hours of diarized conversations</div>
+      <ul class="plan-features">
+        <li>10,872 credits total (incl. 1,986 bonus)</li>
+        <li>Best per-credit value</li>
+        <li>Ideal for firms &amp; large teams</li>
+        <li>Credits never expire</li>
+      </ul>
+      <button class="plan-btn outlined" onclick="initiatePurchase('enterprise',10872,8886,'Enterprise — 10,872 Credits')" id="btn-enterprise">Buy Enterprise</button>
+    </div>
+
+  </div>
+
+  <!-- NOTE -->
+  <div class="note">
+    <strong>GST applicable:</strong> All prices are exclusive of 18% GST. The amount billed includes GST. Credits are added instantly on successful payment. For bulk requirements or custom plans, contact <strong>notification@aiextensive.com</strong>.
+  </div>
+
+  <!-- FAQ -->
+  <div class="section-label">Frequently asked</div>
+  <div class="faq">
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">How exactly are credits consumed? <span class="faq-chevron">▼</span></div>
+      <div class="faq-a">Credits are charged per minute of audio after silence is stripped: <strong><span data-rate="standard">1</span> credit per minute</strong> for a standard MOC, or <strong><span data-rate="diarization">2</span> credits per minute</strong> with speaker diarization (a speaker-wise transcript showing who said what). There is no separate charge for MOC generation. A 60-minute conversation uses <span data-rate="hour-standard">60</span> credits, or <span data-rate="hour-diarization">120</span> with diarization. Free trial minutes are used first. Long pauses do not count.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">Do credits expire? <span class="faq-chevron">▼</span></div>
+      <div class="faq-a">No. Credits are permanent and carry over indefinitely. There is no subscription or renewal.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">What if I run out of credits mid-upload? <span class="faq-chevron">▼</span></div>
+      <div class="faq-a">We check your balance before starting. If you have insufficient credits the upload is blocked before any API cost is incurred. Top up and retry.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">What languages are supported? <span class="faq-chevron">▼</span></div>
+      <div class="faq-a">English, Hindi, Gujarati, Marathi, Tamil, Telugu, Kannada, Bengali, Punjabi, Malayalam, and multilingual (mixed-language) recordings. The system auto-detects if you set Language to Auto.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">Is there a free trial? <span class="faq-chevron">▼</span></div>
+      <div class="faq-a">New accounts receive 60 minutes of free transcription to evaluate the product. Once the trial is used, a credit pack is required to continue.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">Is payment secure? <span class="faq-chevron">▼</span></div>
+      <div class="faq-a">Payments are processed by Razorpay, a PCI-DSS Level 1 certified gateway. AiX Track never stores your card details. The signature is verified server-side before any credits are added.</div>
+    </div>
+  </div>
+  <div class="legal-links"><a href="/terms">Terms of Use</a>·<a href="/privacy">Privacy Policy</a></div>
+
+</div><!-- /page -->
+</div><!-- /sidebar-main -->
+</div><!-- /app-layout -->
+
+<!-- SUCCESS MODAL -->
+<div class="modal-bg" id="successModal">
+  <div class="modal">
+    <div class="modal-icon">🎉</div>
+    <div class="modal-title">Credits added!</div>
+    <div class="modal-credits" id="modalCredits"></div>
+    <div class="modal-body" id="modalBody">Credits have been added to your account.</div>
+    <button class="modal-btn" onclick="closeSuccessAndRefresh()">Go to Dashboard →</button>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="/"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>New MOC</a>
+  <a href="/history"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Records</a>
+  <a href="/actions"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Actions</a>
+  <a href="/pricing" class="active"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Credits</a>
+  <a href="/profile.html"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</a>
+</nav>
+
+<script>
+let RAZORPAY_KEY_ID='',userEmail='',userName='',paymentEnabled=false;
+
+async function init(){
+  try{
+    const me=await fetch('/auth/me').then(r=>r.json());
+    if(!me.user){window.location.href='/login.html';return;}
+    userEmail=me.user.email||'';userName=me.user.name||'';
+    const cfgRes=await fetch('/api/config/payment');
+    if(cfgRes.ok){const cfg=await cfgRes.json();RAZORPAY_KEY_ID=cfg.razorpay_key_id||'';paymentEnabled=!!RAZORPAY_KEY_ID;}
+    if(!paymentEnabled){document.getElementById('noPaymentNotice').style.display='flex';document.querySelectorAll('.plan-btn').forEach(b=>{b.disabled=true;b.textContent='Unavailable';});}
+    await loadBalance();
+  }catch(e){console.error('init error:',e);}
+}
+
+async function loadBalance(){
+  try{
+    const r=await fetch('/api/credits/balance');if(!r.ok)return;
+    const d=await r.json();const bal=(typeof d.total_available==='number')?d.total_available:(d.credits||0);
+    const chip=document.getElementById('navCreditsChip');
+    chip.textContent=bal.toLocaleString('en-IN')+' cr';
+    chip.className='credits-chip '+(bal<100?'red':bal<500?'yellow':'green');
+    chip.style.display='inline-flex';
+    const bar=document.getElementById('balanceBar');bar.style.display='flex';
+    document.getElementById('balanceVal').textContent=d.is_privileged?'Unlimited credits':bal.toLocaleString('en-IN')+' credits'+(d.free_credits_remaining?` (incl. ${d.free_credits_remaining} free trial)`:'');
+    if(d.is_privileged){chip.textContent='Unlimited';chip.className='credits-chip green';}
+    window._aixBalance=bal; fillCoverage();
+  }catch(_){}
+}
+
+async function initiatePurchase(planKey,totalCredits,amountInr,planName){
+  if(!paymentEnabled){alert('Payment is not configured. Contact your administrator.');return;}
+  const btnId='btn-'+planKey;const btn=document.getElementById(btnId);const origHTML=btn.innerHTML;
+  btn.disabled=true;btn.innerHTML='<span class="btn-spin"></span>';
+  try{
+    const orderRes=await fetch('/api/credits/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:planKey,credits:totalCredits,amountInr})});
+    if(!orderRes.ok){const err=await orderRes.json();throw new Error(err.error||'Failed to create order');}
+    const order=await orderRes.json();
+    const options={
+      key:RAZORPAY_KEY_ID,amount:order.amount_paise,currency:'INR',
+      name:'AiX Track',description:planName,order_id:order.order_id,
+      theme:{color:'#E0621A'},prefill:{email:userEmail,name:userName},
+      notes:{plan:planKey,credits:String(order.credits)},
+      handler:async function(response){
+        btn.innerHTML='<span class="btn-spin"></span> Verifying…';
+        try{
+          const verRes=await fetch('/api/credits/verify-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({razorpay_order_id:response.razorpay_order_id,razorpay_payment_id:response.razorpay_payment_id,razorpay_signature:response.razorpay_signature,plan:planKey,credits:order.credits})});
+          const vd=await verRes.json();
+          if(verRes.ok&&vd.success){
+            document.getElementById('modalCredits').textContent='+'+order.credits.toLocaleString('en-IN')+' credits';
+            document.getElementById('modalBody').textContent=planName+' activated. New balance: '+(vd.new_balance||0).toLocaleString('en-IN')+' credits.';
+            document.getElementById('successModal').classList.add('open');
+            await loadBalance();
+          }else{alert('Payment was recorded but credit top-up failed.\nShare this Payment ID with support: '+response.razorpay_payment_id);}
+        }catch(e){alert('Verification error. Share Payment ID with support: '+response.razorpay_payment_id);}
+        btn.disabled=false;btn.innerHTML=origHTML;
+      },
+      modal:{ondismiss:function(){btn.disabled=false;btn.innerHTML=origHTML;}}
+    };
+    const rzp=new Razorpay(options);
+    rzp.on('payment.failed',function(resp){alert('Payment failed: '+(resp.error?.description||'Please try again.'));btn.disabled=false;btn.innerHTML=origHTML;});
+    rzp.open();
+  }catch(e){alert(e.message||'Something went wrong. Please try again.');btn.disabled=false;btn.innerHTML=origHTML;}
+}
+
+function closeSuccessAndRefresh(){document.getElementById('successModal').classList.remove('open');window.location.href='/';}
+function toggleFaq(el){el.closest('.faq-item').classList.toggle('open');}
+/* Theme: handled by /js/theme.js */
+
+init();
+
+/* How much conversation time credits cover — uses live rates (diarization is the main feature) */
+function coverText(cr){
+  var r=window.AIX_RATES||{standard_per_min:1,diarization_per_min:2};
+  var dMin=Math.floor(cr/r.diarization_per_min), sMin=Math.floor(cr/r.standard_per_min);
+  var fmt=function(m){return m>=60?(Math.floor(m/60*10)/10).toLocaleString('en-IN')+' hours':m+' min';};
+  return {diar:fmt(dMin), std:fmt(sMin)};
+}
+function fillCoverage(){
+  document.querySelectorAll('[data-plan-credits]').forEach(function(el){
+    var c=coverText(parseInt(el.getAttribute('data-plan-credits')));
+    el.textContent='≈ '+c.diar+' of diarized conversations';
+    el.title='or ≈ '+c.std+' without speaker names';
+  });
+  if(typeof window._aixBalance==='number'){
+    var c=coverText(window._aixBalance);
+    document.getElementById('balanceSub').textContent='≈ '+c.diar+' with diarization · '+c.std+' standard';
+  }
+}
+document.addEventListener('aix-rates',fillCoverage);
+document.addEventListener('DOMContentLoaded',fillCoverage);
+</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+# ── Secrets — never commit ─────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+service-account*.json
+
+# ── Dependencies (reinstall with: npm install) ─────────────────────
+node_modules/
+
+# ── User data & runtime files (recordings, uploads, temp audio) ────
+uploads/
+tmp/
+temp/
+*.wav
+*.webm
+*.mp3
+*.m4a
+*.ogg
+
+# ── Logs ───────────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+pm2*.log
+.pm2/
+
+# ── Backups & scratch copies ───────────────────────────────────────
+*.backup*.js
+*.bak
+*.orig
+*.pre-*.html
+
+# ── OS & editor files ──────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp

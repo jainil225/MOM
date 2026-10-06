@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<script src="/js/theme.js"></script>
+<script src="/js/referral.js"></script>
+<title>Usage & Balance · AiX Track</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#18120C;--ink2:#4A4238;--ink3:#8A8174;--ink4:#B8B0A4;
+  --paper:#F0EDE6;--paper2:#E8E4DA;--card:rgba(255,255,255,0.92);--card-solid:#FFFFFF;
+  --border:rgba(24,18,12,0.09);--grid:rgba(24,18,12,0.07);
+  --navy:#18182C;--navy-h:#2C2A44;
+  --gold:#E0621A;--gold-tint:rgba(224,98,26,0.08);--gold-tint-strong:rgba(224,98,26,0.20);
+  --bar:#E0621A;
+  --sage:#1A9A5A;--sage-tint:rgba(26,154,90,0.09);
+  --rust:#C03030;--rust-tint:rgba(192,48,48,0.08);
+  --shadow-1:0 1px 3px rgba(24,18,12,0.05),0 4px 14px rgba(24,18,12,0.05);
+  --shadow-2:0 8px 32px rgba(24,18,12,0.10);
+  --sans:'Roboto',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:'Roboto Mono',ui-monospace,monospace;
+}
+[data-theme="dark"]{
+  --ink:#F2EEE6;--ink2:#C4BCB0;--ink3:#8A8276;--ink4:#4A453E;
+  --paper:#0E0F14;--paper2:#181920;--card:rgba(24,25,33,0.92);--card-solid:#181921;
+  --border:rgba(255,255,255,0.08);--grid:rgba(255,255,255,0.07);
+  --navy:#2C2A44;--navy-h:#3A3858;
+  --gold:#F0803A;--gold-tint:rgba(240,128,58,0.10);--gold-tint-strong:rgba(240,128,58,0.24);
+  --bar:#E0621A;
+  --sage:#4CC38A;--sage-tint:rgba(76,195,138,0.10);
+  --rust:#E86A6A;--rust-tint:rgba(232,106,106,0.10);
+  --shadow-1:0 1px 3px rgba(0,0,0,0.3);--shadow-2:0 8px 32px rgba(0,0,0,0.45);
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);color:var(--ink);min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased;
+  background:radial-gradient(ellipse 90% 40% at 50% -6%,rgba(224,98,26,0.28) 0%,transparent 60%),radial-gradient(ellipse 55% 40% at 8% 95%,rgba(176,194,224,0.28) 0%,transparent 68%),var(--paper);
+  background-attachment:fixed}
+[data-theme="dark"] body{background:radial-gradient(ellipse 90% 40% at 50% -6%,rgba(240,128,58,0.14) 0%,transparent 60%),var(--paper);background-attachment:fixed}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:50;height:60px;padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;background:rgba(240,237,230,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+[data-theme="dark"] .nav{background:rgba(14,15,20,0.85)}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit}
+.brand img{width:32px;height:32px;border-radius:8px;object-fit:contain}
+.brand-fb{width:32px;height:32px;border-radius:8px;background:var(--gold);color:#fff;display:none;align-items:center;justify-content:center;font-weight:700;font-style:italic}
+.brand-name{font-size:17px;font-weight:700}
+.brand-name em{font-style:italic;color:var(--gold)}
+.brand-sub{font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:0.12em;text-transform:uppercase}
+.nav-right{display:flex;gap:8px;align-items:center}
+.pill-btn{height:34px;padding:0 13px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--ink2);font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.pill-btn:hover{border-color:var(--gold);color:var(--gold)}
+.pill-btn.primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+.pill-btn.primary:hover{background:var(--navy-h);color:#fff}
+
+.wrap{max-width:100%;margin:0 auto;padding:1.5rem 1.5rem 3rem}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:1.25rem}
+.eyebrow{font-family:var(--mono);font-size:10px;color:var(--gold);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:6px}
+h1{font-size:clamp(24px,4vw,32px);font-weight:700;letter-spacing:-0.02em;line-height:1.15}
+h1 em{font-style:italic;color:var(--gold)}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:var(--card);border:1px solid var(--border)}
+.seg button{border:none;background:transparent;padding:6px 13px;border-radius:999px;font-family:var(--sans);font-size:12px;font-weight:500;color:var(--ink3);cursor:pointer}
+.seg button.on{background:var(--navy);color:#fff}
+
+/* balance hero */
+.hero{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;margin-bottom:12px}
+.bal{background:linear-gradient(135deg,var(--navy),var(--navy-h));color:#fff;border-radius:22px;padding:1.4rem 1.5rem;position:relative;overflow:hidden;box-shadow:var(--shadow-2)}
+.bal::before{content:'';position:absolute;top:0;left:12%;right:12%;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.bal::after{content:'';position:absolute;right:-70px;top:-70px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(224,98,26,0.32),transparent 70%)}
+.bal > *{position:relative;z-index:1}
+.bal-lbl{font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.6)}
+.bal-num{font-size:46px;font-weight:700;line-height:1.05;letter-spacing:-0.02em;margin:6px 0 2px}
+.bal-num small{font-size:16px;font-weight:500;color:rgba(255,255,255,0.65);margin-left:6px}
+.bal-sub{font-size:12.5px;color:rgba(255,255,255,0.72)}
+.bal-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.bal-actions a{background:var(--gold);color:#fff;text-decoration:none;font-size:12.5px;font-weight:600;padding:8px 16px;border-radius:999px}
+.bal-actions a.ghost{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18)}
+.side{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:1.2rem 1.3rem;box-shadow:var(--shadow-1);display:flex;flex-direction:column;gap:12px}
+.side h3{font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+.rate{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:6px 0;border-bottom:1px dashed var(--border)}
+.rate:last-child{border-bottom:none}
+.rate b{font-family:var(--mono);font-size:12px}
+.trial-track{height:8px;border-radius:999px;background:var(--paper2);overflow:hidden;margin-top:6px}
+.trial-fill{height:100%;background:var(--gold);border-radius:999px}
+.muted{font-size:12px;color:var(--ink3)}
+
+/* stat tiles */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+.tiles.seven{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.tile{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:14px 16px;box-shadow:var(--shadow-1)}
+.tile span{font-family:var(--mono);font-size:9.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink3)}
+.tile b{display:block;font-size:26px;font-weight:700;line-height:1.15;margin-top:4px;color:var(--ink)}
+.tile i{font-style:normal;font-size:11.5px;color:var(--ink3)}
+
+/* cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:1.1rem 1.25rem;box-shadow:var(--shadow-1);margin-bottom:12px}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.card-t{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink3)}
+.card-t::before{content:'';width:3px;height:12px;border-radius:2px;background:var(--gold)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hero>*,.two>*,.tiles>*{min-width:0}
+body{overflow-x:clip}
+
+/* chart */
+.chart{position:relative;height:200px;margin:4px 0 0 34px}
+.gridline{position:absolute;left:0;right:0;border-top:1px solid var(--grid)}
+.gridline span{position:absolute;left:-34px;top:-7px;width:28px;text-align:right;font-family:var(--mono);font-size:10px;color:var(--ink3)}
+.bars{position:absolute;inset:0;display:flex;align-items:flex-end;gap:2px}
+.bar-slot{flex:1;height:100%;display:flex;align-items:flex-end;cursor:default;position:relative}
+.bar{width:100%;max-width:28px;margin:0 auto;background:var(--bar);border-radius:4px 4px 0 0;min-height:0}
+.bar-slot:hover .bar,.bar-slot:focus .bar{filter:brightness(1.12)}
+.bar-slot:focus{outline:none}
+.bar-slot:focus-visible{outline:2px solid var(--gold);outline-offset:1px;border-radius:4px}
+.xlabels{display:flex;gap:2px;margin:6px 0 0 34px}
+.xlabels span{flex:1;text-align:center;font-family:var(--mono);font-size:9.5px;color:var(--ink3);white-space:nowrap;overflow:visible}
+.tip{position:absolute;pointer-events:none;background:var(--card-solid);border:1px solid var(--border);box-shadow:var(--shadow-2);border-radius:10px;padding:8px 10px;font-size:12px;min-width:140px;z-index:5;display:none}
+.tip b{display:block;font-size:12px;margin-bottom:4px}
+.tip div{display:flex;justify-content:space-between;gap:12px;color:var(--ink2)}
+.tip div span:last-child{font-family:var(--mono);color:var(--ink)}
+.empty{padding:2rem 1rem;text-align:center;color:var(--ink3);font-size:13px}
+details.tbl summary{cursor:pointer;font-size:12px;color:var(--ink3);margin-top:10px}
+
+/* tables */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-family:var(--mono);font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink3);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+td.num,th.num{text-align:right;font-family:var(--mono);white-space:nowrap}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover td{background:var(--gold-tint)}
+.badge{font-family:var(--mono);font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap}
+.badge.d{background:var(--gold-tint);color:var(--gold)}
+.badge.plus{background:var(--sage-tint);color:var(--sage)}
+.badge.minus{background:var(--rust-tint);color:var(--rust)}
+.badge.low{background:var(--rust-tint);color:var(--rust)}
+.t-title{max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.who{display:flex;flex-direction:column}
+.who small{color:var(--ink3);font-size:11.5px}
+.search{height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--border);background:var(--card-solid);color:var(--ink);font-family:var(--sans);font-size:12.5px;min-width:220px}
+.search:focus{outline:none;border-color:var(--gold)}
+.back{margin-bottom:12px}
+.viewing{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--gold-tint);border:1px solid var(--gold-tint-strong);border-radius:14px;padding:10px 14px;margin-bottom:12px;font-size:13px}
+.state{padding:4rem 1rem;text-align:center;color:var(--ink3)}
+.spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--gold-tint-strong);border-top-color:var(--gold);animation:spin .9s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:860px){
+  .hero,.two{grid-template-columns:1fr}
+  .tiles{grid-template-columns:repeat(2,1fr)}
+  .brand-sub,.hide-sm{display:none}
+  .search{min-width:0;width:100%}
+  .controls{width:100%}
+  .seg{max-width:100%;overflow-x:auto}
+  .seg button{padding:6px 11px;white-space:nowrap}
+  .bal-num{font-size:38px}
+  td.muted{white-space:nowrap}
+}
+
+/* sidebar (same as other app pages) */
+.app-layout{display:flex;min-height:calc(100vh - 60px)}
+.sidebar{width:56px;flex-shrink:0;background:rgba(240,237,230,0.76);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:60px;height:calc(100vh - 60px);overflow:hidden;transition:width .22s cubic-bezier(.4,0,.2,1);z-index:40}
+[data-theme="dark"] .sidebar{background:rgba(18,19,26,0.76)}
+.sidebar:hover{width:200px}
+.sidebar-section{padding:10px 6px 4px}
+.sidebar-nav-btn{display:flex;align-items:center;padding:5px 6px;margin:1px 2px;border-radius:8px;text-decoration:none;color:var(--ink3);width:calc(100% - 4px);white-space:nowrap;overflow:hidden;position:relative;transition:background .15s,color .15s}
+.sidebar-nav-btn:hover{background:var(--gold-tint);color:var(--gold)}
+.sidebar-nav-btn.active{color:var(--gold)}
+.sidebar-nav-btn.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;border-radius:0 3px 3px 0;background:linear-gradient(135deg,#E0621A,#F08030)}
+.sidebar-nav-btn .nav-icon{width:44px;height:38px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sidebar-nav-btn .nav-label{font-size:13px;font-weight:500;opacity:0;transition:opacity .12s .06s}
+.sidebar:hover .nav-label{opacity:1}
+.sidebar-main{flex:1;min-width:0}
+.bottom-nav{display:none}
+@media(max-width:767px){
+  .sidebar{display:none!important}.app-layout{display:block}
+  .bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:60;background:rgba(240,237,230,0.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--border);height:68px;padding-bottom:env(safe-area-inset-bottom,0px)}
+  [data-theme="dark"] .bottom-nav{background:rgba(14,15,20,0.97)}
+  .bottom-nav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:var(--ink3);font-size:9px;font-family:var(--mono);letter-spacing:.06em}
+  .bottom-nav a.active{color:var(--gold)}
+  .bottom-nav a svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .wrap{padding-bottom:90px}
+}
+</style>
+<link rel="stylesheet" href="/css/theme-dark.css">
+<link rel="stylesheet" href="/css/aix-uniform.css">
+</head>
+<body>
+<nav class="nav">
+  <a class="brand" href="/">
+    <img src="/aix-logo.png" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <span class="brand-fb">A</span>
+    <span><span class="brand-name">AiX <em>Track</em></span><br><span class="brand-sub">Usage &amp; Balance</span></span>
+  </a>
+  <div class="nav-right">
+    <a class="pill-btn hide-sm" href="/">＋ New MOC</a>
+    <a class="pill-btn hide-sm" href="/history">Records</a>
+    <a class="pill-btn primary" href="/pricing">Buy credits</a>
+    <button class="pill-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">◐</button>
+  </div>
+</nav>
+
+<div class="app-layout">
+<aside class="sidebar">
+  <div class="sidebar-section" style="padding-top:12px">
+    <a href="/" class="sidebar-nav-btn" title="New MOC"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span><span class="nav-label">New MOC</span></a>
+    <a href="/history" class="sidebar-nav-btn" title="Records"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span><span class="nav-label">Records</span></a>
+    <a href="/actions" class="sidebar-nav-btn" title="Action Items"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span class="nav-label">Action Items</span></a>
+    <a href="/pricing" class="sidebar-nav-btn" title="Credits"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><span class="nav-label">Credits</span></a>
+    <a href="/logging" class="sidebar-nav-btn active" title="Usage"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="nav-label">Usage</span></a>
+    <a href="/profile.html" class="sidebar-nav-btn" title="Profile"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="nav-label">Profile</span></a>
+  </div>
+</aside>
+<div class="sidebar-main">
+<div class="wrap">
+  <div class="head">
+    <div>
+      <div class="eyebrow" id="eyebrow">— Usage &amp; balance</div>
+      <h1 id="page-title">Your <em>usage</em></h1>
+    </div>
+    <div class="controls">
+      <div class="seg" id="view-seg" style="display:none" role="tablist" aria-label="View">
+        <button class="on" data-view="me" role="tab">My usage</button>
+        <button data-view="all" role="tab">All customers</button>
+      </div>
+      <div class="seg" id="period-seg" role="group" aria-label="Period">
+        <button data-days="7">7 days</button>
+        <button data-days="30" class="on">30 days</button>
+        <button data-days="90">90 days</button>
+      </div>
+    </div>
+  </div>
+  <div id="root"><div class="state"><div class="spinner"></div>Loading your usage…</div></div>
+</div>
+</div><!-- /sidebar-main -->
+</div><!-- /app-layout -->
+<nav class="bottom-nav">
+  <a href="/"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>New MOC</a>
+  <a href="/history"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Records</a>
+  <a href="/actions"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Actions</a>
+  <a href="/logging" class="active"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Usage</a>
+  <a href="/profile.html"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</a>
+</nav>
+<div class="tip" id="tip" role="tooltip"></div>
+
+<script>
+const state = { days: 30, view: 'me', isAdmin: false, userEmail: null, search: '' };
+const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf = n => Number(n || 0).toLocaleString('en-IN');
+const mins = s => Math.round((Number(s) || 0) / 60);
+const fmtDur = s => { s = Math.round(Number(s) || 0); const m = Math.floor(s / 60); return m ? `${m}m ${s % 60}s` : `${s}s`; };
+const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+const fmtDT = d => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+
+async function api(url) {
+  const r = await fetch(url, { credentials: 'same-origin' });
+  if (r.status === 401) { location.href = '/login.html'; throw new Error('Please sign in.'); }
+  const d = await r.json().catch(() => ({}));
+  if (r.status === 404 && String(d.error || '').startsWith('Route not found'))
+    throw new Error('The usage service is not available yet. The server needs to be updated and restarted — please contact the administrator.');
+  if (!r.ok) throw new Error(d.error || 'Could not load data.');
+  return d;
+}
+
+function setLoading(msg) { document.getElementById('root').innerHTML = `<div class="state"><div class="spinner"></div>${esc(msg)}</div>`; }
+function setError(msg) { document.getElementById('root').innerHTML = `<div class="state">${esc(msg)}<br><button class="pill-btn" style="margin-top:12px" onclick="load()">Try again</button></div>`; }
+
+async function load() {
+  try {
+    if (state.view === 'all') {
+      setLoading('Loading all customers…');
+      renderAll(await api(`/api/usage/admin/users?days=${state.days}`));
+    } else if (state.userEmail) {
+      setLoading('Loading customer usage…');
+      renderUser(await api(`/api/usage/admin/user?email=${encodeURIComponent(state.userEmail)}&days=${state.days}`), true);
+    } else {
+      setLoading('Loading your usage…');
+      const d = await api(`/api/usage/me?days=${state.days}`);
+      if (d.is_usage_admin && !state.isAdmin) { state.isAdmin = true; document.getElementById('view-seg').style.display = 'inline-flex'; }
+      renderUser(d, false);
+    }
+  } catch (e) { setError(e.message); }
+}
+
+/* ── Daily bar chart: one series (credits used per day), hover tooltip ── */
+function fillDays(daily, days) {
+  const map = Object.fromEntries((daily || []).map(r => [r.day, r]));
+  const out = [], now = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 86400000);
+    const key = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(d);
+    out.push(map[key] || { day: key, meetings: 0, seconds: 0, credits: 0 });
+  }
+  return out;
+}
+function niceMax(v) { if (v <= 4) return 4; const p = Math.pow(10, Math.floor(Math.log10(v))); const n = v / p; return (n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; }
+function chartHTML(daily, days, metric) {
+  const rows = fillDays(daily, days);
+  const val = r => metric === 'minutes' ? mins(r.seconds) : Number(r.credits || 0);
+  const total = rows.reduce((a, r) => a + val(r), 0);
+  if (!total) return `<div class="empty">No ${metric === 'minutes' ? 'minutes processed' : 'credits used'} in the last ${days} days.</div>`;
+  const max = niceMax(Math.max(...rows.map(val)));
+  const grid = [1, 0.5, 0].map(f => `<div class="gridline" style="top:${(1 - f) * 100}%"><span>${nf(Math.round(max * f))}</span></div>`).join('');
+  const step = Math.ceil(rows.length / (window.innerWidth < 700 ? 5 : 8));
+  const label = k => new Date(k + 'T00:00:00').toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+  const bars = rows.map((r, i) => `<div class="bar-slot" tabindex="0" data-i="${i}" aria-label="${label(r.day)}: ${val(r)} ${metric}">
+      <div class="bar" style="height:${(val(r) / max) * 100}%"></div></div>`).join('');
+  const lastRegular = Math.floor((rows.length - 1) / step) * step;
+  const showLabel = i => i % step === 0 || (i === rows.length - 1 && i - lastRegular >= Math.ceil(step / 2));
+  const xl = rows.map((r, i) => `<span>${showLabel(i) ? label(r.day) : ''}</span>`).join('');
+  const table = `<details class="tbl"><summary>View as table</summary><div class="tw"><table><thead><tr><th>Date</th><th class="num">Conversations</th><th class="num">Minutes</th><th class="num">Credits</th></tr></thead><tbody>${
+    rows.filter(r => r.meetings).reverse().map(r => `<tr><td>${label(r.day)}</td><td class="num">${r.meetings}</td><td class="num">${mins(r.seconds)}</td><td class="num">${nf(r.credits)}</td></tr>`).join('')
+  }</tbody></table></div></details>`;
+  setTimeout(() => bindChart(rows), 0);
+  return `<div class="chart" id="chart">${grid}<div class="bars">${bars}</div></div><div class="xlabels">${xl}</div>${table}`;
+}
+function bindChart(rows) {
+  const tip = document.getElementById('tip');
+  document.querySelectorAll('#chart .bar-slot').forEach(el => {
+    const show = () => {
+      const r = rows[+el.dataset.i];
+      tip.innerHTML = `<b>${new Date(r.day + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short' })}</b>
+        <div><span>Conversations</span><span>${r.meetings}</span></div>
+        <div><span>Minutes</span><span>${mins(r.seconds)}</span></div>
+        <div><span>Credits used</span><span>${nf(r.credits)}</span></div>`;
+      tip.style.display = 'block';
+      const b = el.getBoundingClientRect(), t = tip.getBoundingClientRect();
+      let left = b.left + b.width / 2 - t.width / 2 + scrollX;
+      left = Math.max(8 + scrollX, Math.min(left, scrollX + innerWidth - t.width - 8));
+      tip.style.left = left + 'px';
+      tip.style.top = (b.top + scrollY - t.height - 8) + 'px';
+    };
+    el.addEventListener('mouseenter', show); el.addEventListener('focus', show);
+    el.addEventListener('mouseleave', () => tip.style.display = 'none'); el.addEventListener('blur', () => tip.style.display = 'none');
+  });
+}
+
+/* ── Single customer view (own usage, or admin viewing a customer) ── */
+function renderUser(d, viewingOther) {
+  const u = d.user, p = d.period, a = d.all_time, ft = d.free_trial;
+  document.getElementById('page-title').innerHTML = viewingOther ? `${esc(u.name || u.email)}` : 'Your <em>usage</em>';
+  document.getElementById('eyebrow').textContent = viewingOther ? '— Customer usage' : '— Usage & balance';
+  const totalCr = (u.credits || 0) + (ft ? ft.remaining_credits || 0 : 0);
+  const trialHTML = ft ? `
+    <div>
+      <div class="rate" style="border:none;padding:0"><span>Free trial credits</span><b>${ft.remaining_credits} of ${ft.limit_credits} left</b></div>
+      <div class="trial-track"><div class="trial-fill" style="width:${Math.min(100, ((ft.limit_credits - ft.remaining_credits) / ft.limit_credits) * 100)}%"></div></div>
+      <div class="muted" style="margin-top:6px">${ft.remaining_credits > 0 ? 'Free trial credits are used first (diarization uses 2 per minute), then paid credits.' : 'Free trial used — conversations now use paid credits.'}</div>
+    </div>` : '';
+  document.getElementById('root').innerHTML = `
+    ${viewingOther ? `<div class="viewing"><button class="pill-btn" onclick="backToAll()">← All customers</button><span>${esc(u.email)} · member since ${fmtDate(u.member_since)} · last login ${fmtDT(u.last_login)}</span></div>` : ''}
+    <div class="hero">
+      <div class="bal">
+        <div class="bal-lbl">Credit balance</div>
+        <div class="bal-num">${nf(totalCr)}<small>credits</small></div>
+        <div class="bal-sub">${ft && ft.remaining_credits ? `Includes ${nf(ft.remaining_credits)} free trial credits · ` : ''}≈ ${nf(Math.floor(totalCr / d.rates.diarization_per_min))} min with diarization · ${nf(Math.floor(totalCr / d.rates.standard_per_min))} min standard</div>
+        ${viewingOther ? '' : `<div class="bal-actions"><a href="/pricing">Buy credits</a><a class="ghost" href="/">Start a new MOC</a></div>`}
+      </div>
+      <div class="side">
+        <h3>How credits work</h3>
+        <div class="rate"><span>Generate MOC</span><b>${d.rates.standard_per_min} cr / min</b></div>
+        <div class="rate"><span>Generate MOC + Diarization</span><b>${d.rates.diarization_per_min} cr / min</b></div>
+        <div class="rate"><span>Credits used (all time)</span><b>${nf(u.credits_used)}</b></div>
+        ${trialHTML}
+      </div>
+    </div>
+    ${viewingOther ? '' : '<div id="referral-card"></div>'}
+    <div class="tiles">
+      <div class="tile"><span>Conversations</span><b>${nf(p.meetings)}</b><i>${nf(a.meetings)} all time</i></div>
+      <div class="tile"><span>Minutes processed</span><b>${nf(mins(p.seconds))}</b><i>${nf(mins(a.seconds))} all time</i></div>
+      <div class="tile"><span>Credits used</span><b>${nf(p.credits)}</b><i>${nf(a.credits)} all time</i></div>
+      <div class="tile"><span>With diarization</span><b>${nf(p.diarization_meetings)}</b><i>of ${nf(p.meetings)} conversations</i></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="card-t">Credits used per day · last ${d.days} days</div></div>
+      ${chartHTML(d.daily, Math.min(d.days, 90), 'credits')}
+    </div>
+    <div class="two">
+      <div class="card">
+        <div class="card-h"><div class="card-t">Recent conversations</div></div>
+        ${d.sessions.length ? `<div class="tw"><table><thead><tr><th>Conversation</th><th>Date</th><th class="num">Length</th><th class="num">Credits</th></tr></thead><tbody>${
+          d.sessions.map(s => `<tr><td><div class="t-title" title="${esc(s.meeting_title)}">${esc(s.meeting_title || 'Untitled')}</div></td><td class="muted">${fmtDate(s.created_at)}</td><td class="num">${fmtDur(s.duration_seconds)}</td><td class="num">${Number(s.credits_deducted) > 0 ? nf(s.credits_deducted) : '<span class="muted">free</span>'} ${s.with_diarization ? '<span class="badge d" title="Speaker diarization">D</span>' : ''}</td></tr>`).join('')
+        }</tbody></table></div>` : '<div class="empty">No conversations yet.</div>'}
+      </div>
+      <div class="card">
+        <div class="card-h"><div class="card-t">Credit history</div></div>
+        ${d.ledger.length ? `<div class="tw"><table><thead><tr><th>When</th><th>Detail</th><th class="num">Change</th><th class="num">Balance</th></tr></thead><tbody>${
+          d.ledger.map(l => { const up = Number(l.credits_delta) > 0; return `<tr><td class="muted">${fmtDT(l.created_at)}</td><td>${esc(prettyType(l))}</td><td class="num"><span class="badge ${up ? 'plus' : 'minus'}">${up ? '+' : ''}${nf(l.credits_delta)}</span></td><td class="num">${nf(l.balance_after)}</td></tr>`; }).join('')
+        }</tbody></table></div>` : '<div class="empty">No credit transactions yet.</div>'}
+      </div>
+    </div>
+    ${d.orders.length ? `<div class="card"><div class="card-h"><div class="card-t">Purchases</div></div><div class="tw"><table><thead><tr><th>Date</th><th>Plan</th><th class="num">Credits</th><th class="num">Amount</th></tr></thead><tbody>${
+      d.orders.map(o => `<tr><td class="muted">${fmtDate(o.paid_at || o.created_at)}</td><td style="text-transform:capitalize">${esc(o.plan || '—')}</td><td class="num">${nf(o.credits)}</td><td class="num">₹${nf(o.amount_inr)}</td></tr>`).join('')
+    }</tbody></table></div></div>` : ''}
+    <div class="card"><div class="card-h"><div class="card-t">Recordings · saved on server</div><span class="muted">Live recordings are uploaded every few seconds as a backup</span></div>${recordingsTable(d.recordings, false)}</div>`;
+  if (!viewingOther && window.renderReferral) window.renderReferral();
+}
+/* ── Server recordings ── */
+const REC_STATUS = { recording: ['Recording / interrupted', 'd'], stopped: ['Not processed yet', 'd'], used: ['MOC created', 'plus'], failed: ['Failed', 'minus'] };
+const REC_REASON = { user: 'Stopped by user', credit_limit: 'Auto-stopped: balance used up', mic_disconnected: 'Microphone disconnected' };
+const fmtSize = b => { b = Number(b) || 0; return b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.round(b / 1024) + ' KB'; };
+function recordingsTable(rows, showUser) {
+  if (!rows || !rows.length) return '<div class="empty">No recordings saved on the server yet.</div>';
+  return `<div class="tw"><table><thead><tr><th>When</th>${showUser ? '<th>Customer</th>' : ''}<th>Status</th><th class="num">Length</th><th class="num">Size</th><th>Details</th><th></th></tr></thead><tbody>${
+    rows.map(r => { const st = REC_STATUS[r.status] || [r.status, 'd'];
+      const detail = [r.stop_reason ? (REC_REASON[r.stop_reason] || r.stop_reason) : '', r.session_id ? `MOC #${r.session_id}` : '', r.error ? `<span style="color:var(--rust)">${esc(r.error)}</span>` : ''].filter(Boolean).join(' · ');
+      return `<tr><td class="muted">${fmtDT(r.created_at)}</td>${showUser ? `<td>${esc(r.user_email)}</td>` : ''}
+        <td><span class="badge ${st[1]}">${esc(st[0])}</span></td><td class="num">${fmtDur(r.duration_seconds)}</td><td class="num">${fmtSize(r.bytes)}</td>
+        <td style="font-size:12px;max-width:360px">${detail || '—'}</td>
+        <td>${Number(r.bytes) > 0 ? `<a class="pill-btn" style="height:28px" href="/api/recordings/${encodeURIComponent(r.id)}/file" target="_blank" rel="noopener">▶ Play</a>` : ''}</td></tr>`; }).join('')
+  }</tbody></table></div>`;
+}
+
+function prettyType(l) {
+  const t = String(l.type || '').toLowerCase();
+  if (t === 'purchase') return l.plan ? `Top-up · ${l.plan}` : 'Top-up';
+  if (t === 'manual') return l.note ? `Adjusted by admin · ${l.note}` : 'Adjusted by admin';
+  if (t === 'bonus') return '🎁 ' + (l.note || 'Bonus credits');
+  if (t === 'usage') return String(l.note || 'Conversation processed').replace(/^Session #(\d+):\s*/, 'Conversation #$1 · ').replace(/\s*chunked$/, '');
+  return l.note || l.type || '—';
+}
+
+/* ── All customers (usage admins only) ── */
+let allData = null;
+function renderAll(d) {
+  allData = d;
+  document.getElementById('page-title').innerHTML = 'All <em>customers</em>';
+  document.getElementById('eyebrow').textContent = '— Admin · usage & balance';
+  const t = d.totals;
+  document.getElementById('root').innerHTML = `
+    <div class="tiles seven">
+      <div class="tile"><span>Customers</span><b>${nf(t.users)}</b><i>${nf(t.active_users)} active in period</i></div>
+      <div class="tile"><span>Conversations</span><b>${nf(t.meetings)}</b><i>last ${d.days} days</i></div>
+      <div class="tile"><span>Minutes</span><b>${nf(mins(t.seconds))}</b><i>last ${d.days} days</i></div>
+      <div class="tile"><span>Credits used</span><b>${nf(t.period_credits)}</b><i>last ${d.days} days</i></div>
+      <div class="tile"><span>Balances held</span><b>${nf(t.balance_total)}</b><i>credits across customers</i></div>
+      <div class="tile"><span>Revenue</span><b>₹${nf(Math.round(t.paid_inr))}</b><i>all paid orders</i></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="card-t">Credits used per day · all customers · last ${d.days} days</div></div>
+      ${chartHTML(d.daily, Math.min(d.days, 90), 'credits')}
+    </div>
+    <div class="card">
+      <div class="card-h">
+        <div class="card-t">Customers</div>
+        <input class="search" id="search" type="search" placeholder="Search name or email" value="${esc(state.search)}" aria-label="Search customers">
+      </div>
+      <div class="tw" id="users-table"></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="card-t">Recent recordings · all customers</div><span class="muted">${(d.recordings || []).filter(r => r.status === 'failed').length} failed in period</span></div>
+      ${recordingsTable(d.recordings, true)}
+    </div>`;
+  document.getElementById('search').addEventListener('input', e => { state.search = e.target.value; renderUsersTable(); });
+  renderUsersTable();
+}
+function renderUsersTable() {
+  const q = state.search.trim().toLowerCase();
+  const rows = allData.users.filter(u => !q || (u.email || '').toLowerCase().includes(q) || (u.name || '').toLowerCase().includes(q));
+  document.getElementById('users-table').innerHTML = rows.length ? `<table><thead><tr>
+      <th>Customer</th><th class="num">Balance</th><th class="num">Used (all time)</th><th class="num">Conversations</th><th class="num">Minutes</th><th class="num">Credits (period)</th><th class="num">Paid</th><th>Last conversation</th><th>Last login</th></tr></thead><tbody>${
+    rows.map(u => `<tr class="click" tabindex="0" data-email="${esc(u.email)}">
+      <td><div class="who"><span>${esc(u.name || '—')}${['admin','developer'].includes(u.role) ? ' <span class="badge d">' + esc(u.role) + '</span>' : ''}</span><small>${esc(u.email)}</small></div></td>
+      <td class="num">${nf(u.credits)}${Number(u.credits) < 100 && !['admin','developer'].includes(u.role) ? ' <span class="badge low">low</span>' : ''}</td>
+      <td class="num">${nf(u.credits_used)}</td>
+      <td class="num">${nf(u.meetings)}</td>
+      <td class="num">${nf(mins(u.seconds))}</td>
+      <td class="num">${nf(u.period_credits)}</td>
+      <td class="num">${u.paid_inr ? '₹' + nf(Math.round(u.paid_inr)) : '—'}</td>
+      <td class="muted">${u.last_meeting ? fmtDT(u.last_meeting) : '—'}</td>
+      <td class="muted">${u.last_login ? fmtDT(u.last_login) : 'Never'}</td></tr>`).join('')
+  }</tbody></table>` : '<div class="empty">No customers match your search.</div>';
+  document.querySelectorAll('#users-table tr.click').forEach(tr => {
+    const open = () => { state.userEmail = tr.dataset.email; state.view = 'user'; load(); scrollTo({ top: 0 }); };
+    tr.addEventListener('click', open);
+    tr.addEventListener('keydown', e => { if (e.key === 'Enter') open(); });
+  });
+}
+function backToAll() { state.userEmail = null; state.view = 'all'; setSeg('view-seg', 'all'); load(); }
+
+/* ── Controls ── */
+function setSeg(id, value) { document.querySelectorAll(`#${id} button`).forEach(b => b.classList.toggle('on', (b.dataset.view || b.dataset.days) == value)); }
+document.querySelectorAll('#period-seg button').forEach(b => b.addEventListener('click', () => { state.days = +b.dataset.days; setSeg('period-seg', state.days); load(); }));
+document.querySelectorAll('#view-seg button').forEach(b => b.addEventListener('click', () => {
+  state.view = b.dataset.view; state.userEmail = null; setSeg('view-seg', state.view); load();
+}));
+addEventListener('scroll', () => { document.getElementById('tip').style.display = 'none'; }, { passive: true });
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<script src="/js/theme.js"></script>
+<title>Usage Dashboard · AiX Track</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0F1524;--ink2:#4A5468;--ink3:#8A93A8;--ink4:#B8BFCC;
+  --paper:#FAF8F3;--paper2:#F4F0E6;--card:#FFFFFF;
+  --border:#E8E4D8;--border-strong:#D4CFC0;
+  --navy:#0F1B3D;--navy-h:#1F2D57;
+  --gold:#B8912A;--gold-h:#C89A3D;
+  --gold-tint:rgba(184,145,42,0.10);--gold-tint-strong:rgba(184,145,42,0.22);
+  --sage:#4A7C59;--sage-tint:rgba(74,124,89,0.10);
+  --rust:#A0472E;--rust-tint:rgba(160,71,46,0.10);
+  --plum:#5C3D5C;--plum-tint:rgba(92,61,92,0.10);
+  --shadow-1:0 1px 2px rgba(15,21,36,0.04),0 2px 6px rgba(15,21,36,0.03);
+  --shadow-2:0 4px 20px rgba(15,21,36,0.06),0 12px 48px rgba(15,21,36,0.06);
+  --serif:'Roboto',Georgia,serif;
+  --sans:'Roboto',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'Roboto Mono',ui-monospace,monospace;
+  --c-sarvam:#7C3AED;--c-claude:#B8912A;--c-openai:#10B981;--c-aws:#F59E0B;
+}
+[data-theme="dark"]{
+  --ink:#F5F1E6;--ink2:#B8B0A0;--ink3:#6B6455;--ink4:#3D3830;
+  --paper:#0C0D10;--paper2:#141519;--card:#161820;
+  --border:#25272F;--border-strong:#333540;
+  --navy:#4A5B8C;--navy-h:#6274AA;
+  --gold:#D4A94A;--gold-tint:rgba(212,169,74,0.10);--gold-tint-strong:rgba(212,169,74,0.20);
+  --sage:#7BA88C;--sage-tint:rgba(123,168,140,0.10);
+  --rust:#D07358;--rust-tint:rgba(208,115,88,0.10);
+  --shadow-2:0 4px 20px rgba(0,0,0,0.4);
+}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;transition:background 0.3s,color 0.3s}
+
+/* ── NAV ── */
+.nav{background:var(--card);border-bottom:1px solid var(--border);height:60px;padding:0 1.75rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-brand{display:flex;align-items:center;gap:12px}
+.nav-mark{width:32px;height:32px;background:var(--navy);color:var(--gold);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-size:20px;padding-bottom:3px}
+.nav-title{font-family:var(--serif);font-size:20px;letter-spacing:-0.01em}
+.nav-title em{font-style:italic;color:var(--gold)}
+.nav-sub{font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:0.14em;text-transform:uppercase;margin-top:1px}
+.nav-right{display:flex;align-items:center;gap:8px}
+.btn-nav{padding:7px 12px;font-size:12px;font-weight:500;background:var(--card);color:var(--ink2);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all 0.15s}
+.btn-nav:hover{border-color:var(--gold);color:var(--gold)}
+
+.page{max-width:1200px;margin:0 auto;padding:2rem 1rem 5rem}
+
+/* ── Header ── */
+.page-eyebrow{font-family:var(--mono);font-size:10px;color:var(--gold);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:6px}
+.page-title{font-family:var(--serif);font-size:34px;line-height:1.1;letter-spacing:-0.01em;margin-bottom:0.25rem}
+.page-title em{font-style:italic;color:var(--gold)}
+.page-subtitle{font-family:var(--mono);font-size:11px;color:var(--ink3);letter-spacing:0.06em;margin-bottom:1.75rem}
+
+/* ── Top stat ledger ── */
+.stat-ledger{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--card);margin-bottom:1.75rem;box-shadow:var(--shadow-1)}
+.stat-card{padding:16px 18px;border-right:1px solid var(--border);transition:background 0.15s}
+.stat-card:last-child{border-right:none}
+.stat-card:hover{background:var(--gold-tint)}
+.stat-lbl{font-family:var(--mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:var(--ink3);margin-bottom:8px}
+.stat-val{font-family:var(--serif);font-size:28px;color:var(--ink);line-height:1;letter-spacing:-0.02em}
+.stat-val em{font-style:italic;color:var(--gold)}
+.stat-sub{font-size:11px;color:var(--ink3);margin-top:4px;font-family:var(--mono)}
+
+/* ── Action bar ── */
+.action-bar{display:flex;align-items:center;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap}
+.period-group{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.period-btn{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:0.06em;padding:7px 14px;border:none;background:var(--card);color:var(--ink3);cursor:pointer;transition:all 0.15s;border-right:1px solid var(--border)}
+.period-btn:last-child{border-right:none}
+.period-btn.active{background:var(--navy);color:var(--gold)}
+.period-btn:not(.active):hover{background:var(--paper2);color:var(--ink)}
+.btn-email{padding:8px 16px;font-size:12px;font-weight:600;background:var(--navy);color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:background 0.15s}
+.btn-email:hover{background:var(--navy-h)}
+.btn-email.secondary{background:var(--card);color:var(--ink2);border:1px solid var(--border)}
+.btn-email.secondary:hover{border-color:var(--gold);color:var(--gold)}
+.refresh-btn{padding:8px 12px;font-size:13px;background:var(--card);border:1px solid var(--border);border-radius:7px;cursor:pointer;color:var(--ink3);transition:all 0.15s}
+.refresh-btn:hover{border-color:var(--gold);color:var(--gold)}
+.toast{font-family:var(--mono);font-size:11px;padding:6px 14px;border-radius:6px;display:none;border:1px solid}
+
+/* ── Section ── */
+.section{margin-bottom:2rem}
+.section-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-title{font-family:var(--mono);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:var(--gold)}
+.section-meta{font-family:var(--mono);font-size:10px;color:var(--ink3)}
+
+/* ── Service cards ── */
+.service-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:1.75rem}
+.svc-card.sarvam_diarization::before{background:linear-gradient(90deg,#5B21B6,#8B5CF6)}
+.svc-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;position:relative;overflow:hidden;transition:box-shadow 0.15s}
+.svc-card:hover{box-shadow:var(--shadow-2)}
+.svc-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px}
+.svc-card.aws::before{background:linear-gradient(90deg,#F59E0B,#FBBF24)}
+.svc-card.sarvam::before{background:linear-gradient(90deg,#7C3AED,#A855F7)}
+.svc-card.claude::before{background:linear-gradient(90deg,#B8912A,#D4A94A)}
+.svc-card.openai::before{background:linear-gradient(90deg,#10B981,#34D399)}
+.svc-icon{font-size:22px;margin-bottom:10px}
+.svc-name{font-family:var(--mono);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:var(--ink3);margin-bottom:8px}
+.svc-cost{font-family:var(--serif);font-size:26px;color:var(--ink);letter-spacing:-0.02em;margin-bottom:2px}
+.svc-inr{font-family:var(--mono);font-size:12px;color:var(--ink3);margin-bottom:10px}
+.svc-chips{display:flex;gap:5px;flex-wrap:wrap}
+.svc-chip{font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:3px;background:var(--paper2);color:var(--ink2);white-space:nowrap}
+.svc-last{font-family:var(--mono);font-size:9px;color:var(--ink4);margin-top:8px}
+
+/* ── Mini bar chart ── */
+.chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:1.75rem;box-shadow:var(--shadow-1)}
+.chart-title{font-family:var(--mono);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:var(--gold);margin-bottom:16px}
+.bar-chart{display:flex;align-items:flex-end;gap:4px;height:120px;padding-bottom:24px;position:relative;overflow-x:auto}
+.bar-chart::after{content:"";position:absolute;bottom:24px;left:0;right:0;height:1px;background:var(--border)}
+.bar-col{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:36px;flex:1}
+.bar-fill{width:100%;border-radius:3px 3px 0 0;transition:height 0.4s ease;cursor:pointer;position:relative;min-height:2px}
+.bar-fill:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--navy);color:var(--gold);font-family:var(--mono);font-size:9px;padding:3px 7px;border-radius:4px;white-space:nowrap;z-index:10}
+.bar-lbl{font-family:var(--mono);font-size:8px;color:var(--ink3);text-align:center;position:absolute;bottom:6px;white-space:nowrap}
+.bar-col-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:36px;position:relative;height:144px}
+
+/* ── Table ── */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-1)}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--paper2);padding:10px 14px;text-align:left;font-family:var(--mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:var(--ink3);border-bottom:1px solid var(--border);white-space:nowrap}
+thead th:first-child{padding-left:18px}
+tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s;cursor:default}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--gold-tint)}
+tbody td{padding:11px 14px;font-size:13px;color:var(--ink);vertical-align:middle}
+tbody td:first-child{padding-left:18px}
+.mono{font-family:var(--mono);font-size:11px}
+.cost-cell{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--gold)}
+.inr-cell{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+.badge{font-family:var(--mono);font-size:9px;font-weight:600;padding:2px 7px;border-radius:3px;text-transform:uppercase;letter-spacing:0.08em;white-space:nowrap}
+.badge.sarvam{background:rgba(124,58,237,0.12);color:#7C3AED}
+.badge.claude{background:var(--gold-tint);color:var(--gold)}
+.badge.openai{background:rgba(16,185,129,0.12);color:#10B981}
+.badge.aws{background:rgba(245,158,11,0.12);color:#D97706}
+.no-data{padding:2.5rem;text-align:center;color:var(--ink3);font-family:var(--mono);font-size:12px;letter-spacing:0.06em}
+
+/* ── Per-process table expand ── */
+.process-row{cursor:pointer}
+.process-row td:first-child{font-family:var(--serif);font-size:15px;letter-spacing:-0.01em}
+.expand-row{display:none}
+.expand-row.open{display:table-row}
+.expand-inner{padding:0 18px 14px 18px;background:var(--paper2)}
+.breakdown-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.breakdown-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.breakdown-svc{font-family:var(--mono);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px}
+.breakdown-svc.sarvam{color:#7C3AED}
+.breakdown-svc.claude{color:var(--gold)}
+.breakdown-svc.openai{color:#10B981}
+.breakdown-svc.aws{color:#D97706}
+.breakdown-cost{font-family:var(--serif);font-size:18px;color:var(--ink);letter-spacing:-0.01em}
+.breakdown-meta{font-family:var(--mono);font-size:9px;color:var(--ink3);margin-top:2px}
+
+/* ── User activity ── */
+.user-activity-row{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);transition:background 0.1s}
+.user-activity-row:last-child{border-bottom:none}
+.user-activity-row:hover{background:var(--gold-tint)}
+.user-avatar{width:36px;height:36px;border-radius:8px;background:var(--navy);color:var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:700;flex-shrink:0}
+.user-name{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px}
+.user-meta{font-family:var(--mono);font-size:10px;color:var(--ink3)}
+.user-bars{flex:1;display:flex;gap:3px;align-items:center}
+.user-bar-seg{height:6px;border-radius:1px}
+.user-bar-seg.sarvam{background:#7C3AED}
+.user-bar-seg.claude{background:var(--gold)}
+.user-bar-seg.openai{background:#10B981}
+.user-cost{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--gold);white-space:nowrap;min-width:56px;text-align:right}
+.user-inr{font-family:var(--mono);font-size:10px;color:var(--ink3);white-space:nowrap;text-align:right}
+
+/* ── Pricing note ── */
+.pricing-note{background:var(--gold-tint);border:1px solid var(--gold-tint-strong);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:10px;color:var(--ink2);letter-spacing:0.03em;margin-bottom:1.5rem;line-height:1.6}
+.pricing-note strong{color:var(--gold)}
+
+/* ── Loading ── */
+.loading-spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.skeleton{background:linear-gradient(90deg,var(--paper2) 25%,var(--border) 50%,var(--paper2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:4px;color:transparent}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── Two-col layout ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1.75rem}
+
+@media(max-width:900px){
+  .stat-ledger{grid-template-columns:repeat(3,1fr)}
+  .stat-card:nth-child(3){border-right:none}
+  .stat-card:nth-child(n+4){border-top:1px solid var(--border)}
+  .service-row{grid-template-columns:repeat(2,1fr)}
+  .two-col{grid-template-columns:1fr}
+  .breakdown-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:600px){
+  .nav{padding:0 1rem}
+  .nav-sub{display:none}
+  .page{padding:1rem 0.75rem 3rem}
+  .stat-ledger{grid-template-columns:repeat(2,1fr)}
+  .stat-card:nth-child(2n){border-right:none}
+  .stat-card:nth-child(n+3){border-top:1px solid var(--border)}
+  .stat-card:nth-child(3){border-right:1px solid var(--border)}
+  .service-row{grid-template-columns:1fr}
+  .breakdown-grid{grid-template-columns:1fr}
+  .action-bar{gap:6px}
+  .period-btn{padding:6px 10px;font-size:10px}
+}
+/* ── Provider balances ── */
+.bal-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-bottom:1.75rem}
+.bal-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden}
+.bal-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--sage)}
+.bal-card.low{border-color:var(--rust);box-shadow:0 0 0 3px var(--rust-tint)}
+.bal-card.low::before{background:var(--rust)}
+.bal-card.unset::before{background:var(--border)}
+.bal-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.bal-name{font-size:13px;font-weight:600;color:var(--ink)}
+.bal-badge{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:3px 8px;border-radius:999px}
+.bal-badge.ok{background:var(--sage-tint);color:var(--sage)}
+.bal-badge.low{background:var(--rust-tint);color:var(--rust)}
+.bal-badge.unset{background:var(--paper2);color:var(--ink3)}
+.bal-amt{font-size:24px;font-weight:600;color:var(--ink);line-height:1.1}
+.bal-card.low .bal-amt{color:var(--rust)}
+.bal-sub{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:4px;line-height:1.6}
+.bal-form{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.bal-form label{flex:1 1 90px;display:grid;gap:3px;font-size:10px;color:var(--ink3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em}
+.bal-form button{align-self:end}
+.bal-form input{flex:1;min-width:0;padding:7px 10px;font-size:12px;border:1px solid var(--border);border-radius:7px;background:var(--paper);color:var(--ink);font-family:inherit}
+.bal-form input:focus,.bal-form select:focus{outline:none;border-color:var(--gold)}
+.bal-form select{padding:7px 8px;font-size:12px;border:1px solid var(--border);border-radius:7px;background:var(--paper);color:var(--ink);font-family:inherit}
+.bal-form .bal-btns{display:flex;gap:6px;flex:1 1 100%}
+.bal-form button.secondary{background:var(--paper2);color:var(--ink);border:1px solid var(--border)}
+.bal-src{display:inline-block;margin-top:6px;font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:var(--paper2);color:var(--ink3)}
+.bal-src.live{background:var(--sage-tint);color:var(--sage)}
+.bal-note{font-size:11px;color:var(--ink3);margin-top:6px;line-height:1.5}
+.bal-note.err{color:var(--rust)}
+.bal-refresh{font-family:inherit;font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--paper);color:var(--ink);cursor:pointer;margin-left:8px}
+.bal-form button{padding:7px 12px;font-size:12px;font-weight:600;background:var(--navy);color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.bal-form button:disabled{opacity:0.6;cursor:wait}
+@media(max-width:900px){.bal-row{grid-template-columns:1fr}}
+</style>
+<link rel="stylesheet" href="/css/theme-dark.css">
+<link rel="stylesheet" href="/css/aix-uniform.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-mark">A</div>
+    <div>
+      <div class="nav-title">AiX <em>Track</em></div>
+      <div class="nav-sub">Usage Dashboard</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <button class="btn-nav" onclick="toggleTheme()" id="theme-btn">◐</button>
+    <a href="/" class="btn-nav">← Generator</a>
+    <a href="/history" class="btn-nav">Archive</a>
+    <a href="/credits" class="btn-nav">Credits</a>
+    <a href="/prompts.html" class="btn-nav" onclick="this.href='/prompts.html'+(adminSecret?'?secret='+encodeURIComponent(adminSecret):'')">Prompts</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div class="page-eyebrow">— Admin · Internal</div>
+  <h1 class="page-title">API <em>usage</em> tracker</h1>
+  <div class="page-subtitle">Hostinger · Sarvam AI · Claude · ChatGPT — per-process &amp; per-user breakdown → jainildoshi22@gmail.com, carajanikant@gmail.com</div>
+
+  <!-- Action bar -->
+  <div class="action-bar">
+    <div class="period-group">
+      <button class="period-btn active" id="p1" onclick="setPeriod(1)">Today</button>
+      <button class="period-btn" id="p7" onclick="setPeriod(7)">7d</button>
+      <button class="period-btn" id="p30" onclick="setPeriod(30)">30d</button>
+      <button class="period-btn" id="p90" onclick="setPeriod(90)">90d</button>
+      <button class="period-btn" id="p0" onclick="setPeriod(0)">All time</button>
+    </div>
+    <button class="refresh-btn" onclick="loadAll()" title="Refresh">↺</button>
+    <button class="btn-email" onclick="sendEmail('daily')">📧 Send Daily Report</button>
+    <button class="btn-email secondary" onclick="sendEmail('weekly')">📧 Weekly Report</button>
+    <span class="toast" id="toast"></span>
+  </div>
+
+  <!-- Pricing note -->
+  <div class="pricing-note">
+    <strong>Cost estimates:</strong>
+    Hosting (Hostinger) <strong id="note-hosting">monthly cost set on the Hostinger card</strong> ·
+    Sarvam saarika:v2.5 ~<strong>$0.0002/sec</strong> audio ·
+    Claude claude-sonnet-4-6 <strong>$3/$15</strong> per MTok in/out ·
+    OpenAI GPT-4o <strong>$5/$15</strong> per MTok in/out ·
+    INR ≈ cost × 84 · Verify against provider dashboards for billing.
+  </div>
+
+  <!-- Top stat ledger -->
+  <div class="stat-ledger">
+    <div class="stat-card"><div class="stat-lbl">Total Cost (USD)</div><div class="stat-val" id="s-total"><em>—</em></div><div class="stat-sub" id="s-total-inr">—</div></div>
+    <div class="stat-card"><div class="stat-lbl">API Calls</div><div class="stat-val" id="s-calls"><em>—</em></div><div class="stat-sub">all services</div></div>
+    <div class="stat-card"><div class="stat-lbl">Conversations Processed</div><div class="stat-val" id="s-meetings"><em>—</em></div><div class="stat-sub">total sessions</div></div>
+    <div class="stat-card"><div class="stat-lbl">Active Users</div><div class="stat-val" id="s-users"><em>—</em></div><div class="stat-sub" id="s-period-label">this period</div></div>
+    <div class="stat-card"><div class="stat-lbl">Hosting · Hostinger</div><div class="stat-val"><em id="s-ec2">—</em></div><div class="stat-sub" id="s-host-sub">this period</div></div>
+  </div>
+
+  <!-- Provider balances -->
+  <div class="section-hd">
+    <div class="section-title">— Provider balances</div>
+    <div class="section-meta" id="bal-meta">Loading…</div>
+  </div>
+  <div class="bal-row" id="bal-row"><div class="no-data">Loading…</div></div>
+
+  <!-- Service breakdown cards -->
+  <div class="section-hd">
+    <div class="section-title">— By service</div>
+    <div class="section-meta" id="svc-period-label">All time</div>
+  </div>
+  <div class="service-row" id="service-row">
+    <div class="svc-card aws"><div class="svc-icon">☁</div><div class="svc-name">AWS EC2</div><div class="svc-cost skeleton">$00.00</div><div class="svc-inr skeleton">₹000</div><div class="svc-chips"><span class="svc-chip">t3.small</span><span class="svc-chip">Ubuntu 24</span><span class="svc-chip">PM2</span></div></div>
+    <div class="svc-card sarvam"><div class="svc-icon">🎙</div><div class="svc-name">Sarvam AI</div><div class="svc-cost skeleton">$00.00</div><div class="svc-inr skeleton">₹000</div></div>
+    <div class="svc-card claude"><div class="svc-icon">🧠</div><div class="svc-name">Claude (Anthropic)</div><div class="svc-cost skeleton">$00.00</div><div class="svc-inr skeleton">₹000</div></div>
+    <div class="svc-card openai"><div class="svc-icon">✦</div><div class="svc-name">ChatGPT (OpenAI)</div><div class="svc-cost skeleton">$00.00</div><div class="svc-inr skeleton">₹000</div></div>
+  </div>
+
+  <!-- Daily bar chart + User activity side by side -->
+  <div class="two-col">
+
+    <!-- Bar chart -->
+    <div class="chart-wrap">
+      <div class="chart-title">— Daily cost (last 14 days)</div>
+      <div class="bar-chart" id="bar-chart">
+        <div class="no-data" style="width:100%;padding:2rem">Loading chart…</div>
+      </div>
+    </div>
+
+    <!-- User activity -->
+    <div class="table-wrap">
+      <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div class="section-title">— Users this period</div>
+        <div class="section-meta" id="user-count-label">—</div>
+      </div>
+      <div id="user-list"><div class="no-data">Loading…</div></div>
+    </div>
+
+  </div>
+
+  <!-- Per-process / per-session breakdown -->
+  <div class="section">
+    <div class="section-hd">
+      <div class="section-title">— Per-process breakdown</div>
+      <div class="section-meta">click any row to expand costs</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Conversation</th>
+            <th>User</th>
+            <th>Date</th>
+            <th>Audio</th>
+            <th>Sarvam</th>
+            <th>AI (Claude/GPT)</th>
+            <th>Total Cost</th>
+            <th>₹</th>
+          </tr>
+        </thead>
+        <tbody id="process-tbody">
+          <tr><td colspan="8" class="no-data"><span class="loading-spinner"></span>Loading processes…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Daily breakdown table -->
+  <div class="section">
+    <div class="section-hd">
+      <div class="section-title">— Daily log</div>
+      <div class="section-meta" id="daily-period-label"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Service</th>
+            <th>Calls</th>
+            <th>Units</th>
+            <th>Cost (USD)</th>
+            <th>Cost (INR)</th>
+          </tr>
+        </thead>
+        <tbody id="daily-tbody">
+          <tr><td colspan="6" class="no-data"><span class="loading-spinner"></span>Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Monthly summary -->
+  <div class="section">
+    <div class="section-hd"><div class="section-title">— Monthly summary</div></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Month</th><th>Sarvam</th><th>Claude</th><th>OpenAI</th><th>Total (USD)</th><th>Total (INR)</th></tr>
+        </thead>
+        <tbody id="monthly-tbody">
+          <tr><td colspan="6" class="no-data"><span class="loading-spinner"></span>Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+/* ── Theme: handled by /js/theme.js ── */
+
+/* ── Helpers ── */
+const urlParams   = new URLSearchParams(window.location.search);
+const adminSecret = urlParams.get('secret') || '';
+
+function fmt$(v){ return '$' + parseFloat(v||0).toFixed(4); }
+function fmtINR(v){ return '₹' + (parseFloat(v||0)*84).toFixed(2); }
+function fmtNum(v){ return Number(parseFloat(v||0)).toLocaleString('en-IN'); }
+function fmtDate(d){ if(!d) return '—'; return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }
+function fmtDur(s){ const m=Math.floor(s/60),sec=Math.floor(s%60); return m>0?`${m}m ${sec}s`:`${sec}s`; }
+function authHeaders(){ return { 'x-admin-secret': adminSecret }; }
+
+let currentPeriod = 1;
+
+function setPeriod(d){
+  currentPeriod = d;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('p' + d)?.classList.add('active');
+  loadAll();
+}
+
+/* ══════════════════════════════════════════════════════════
+   LOAD ALL DATA
+══════════════════════════════════════════════════════════ */
+async function loadAll(){
+  loadBalances();
+  loadUsage();
+  loadProcesses();
+}
+
+/* ── Provider balances ── */
+function inr(v){ return '₹' + Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:0}); }
+function money(v, cur){ return cur === 'USD' ? '$' + Number(v||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : inr(v); }
+function escB(t){ return String(t==null?'':t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmtWhen(d){ if(!d) return '—'; return new Date(d).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); }
+function renderBalances(d){
+  const anyLive = d.providers.some(p => p.live_available);
+  document.getElementById('bal-meta').innerHTML =
+    `Email when a balance falls below its alert level, and at once if a provider refuses a request for low credit` +
+    (anyLive ? `<button type="button" class="bal-refresh" onclick="refreshBalances(this)">Check provider spend now</button>` : '');
+  document.getElementById('bal-row').innerHTML = d.providers.map(p => {
+    const state = !p.configured ? 'unset' : p.low ? 'low' : 'ok';
+    const cur   = p.currency;
+    const badge = state === 'unset' ? 'Not set · no alerts' : state === 'low' ? `Below ${money(p.alert_level, cur)}` : 'OK';
+    const amt   = p.configured ? money(p.remaining, cur) : '—';
+    const sub   = p.configured
+      ? `Balance ${money(p.balance, cur)} from ${fmtDate(p.set_at)}<br>Spent since: ${money(p.spent, cur)}<br>Alert below: ${money(p.alert_level, cur)}`
+      : 'Enter the current balance from the provider dashboard to turn on alerts';
+    let src = '';
+    if (p.configured) src = p.source === 'provider'
+      ? `<span class="bal-src live">Spend from provider billing · ${fmtWhen(p.live_checked_at)}</span>`
+      : `<span class="bal-src">Spend estimated from app usage</span>`;
+    let note = '';
+    if (p.live_error) note = `<div class="bal-note err">Could not read provider billing: ${escB(p.live_error)}. Using the app's estimate.</div>`;
+    else if (!p.live_available && (p.service === 'claude' || p.service === 'openai'))
+      note = `<div class="bal-note">Add ${p.service === 'claude' ? 'ANTHROPIC_ADMIN_KEY' : 'OPENAI_ADMIN_KEY'} to the server .env to use real spend from provider billing.</div>`;
+    else if (p.service === 'sarvam' && d.sarvam_shared_key) note = `<div class="bal-note">Includes diarization, which uses the same Sarvam key.</div>`;
+    const opt = c => `<option value="${c}" ${c === cur ? 'selected' : ''}>${c}</option>`;
+    return `<div class="bal-card ${state}">
+      <div class="bal-head"><span class="bal-name">${escB(p.label)}</span><span class="bal-badge ${state}">${badge}</span></div>
+      <div class="bal-amt">${amt}</div>
+      <div class="bal-sub">${sub}</div>
+      ${src}${note}
+      <form class="bal-form" onsubmit="saveBalance(event,'${p.service}')">
+        <label>Amount<input type="number" min="0" step="0.01" inputmode="decimal" name="amount" placeholder="${cur === 'USD' ? 'e.g. 10' : 'e.g. 5000'}" aria-label="Amount for ${escB(p.label)}"></label>
+        <label>Currency<select name="currency" aria-label="Currency for ${escB(p.label)}">${opt('USD')}${opt('INR')}</select></label>
+        <label>Alert below<input type="number" min="0" step="0.01" inputmode="decimal" name="alert" value="${p.alert_level}" aria-label="Alert level for ${escB(p.label)}"></label>
+        <div class="bal-btns">
+          <button type="submit" value="set" title="The balance shown on the provider dashboard right now">Set current balance</button>
+          ${p.configured ? `<button type="submit" value="topup" class="secondary" title="Money you just added">Add top-up</button>` : ''}
+        </div>
+      </form>
+    </div>`;
+  }).join('');
+}
+async function loadBalances(){
+  try {
+    const res = await fetch(`/api/admin/provider-balances?secret=${adminSecret}`, { headers: authHeaders() });
+    if (!res.ok) throw new Error(await res.text());
+    const bd = await res.json();
+    hostingMonthlyInr = parseFloat(bd.hosting_monthly_inr) || 0;
+    renderHostingStat(); if (window._lastSvcRows) renderServices(window._lastSvcRows);
+    renderBalances(bd);
+  } catch(err){
+    console.error('[balances]', err);
+    document.getElementById('bal-row').innerHTML = '<div class="no-data">Could not load balances.</div>';
+  }
+}
+async function saveBalance(e, service){
+  e.preventDefault();
+  const form = e.target, btn = e.submitter || form.querySelector('button');
+  const mode = btn.value === 'topup' ? 'topup' : 'set';
+  const amount = form.querySelector('[name=amount]').value;
+  if (!amount && mode === 'topup') { alert('Enter the top-up amount.'); return; }
+  const label = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const res = await fetch(`/api/admin/provider-balances?secret=${adminSecret}`, {
+      method: 'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ service, mode, amount, currency: form.querySelector('[name=currency]').value,
+                             alert_level: form.querySelector('[name=alert]').value })
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Save failed');
+    renderBalances(d);
+  } catch(err){
+    alert(err.message);
+    btn.disabled = false; btn.textContent = label;
+  }
+}
+async function refreshBalances(btn){
+  btn.disabled = true; btn.textContent = 'Checking…';
+  try {
+    const res = await fetch(`/api/admin/provider-balances/refresh?secret=${adminSecret}`, { method: 'POST', headers: authHeaders() });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Check failed');
+    renderBalances(d);
+  } catch(err){
+    alert(err.message);
+    btn.disabled = false; btn.textContent = 'Check provider spend now';
+  }
+}
+
+async function loadUsage(){
+  try {
+    const days  = currentPeriod || 3650;
+    const res   = await fetch(`/api/admin/usage?days=${days}&secret=${adminSecret}`, { headers: authHeaders() });
+    if (!res.ok){
+      if (res.status === 403){
+        document.body.innerHTML = '<div style="padding:4rem;text-align:center;font-family:monospace;color:#A0472E;font-size:14px">🔒 Access denied — append <strong>?secret=YOUR_ADMIN_SECRET</strong> to the URL</div>';
+        return;
+      }
+      throw new Error(await res.text());
+    }
+    const data = await res.json();
+    renderStats(data);
+    renderServices(data.by_service);
+    renderBarChart(data.daily);
+    renderUsers(data.per_user);
+    renderDaily(data.daily);
+    renderMonthly(data.monthly);
+    const label = currentPeriod === 0 ? 'All time' : currentPeriod === 1 ? 'Today' : `Last ${currentPeriod} days`;
+    document.getElementById('svc-period-label').textContent = label;
+    document.getElementById('daily-period-label').textContent = label;
+    document.getElementById('s-period-label').textContent = label;
+  } catch(err){
+    console.error('[usage]', err);
+  }
+}
+
+async function loadProcesses(){
+  try {
+    const days = currentPeriod || 3650;
+    const res  = await fetch(`/api/admin/usage-per-session?days=${days}&secret=${adminSecret}`, { headers: authHeaders() });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    renderProcesses(data.sessions);
+  } catch(err){
+    document.getElementById('process-tbody').innerHTML =
+      `<tr><td colspan="8" class="no-data" style="color:var(--rust)">Could not load per-process data: ${err.message}</td></tr>`;
+  }
+}
+
+/* ── Stats ── */
+function renderStats(data){
+  const t = data.totals || {};
+  document.getElementById('s-total').innerHTML   = `<em>${fmt$(t.grand_total_usd)}</em>`;
+  document.getElementById('s-total-inr').textContent = fmtINR(t.grand_total_usd);
+  document.getElementById('s-calls').innerHTML   = `<em>${fmtNum(t.total_calls)}</em>`;
+  document.getElementById('s-meetings').innerHTML= `<em>${fmtNum(data.meetings)}</em>`;
+  document.getElementById('s-users').innerHTML   = `<em>${fmtNum((data.per_user||[]).length)}</em>`;
+  document.getElementById('user-count-label').textContent = `${(data.per_user||[]).length} user${(data.per_user||[]).length!==1?'s':''}`;
+
+  renderHostingStat();
+}
+
+/* ── Hosting (Hostinger) — fixed monthly cost, shared across the period ── */
+let hostingMonthlyInr = 0;
+function hostingForPeriod() {
+  const days = currentPeriod === 0 ? 30 : currentPeriod;      // "all time" shows one month
+  return hostingMonthlyInr * Math.min(days, 30) / 30;
+}
+function renderHostingStat() {
+  const el = document.getElementById('s-ec2'); if (!el) return;
+  el.textContent = hostingMonthlyInr ? '₹' + Math.round(hostingForPeriod()).toLocaleString('en-IN') : 'Not set';
+  document.getElementById('s-host-sub').textContent = hostingMonthlyInr
+    ? `₹${hostingMonthlyInr.toLocaleString('en-IN')}/month` : 'enter monthly cost below';
+  const note = document.getElementById('note-hosting');
+  if (note) note.textContent = hostingMonthlyInr ? `₹${hostingMonthlyInr.toLocaleString('en-IN')}/month` : 'monthly cost not set';
+}
+async function saveHosting(ev) {
+  ev.preventDefault();
+  const form = ev.target, btn = form.querySelector('button'), v = form.querySelector('input').value;
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const res = await fetch(`/api/admin/hosting-cost?secret=${adminSecret}`, {
+      method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ monthly_inr: v })
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Save failed');
+    hostingMonthlyInr = d.hosting_monthly_inr;
+    renderHostingStat(); if (window._lastSvcRows) renderServices(window._lastSvcRows);
+  } catch (err) { alert(err.message); }
+  btn.disabled = false; btn.textContent = 'Save';
+}
+
+/* ── Service cards ── */
+function renderServices(rows){
+  window._lastSvcRows = rows;
+  const svcData = { sarvam: null, sarvam_diarization: null, claude: null, openai: null };
+  (rows||[]).forEach(r => { svcData[r.service] = r; });
+
+  const grid = document.getElementById('service-row');
+  const make  = (svc, icon, label, extra='') => {
+    const r = svcData[svc];
+    const cost = r ? parseFloat(r.total_cost_usd||0) : 0;
+    const inr  = (cost * 84).toFixed(2);
+    const calls= r ? fmtNum(r.calls) : '0';
+    const units= r ? parseFloat(r.total_units||0) : 0;
+    const unitLabel = svc.startsWith('sarvam') ? `${(units/60).toFixed(1)} min audio` : `${fmtNum(units)} tokens`;
+    const lastCall  = r ? `Last: ${fmtDate(r.last_call)}` : 'No usage yet';
+    const chips = r
+      ? `<span class="svc-chip">${calls} calls</span><span class="svc-chip">${unitLabel}</span>${extra}`
+      : `<span class="svc-chip" style="color:var(--ink3)">No usage recorded</span>`;
+    return `<div class="svc-card ${svc}">
+      <div class="svc-icon">${icon}</div>
+      <div class="svc-name">${label}</div>
+      <div class="svc-cost">$${cost.toFixed(4)}</div>
+      <div class="svc-inr">₹${inr}</div>
+      <div class="svc-chips">${chips}</div>
+      <div class="svc-last">${lastCall}</div>
+    </div>`;
+  };
+
+  // Hosting (Hostinger) — fixed monthly cost entered here, shared across the period
+  const hostInr = hostingForPeriod();
+  const hosthtml = `<div class="svc-card aws">
+    <div class="svc-icon">🖥</div>
+    <div class="svc-name">Hosting · Hostinger</div>
+    <div class="svc-cost">${hostingMonthlyInr ? '₹' + hostInr.toFixed(2) : 'Not set'}</div>
+    <div class="svc-inr">${hostingMonthlyInr ? '$' + (hostInr / 84).toFixed(2) + ' · this period' : 'Enter the monthly cost'}</div>
+    <form class="bal-form" onsubmit="saveHosting(event)">
+      <label>Monthly cost ₹<input type="number" min="0" step="1" inputmode="numeric" value="${hostingMonthlyInr || ''}" placeholder="e.g. 800" required></label>
+      <button type="submit">Save</button>
+    </form>
+    <div class="svc-last">Server · Nginx + PM2 · from your Hostinger invoice</div>
+  </div>`;
+
+  grid.innerHTML = hosthtml
+    + make('sarvam',  '🎙', 'Sarvam AI · STT (₹30/hr)')
+    + make('sarvam_diarization', '🗣', 'Sarvam · Diarization (₹45/hr)')
+    + make('claude',  '🧠', 'Claude · Anthropic')
+    + make('openai',  '✦',  'ChatGPT · OpenAI');
+}
+
+/* ── Bar chart ── */
+function renderBarChart(rows){
+  const el = document.getElementById('bar-chart');
+  if (!rows || !rows.length){ el.innerHTML = '<div class="no-data" style="width:100%">No daily data for this period.</div>'; return; }
+
+  // Aggregate by day (sum across services)
+  const byDay = {};
+  rows.forEach(r => {
+    const day = r.day;
+    if (!byDay[day]) byDay[day] = 0;
+    byDay[day] += parseFloat(r.cost_usd||0);
+  });
+
+  // Last 14 days only
+  const entries = Object.entries(byDay).sort(([a],[b]) => a < b ? -1 : 1).slice(-14);
+  if (!entries.length){ el.innerHTML = '<div class="no-data" style="width:100%">No data.</div>'; return; }
+
+  const maxVal = Math.max(...entries.map(([,v]) => v), 0.0001);
+
+  el.innerHTML = entries.map(([day, val]) => {
+    const pct  = Math.max((val / maxVal) * 100, 2);
+    const lbl  = new Date(day).toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+    const tip  = `${lbl}: ${fmt$(val)}`;
+    return `<div class="bar-col-wrap">
+      <div style="flex:1;display:flex;align-items:flex-end;width:100%">
+        <div class="bar-fill" style="height:${pct}%;background:linear-gradient(180deg,var(--gold),var(--navy));opacity:0.85;width:100%" data-tip="${tip}"></div>
+      </div>
+      <div class="bar-lbl">${lbl}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ── User list ── */
+function renderUsers(rows){
+  const el = document.getElementById('user-list');
+  if (!rows || !rows.length){ el.innerHTML = '<div class="no-data">No user activity in this period.</div>'; return; }
+
+  const avatarColors = ['#0F1B3D','#B8912A','#4A7C59','#A0472E','#5C3D5C','#2C6B8A'];
+  const maxCost = Math.max(...rows.map(r => parseFloat(r.total_cost_usd||0)), 0.0001);
+
+  el.innerHTML = rows.slice(0,12).map(r => {
+    const cost   = parseFloat(r.total_cost_usd||0);
+    const email  = r.user_email || '—';
+    const ini    = email.slice(0,2).toUpperCase();
+    const col    = avatarColors[email.charCodeAt(0) % avatarColors.length];
+    const pct    = Math.round((cost/maxCost)*100);
+    return `<div class="user-activity-row">
+      <div class="user-avatar" style="background:${col}">${ini}</div>
+      <div style="flex:1;min-width:0">
+        <div class="user-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${email}</div>
+        <div class="user-meta">${fmtNum(r.calls)} calls · ${fmtNum(r.meetings||0)} conversations</div>
+        <div style="margin-top:4px;height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--navy),var(--gold));border-radius:2px"></div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="user-cost">${fmt$(cost)}</div>
+        <div class="user-inr">${fmtINR(cost)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Per-process table ── */
+function renderProcesses(sessions){
+  const tbody = document.getElementById('process-tbody');
+  if (!sessions || !sessions.length){
+    tbody.innerHTML = '<tr><td colspan="8" class="no-data">No processes found for this period.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = sessions.map((s, i) => {
+    const totalCost  = parseFloat(s.total_cost||0);
+    const sarvamCost = parseFloat(s.sarvam_cost||0);
+    const aiCost     = parseFloat(s.ai_cost||0);
+    const aiSvc      = s.ai_service || 'claude';
+    const dur        = s.duration_seconds ? fmtDur(Number(s.duration_seconds)) : '—';
+    const dt         = s.created_at ? new Date(s.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+    const email      = s.user_email || '—';
+    const title      = s.meeting_title || 'Untitled';
+
+    const expandId  = `expand-${i}`;
+    const sarvamRow = sarvamCost > 0
+      ? `<div class="breakdown-item"><div class="breakdown-svc sarvam">Sarvam STT</div><div class="breakdown-cost">${fmt$(sarvamCost)}</div><div class="breakdown-meta">${fmtINR(sarvamCost)} · ${dur} audio</div></div>`
+      : '';
+    const aiRow = aiCost > 0
+      ? `<div class="breakdown-item"><div class="breakdown-svc ${aiSvc}">${aiSvc === 'openai' ? 'ChatGPT GPT-4o' : 'Claude claude-sonnet-4-6'}</div><div class="breakdown-cost">${fmt$(aiCost)}</div><div class="breakdown-meta">${fmtINR(aiCost)} · ${fmtNum(s.ai_tokens||0)} tokens</div></div>`
+      : '';
+
+    return `<tr class="process-row" onclick="toggleExpand('${expandId}')">
+      <td style="font-family:var(--serif);font-size:15px;letter-spacing:-0.01em;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(title)}">${esc(title)}</td>
+      <td class="mono" style="font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(email)}</td>
+      <td class="mono">${dt}</td>
+      <td class="mono">${dur}</td>
+      <td class="mono" style="color:#7C3AED">${sarvamCost > 0 ? fmt$(sarvamCost) : '—'}</td>
+      <td><span class="badge ${aiSvc}">${aiSvc}</span> <span class="mono">${aiCost > 0 ? fmt$(aiCost) : '—'}</span></td>
+      <td class="cost-cell">${totalCost > 0 ? fmt$(totalCost) : '—'}</td>
+      <td class="inr-cell">${totalCost > 0 ? fmtINR(totalCost) : '—'}</td>
+    </tr>
+    <tr class="expand-row" id="${expandId}">
+      <td colspan="8" class="expand-inner">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:8px">Cost breakdown for this session</div>
+        <div class="breakdown-grid">${sarvamRow}${aiRow}</div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleExpand(id){
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('open');
+}
+
+/* ── Daily log ── */
+function renderDaily(rows){
+  const tbody = document.getElementById('daily-tbody');
+  if (!rows || !rows.length){ tbody.innerHTML = '<tr><td colspan="6" class="no-data">No data for this period.</td></tr>'; return; }
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td class="mono">${r.day}</td>
+      <td><span class="badge ${r.service}">${r.service}</span></td>
+      <td class="mono">${fmtNum(r.calls)}</td>
+      <td class="mono">${parseFloat(r.units||0).toFixed(1)}</td>
+      <td class="cost-cell">${fmt$(r.cost_usd)}</td>
+      <td class="inr-cell">${fmtINR(r.cost_usd)}</td>
+    </tr>`).join('');
+}
+
+/* ── Monthly ── */
+function renderMonthly(rows){
+  const tbody = document.getElementById('monthly-tbody');
+  if (!rows || !rows.length){ tbody.innerHTML = '<tr><td colspan="6" class="no-data">No monthly data yet.</td></tr>'; return; }
+
+  // Pivot by month
+  const byMonth = {};
+  (rows||[]).forEach(r => {
+    if (!byMonth[r.month]) byMonth[r.month] = { sarvam:0, claude:0, openai:0, total:0 };
+    byMonth[r.month][r.service] = parseFloat(r.cost_usd||0);
+    byMonth[r.month].total     += parseFloat(r.cost_usd||0);
+  });
+
+  // If rows don't have per-service breakdown use totals
+  if (rows[0] && !rows[0].service){
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td class="mono">${r.month}</td>
+        <td class="mono">—</td><td class="mono">—</td><td class="mono">—</td>
+        <td class="cost-cell">${fmt$(r.cost_usd)}</td>
+        <td class="inr-cell">${fmtINR(r.cost_usd)}</td>
+      </tr>`).join('');
+    return;
+  }
+
+  tbody.innerHTML = Object.entries(byMonth).sort(([a],[b]) => a < b ? 1 : -1).map(([month, d]) => `
+    <tr>
+      <td class="mono">${month}</td>
+      <td class="mono" style="color:#7C3AED">${d.sarvam  > 0 ? fmt$(d.sarvam)  : '—'}</td>
+      <td class="mono" style="color:var(--gold)">${d.claude  > 0 ? fmt$(d.claude)  : '—'}</td>
+      <td class="mono" style="color:#10B981">${d.openai  > 0 ? fmt$(d.openai)  : '—'}</td>
+      <td class="cost-cell">${fmt$(d.total)}</td>
+      <td class="inr-cell">${fmtINR(d.total)}</td>
+    </tr>`).join('');
+}
+
+/* ── Email ── */
+async function sendEmail(period){
+  const btn = event.target;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-spinner"></span>Sending…';
+  try {
+    const res  = await fetch('/api/admin/send-usage-email', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'x-admin-secret': adminSecret },
+      body: JSON.stringify({ period })
+    });
+    const data = await res.json();
+    showToast(res.ok ? `✓ ${data.message}` : `✗ ${data.error}`, res.ok);
+  } catch(err){ showToast('✗ Failed: ' + err.message, false); }
+  finally { btn.disabled = false; btn.innerHTML = period === 'weekly' ? '📧 Weekly Report' : '📧 Send Daily Report'; }
+}
+
+function showToast(msg, ok){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'inline-block';
+  t.style.background = ok ? 'var(--sage-tint)' : 'var(--rust-tint)';
+  t.style.color      = ok ? 'var(--sage)' : 'var(--rust)';
+  t.style.border     = `1px solid ${ok ? 'var(--sage)' : 'var(--rust)'}`;
+  setTimeout(() => t.style.display = 'none', 4000);
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ── Init ── */
+loadAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<script src="/js/theme.js"></script>
+<title>MOC Prompts · AiX Track</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0F1524;--ink2:#4A5468;--ink3:#8A93A8;--ink4:#B8BFCC;
+  --paper:#FAF8F3;--paper2:#F4F0E6;--card:#FFFFFF;
+  --border:#E8E4D8;--border-strong:#D4CFC0;
+  --navy:#0F1B3D;--navy-h:#1F2D57;
+  --gold:#B8912A;--gold-tint:rgba(184,145,42,0.10);
+  --sage:#4A7C59;--sage-tint:rgba(74,124,89,0.10);
+  --rust:#A0472E;--rust-tint:rgba(160,71,46,0.10);
+  --shadow-2:0 4px 20px rgba(15,21,36,0.06),0 12px 48px rgba(15,21,36,0.06);
+  --sans:'Roboto',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'Roboto Mono',ui-monospace,monospace;
+}
+[data-theme="dark"]{
+  --ink:#F5F1E6;--ink2:#B8B0A0;--ink3:#6B6455;--ink4:#3D3830;
+  --paper:#0C0D10;--paper2:#141519;--card:#161820;
+  --border:#25272F;--border-strong:#333540;
+  --navy:#4A5B8C;--navy-h:#6274AA;
+  --gold:#D4A94A;--gold-tint:rgba(212,169,74,0.10);
+  --sage:#7BA88C;--sage-tint:rgba(123,168,140,0.10);
+  --rust:#D07358;--rust-tint:rgba(208,115,88,0.10);
+  --shadow-2:0 4px 20px rgba(0,0,0,0.4);
+}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh}
+.nav{background:var(--card);border-bottom:1px solid var(--border);height:60px;padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.nav-brand{display:flex;align-items:center;gap:12px}
+.nav-mark{width:32px;height:32px;background:var(--navy);color:var(--gold);border-radius:6px;display:flex;align-items:center;justify-content:center;font-style:italic;font-size:20px}
+.nav-title{font-size:20px}
+.nav-title em{font-style:italic;color:var(--gold)}
+.nav-sub{font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:0.14em;text-transform:uppercase}
+.nav-right{display:flex;gap:8px;flex-wrap:wrap}
+.btn-nav{padding:7px 12px;font-size:12px;font-weight:500;background:var(--card);color:var(--ink2);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-family:inherit;text-decoration:none}
+.btn-nav:hover{border-color:var(--gold);color:var(--gold)}
+.page{max-width:1200px;margin:0 auto;padding:2rem 1rem 5rem}
+.eyebrow{font-family:var(--mono);font-size:10px;color:var(--gold);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:6px}
+h1{font-size:32px;font-weight:500;line-height:1.1;margin-bottom:6px}
+h1 em{color:var(--gold)}
+.sub{font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:1.75rem;max-width:760px}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:2rem}
+.flow span{font-family:var(--mono);font-size:11px;padding:5px 10px;border:1px solid var(--border);border-radius:999px;background:var(--card);color:var(--ink2)}
+.flow b{color:var(--ink3);font-weight:400}
+.section-title{font-family:var(--mono);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:var(--gold);margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:1.75rem}
+.grid{display:grid;grid-template-columns:1fr 300px;gap:16px}
+textarea{width:100%;min-height:460px;padding:12px 14px;font-family:var(--mono);font-size:12px;line-height:1.6;border:1px solid var(--border);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical}
+textarea:focus,input:focus{outline:none;border-color:var(--gold)}
+.row{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+input[type=text]{flex:1;min-width:200px;padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:7px;background:var(--paper);color:var(--ink);font-family:inherit}
+.btn{padding:8px 14px;font-size:12px;font-weight:600;background:var(--navy);color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:inherit}
+.btn:disabled{opacity:0.6;cursor:wait}
+.btn.ghost{background:var(--card);color:var(--ink2);border:1px solid var(--border)}
+.meta{font-family:var(--mono);font-size:10px;color:var(--ink3)}
+.msg{font-size:12px;margin-left:4px}
+.msg.ok{color:var(--sage)} .msg.err{color:var(--rust)}
+.versions{display:flex;flex-direction:column;gap:6px;max-height:520px;overflow:auto}
+.ver{border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:12px}
+.ver.active{border-color:var(--sage);background:var(--sage-tint)}
+.ver-top{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.ver-note{color:var(--ink2);margin:4px 0;line-height:1.4;word-break:break-word}
+.ver button{font-size:11px;padding:3px 8px;border-radius:5px;border:1px solid var(--border);background:var(--card);color:var(--ink2);cursor:pointer;font-family:inherit}
+.badge{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:var(--sage-tint);color:var(--sage)}
+.badge.warn{background:var(--rust-tint);color:var(--rust)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink3);padding:8px 10px;border-bottom:1px solid var(--border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+tr:hover td{background:var(--paper2)}
+.table-wrap{overflow-x:auto}
+.empty{padding:2rem;text-align:center;color:var(--ink3);font-size:13px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.modal.open{display:flex}
+.modal-box{background:var(--card);border-radius:12px;width:100%;max-width:960px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.modal-body{padding:16px 18px;overflow:auto}
+.modal-body h3{font-family:var(--mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin:14px 0 6px}
+.modal-body h3:first-child{margin-top:0}
+pre{white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:11.5px;line-height:1.55;background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:12px;max-height:420px;overflow:auto}
+@media(max-width:900px){.grid{grid-template-columns:1fr}textarea{min-height:320px}}
+</style>
+<link rel="stylesheet" href="/css/aix-uniform.css">
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-mark">A</div>
+    <div><div class="nav-title">AiX <em>Track</em></div><div class="nav-sub">MOC Prompts</div></div>
+  </div>
+  <div class="nav-right">
+    <button class="btn-nav" onclick="toggleTheme()" id="theme-btn">◐</button>
+    <a href="/" class="btn-nav">← Generator</a>
+    <a class="btn-nav" id="usage-link" href="/usage">Usage</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="eyebrow">— Admin · Internal</div>
+  <h1>MOC <em>prompts</em></h1>
+  <p class="sub">The master prompt sets the rules for every MOC. For each conversation, the prompt composer writes a meeting-specific brief from the master prompt and transcript; the MOC model then receives master prompt + brief + transcript. Every final prompt is logged below.</p>
+  <div class="flow"><span>Transcript + master prompt</span><b>→</b><span>ChatGPT-4o writes conversation prompt</span><b>→</b><span>Final prompt + transcript</span><b>→</b><span>Claude Sonnet 5.5</span><b>→</b><span>MOC</span></div>
+
+  <div class="section-title">— Master prompt</div>
+  <div class="grid">
+    <div class="card" style="margin-bottom:0">
+      <div class="meta" id="mp-meta">Loading…</div>
+      <textarea id="mp-content" spellcheck="false" aria-label="Master prompt"></textarea>
+      <div class="row">
+        <input type="text" id="mp-note" placeholder="What changed? (saved with the version)" maxlength="300" aria-label="Change note">
+        <button class="btn" id="mp-save" onclick="saveMaster()">Save as new version</button>
+        <span class="msg" id="mp-msg"></span>
+      </div>
+      <div class="meta" style="margin-top:8px">Saving creates a new version and uses it for the next MOC. Earlier versions stay available for rollback.</div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="section-title" style="margin-bottom:8px">Versions</div>
+      <div class="versions" id="versions"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:2rem">— Prompt log (per conversation)</div>
+  <div class="card table-wrap" style="padding:0">
+    <table>
+      <thead><tr><th>Log</th><th>When</th><th>Conversation</th><th>User</th><th>Flow</th><th>Type</th><th>Master</th><th></th></tr></thead>
+      <tbody id="log-body"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-head"><strong id="modal-title">Prompt</strong><button class="btn ghost" onclick="closeModal()">Close</button></div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const adminSecret = new URLSearchParams(location.search).get('secret') || '';
+const qs = adminSecret ? `?secret=${encodeURIComponent(adminSecret)}` : '';
+if (adminSecret) document.getElementById('usage-link').href = '/usage' + qs;
+function api(path, opts = {}) {
+  const sep = path.includes('?') ? '&' : '?';
+  return fetch(path + (adminSecret ? `${sep}secret=${encodeURIComponent(adminSecret)}` : ''), {
+    credentials: 'same-origin', ...opts,
+    headers: { 'x-admin-secret': adminSecret, ...(opts.body ? { 'Content-Type': 'application/json' } : {}) }
+  }).then(async r => {
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 403) throw new Error('Admin access required. Sign in as admin or append ?secret=YOUR_ADMIN_SECRET to the URL.');
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  });
+}
+const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const when = d => d ? new Date(d).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+let activeContent = '';
+
+async function loadMaster() {
+  try {
+    const d = await api('/api/admin/master-prompt');
+    activeContent = d.active ? d.active.content : '';
+    document.getElementById('mp-content').value = activeContent;
+    document.getElementById('mp-meta').textContent = d.active
+      ? `Active: version #${d.active.id} · ${when(d.active.created_at)} · ${d.active.created_by || '—'} · ${activeContent.length.toLocaleString('en-IN')} characters`
+      : 'No master prompt in the database yet — restart the server to seed it from prompts/master-moc-prompt.md.';
+    document.getElementById('versions').innerHTML = d.versions.length ? d.versions.map(v => `
+      <div class="ver ${v.is_active ? 'active' : ''}">
+        <div class="ver-top"><strong>#${v.id}</strong>${v.is_active ? '<span class="badge">Active</span>' : `<button onclick="activate(${v.id})">Use this version</button>`}</div>
+        <div class="ver-note">${esc(v.note || 'No note')}</div>
+        <div class="meta">${when(v.created_at)} · ${esc(v.created_by || '—')} · <a href="#" onclick="viewVersion(${v.id});return false" style="color:var(--gold)">view</a></div>
+      </div>`).join('') : '<div class="empty">No versions yet.</div>';
+  } catch (e) { document.getElementById('mp-meta').textContent = e.message; }
+}
+
+async function saveMaster() {
+  const btn = document.getElementById('mp-save'), msg = document.getElementById('mp-msg');
+  const content = document.getElementById('mp-content').value;
+  if (content.trim() === activeContent.trim()) { msg.className = 'msg err'; msg.textContent = 'No changes to save.'; return; }
+  btn.disabled = true; msg.textContent = '';
+  try {
+    const d = await api('/api/admin/master-prompt', { method: 'POST', body: JSON.stringify({ content, note: document.getElementById('mp-note').value }) });
+    msg.className = 'msg ok'; msg.textContent = `Saved as version #${d.id}.`;
+    document.getElementById('mp-note').value = '';
+    loadMaster();
+  } catch (e) { msg.className = 'msg err'; msg.textContent = e.message; }
+  btn.disabled = false;
+}
+
+async function activate(id) {
+  if (!confirm(`Use version #${id} for all new MOCs?`)) return;
+  try { await api(`/api/admin/master-prompt/${id}/activate`, { method: 'POST' }); loadMaster(); }
+  catch (e) { alert(e.message); }
+}
+
+async function viewVersion(id) {
+  try {
+    const v = await api(`/api/admin/master-prompt/${id}`);
+    openModal(`Master prompt version #${id}`, `<pre>${esc(v.content)}</pre>`);
+  } catch (e) { alert(e.message); }
+}
+
+async function loadLogs() {
+  try {
+    const d = await api('/api/admin/prompt-log?limit=100');
+    document.getElementById('log-body').innerHTML = d.logs.length ? d.logs.map(l => `
+      <tr>
+        <td class="meta">#${l.id}</td>
+        <td class="meta">${when(l.created_at)}</td>
+        <td>${l.session_id ? `${esc(l.meeting_title || 'Untitled')} <span class="meta">· #${l.session_id}</span>` : '<span class="meta">Not saved</span>'}</td>
+        <td class="meta">${esc(l.user_email || '—')}</td>
+        <td><span class="badge ${l.composer_error ? 'warn' : ''}">${esc(l.flow)}</span>${l.composer_error ? '<div class="meta" style="margin-top:3px">Composer failed</div>' : ''}</td>
+        <td class="meta">${esc(l.meeting_type || '—')}</td>
+        <td class="meta">${l.master_prompt_id ? '#' + l.master_prompt_id : 'file'}</td>
+        <td><button class="btn ghost" style="padding:4px 10px" onclick="viewLog(${l.id})">View</button></td>
+      </tr>`).join('') : '<tr><td colspan="8" class="empty">No prompts logged yet. Generate an MOC to see its prompt here.</td></tr>';
+  } catch (e) { document.getElementById('log-body').innerHTML = `<tr><td colspan="8" class="empty">${esc(e.message)}</td></tr>`; }
+}
+
+async function viewLog(id) {
+  try {
+    const l = await api(`/api/admin/prompt-log/${id}`);
+    let html = `<div class="meta" style="margin-bottom:10px">Flow: ${esc(l.flow)} · Composer: ${esc(l.composer_model || '—')} · MOC model: ${esc(l.moc_model || '—')} · Master version: ${l.master_prompt_id ? '#' + l.master_prompt_id : 'file'} · ${when(l.created_at)}</div>`;
+    if (l.composer_error) html += `<h3>ChatGPT-4o error (MOC made with the master prompt only)</h3><pre>${esc(l.composer_error)}</pre>`;
+    if (l.user_instructions) html += `<h3>User instructions for this conversation</h3><pre>${esc(l.user_instructions)}</pre>`;
+    if (l.composer_prompt) html += `<h3>① Prompt generated by ChatGPT-4o for this conversation</h3><pre>${esc(l.composer_prompt)}</pre>`;
+    if (l.composer_input) html += `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;color:var(--ink3)">Input sent to ChatGPT-4o (master prompt + notes; transcript stored with the conversation)</summary><pre>${esc(l.composer_input)}</pre></details>`;
+    if (l.composer_output) html += `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;color:var(--ink3)">ChatGPT-4o raw output (JSON)</summary><pre>${esc(JSON.stringify(l.composer_output, null, 2))}</pre></details>`;
+    html += `<h3>② Final prompt sent to ${esc(l.moc_model || 'the MOC model')} (master prompt + ChatGPT-4o prompt + output format)</h3><pre>${esc(l.final_system_prompt || '—')}</pre>`;
+    openModal(`Prompt log #${l.id}${l.meeting_title ? ' — ' + l.meeting_title : ''}`, html);
+  } catch (e) { alert(e.message); }
+}
+
+function openModal(title, html) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+loadMaster();
+loadLogs();
+</script>
+</body>
+</html>

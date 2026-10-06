@@ -1,0 +1,144 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   AiX Track — one shared look for every page.
+   Loaded LAST on each page so the same colours, font and sizes win
+   everywhere. Dark mode keeps its own palette from theme-dark.css.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Fonts (all modes) ─────────────────────────────────────────────── */
+html:root {
+  --sans:  'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --serif: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --mono:  'Roboto Mono', ui-monospace, monospace;
+}
+
+/* ── Light palette — same orange brand on every page ───────────────── */
+html:root:not([data-theme="dark"]) {
+  --gold: #E0621A;  --gold-h: #C8540E;
+  --gold-tint: rgba(224,98,26,0.08);  --gold-tint-strong: rgba(224,98,26,0.20);
+  --navy: #18182C;  --navy-h: #2C2A44;
+  --paper: #F0EDE6; --paper2: #E8E4DA;
+  --ink: #18120C;   --ink2: #4A4238;  --ink3: #8A8174;  --ink4: #B8B0A4;
+}
+html:not([data-theme="dark"]) body {
+  background:
+    radial-gradient(ellipse 90% 40% at 50% -6%, rgba(224,98,26,0.26) 0%, rgba(232,128,48,0) 60%),
+    radial-gradient(ellipse 55% 40% at 8% 95%, rgba(176,194,224,0.28) 0%, transparent 68%),
+    #F0EDE6 !important;
+  background-attachment: fixed !important;
+}
+
+/* ── Base text ─────────────────────────────────────────────────────── */
+body {
+  font-family: var(--sans) !important;
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+input, select, textarea, button { font-family: inherit; }
+
+/* ── Page titles (Record or upload…, Your Action Items, Your usage…) ── */
+.hero-title, .page-title, .section-hd-title, .wrap > .head h1, .page > h1 {
+  font-family: var(--sans) !important;
+  font-size: 40px !important;
+  font-weight: 600 !important;
+  line-height: 1.12 !important;
+  letter-spacing: -0.02em !important;
+}
+.hero-title em, .page-title em, .section-hd-title em, .wrap > .head h1 em, .page > h1 em {
+  font-style: italic; color: var(--gold);
+}
+
+/* ── Small orange labels above titles ──────────────────────────────── */
+.hero-eyebrow, .page-eyebrow, .section-hd-eyebrow, .eyebrow, .hero-label {
+  font-family: var(--mono) !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase !important;
+  color: var(--gold) !important;
+}
+
+/* ── Subtitle under the title ──────────────────────────────────────── */
+.hero-sub, .page-subtitle, .page > .sub, .section-hd-sub {
+  font-family: var(--sans) !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  letter-spacing: 0 !important;
+  color: var(--ink2) !important;
+}
+
+/* ── Top bar ───────────────────────────────────────────────────────── */
+.nav, .topbar {
+  height: 60px !important;
+  min-height: 60px !important;
+}
+.nav-title, .brand-name {
+  font-family: var(--sans) !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+}
+.nav-sub, .brand-sub {
+  font-family: var(--mono) !important;
+  font-size: 9px !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase;
+}
+.btn-nav, .pill-btn {
+  font-family: var(--sans) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  border-radius: 999px !important;
+}
+
+/* ── Section labels inside cards ───────────────────────────────────── */
+.section-title, .card-title-sm, .right-card-title, .tracker-title {
+  font-family: var(--mono) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.14em !important;
+}
+
+/* ── Phones ────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .hero-title, .page-title, .section-hd-title, .wrap > .head h1, .page > h1 {
+    font-size: 28px !important;
+  }
+  body { font-size: 14px; }
+}
+
+/* ═══ Phones: no sideways scrolling on any page ═══════════════════════ */
+body { overflow-x: clip; }              /* clips stray decorative glows; keeps sticky headers working */
+.hero-bg { overflow: hidden !important; }   /* decorative glow layer must not widen the page */
+@media (max-width: 767px) {
+  /* Top bar: brand on the left, buttons in one swipeable row on the right */
+  .nav, .topbar { padding: 0 12px !important; gap: 8px; }
+  .nav-sub, .brand-sub, .status-chip, #nav-user, #nav-user-badge, .user-badge { display: none !important; }
+  .nav-brand, .lg-brand, .brand { flex-shrink: 0; }
+  .nav-right, .top-actions {
+    flex: 1 1 auto; min-width: 0; justify-content: flex-end;
+    flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; gap: 6px !important;
+  }
+  .nav-right::-webkit-scrollbar, .top-actions::-webkit-scrollbar { display: none; }
+  .nav-right > *, .top-actions > * { flex-shrink: 0; }
+  .btn-nav, .pill-btn { padding: 6px 10px !important; font-size: 11.5px !important; }
+
+  /* Phones use the bottom bar — never the desktop sidebar */
+  .app-layout > .sidebar, aside.sidebar { display: none !important; }
+  .app-layout { display: block !important; }
+
+  /* Content never wider than the screen */
+  .page, .wrap, .main-content, .sidebar-main, #archive-view { min-width: 0 !important; max-width: 100% !important; }
+  .page { padding-left: 14px !important; padding-right: 14px !important; }
+  img, video, canvas { max-width: 100%; }
+  input, select, textarea { max-width: 100%; }
+
+  /* Wide tables scroll inside their card instead of stretching the page */
+  .table-wrap, .tw, .tbl-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+
+  /* Toolbars and stat grids fold onto the screen */
+  .toolbar { flex-wrap: wrap !important; }
+  .toolbar > * { min-width: 0; }
+  .search-wrap { flex: 1 1 100% !important; min-width: 0 !important; }
+  .kpi-grid, .stats, .tiles, .stat-ledger { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .kpi, .stat-card, .tile { min-width: 0; }
+}

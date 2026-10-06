@@ -127,11 +127,11 @@ function setupAuthRoutes(app, pool) {
       await mailer.sendMail({
         from:    process.env.GMAIL_USER || process.env.SMTP_USER,
         to:      email,
-        subject: "Your MOM Generator login code",
+        subject: "Your MOC Generator login code",
         html: `
           <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px">
             <h2 style="font-size:20px;font-weight:600;margin-bottom:8px">Your login code</h2>
-            <p style="color:#666;margin-bottom:24px">Enter this code to sign in to MOM Generator. It expires in 10 minutes.</p>
+            <p style="color:#666;margin-bottom:24px">Enter this code to sign in to MOC Generator. It expires in 10 minutes.</p>
             <div style="background:#f5f6fa;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px">
               <span style="font-size:36px;font-weight:700;letter-spacing:8px;color:#0f1117">${otp}</span>
             </div>

@@ -1,0 +1,235 @@
+/* ═══════════════════════════════════════════════════════════════════
+   theme-dark.css — AiX Track dark theme, shared by every page
+   Load LAST in <head>. Every rule is scoped to html[data-theme="dark"],
+   so the light theme is untouched.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. TOKENS ─────────────────────────────────────────────────────
+   html[data-theme] (0,1,1) beats each page's :root / [data-theme] sets */
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --ink:#EDEBF5; --ink2:#B6B4CA; --ink3:#8A89A6; --ink4:#5E5E78;
+  --paper:#0E0F14; --paper2:#171922; --card:#1A1C25;
+  --border:rgba(255,255,255,0.08); --border-strong:rgba(255,255,255,0.16);
+  --navy:#3B3B63; --navy-h:#4A4A78;
+  --gold:#F0803A; --gold-h:#F59A5A;
+  --gold-tint:rgba(240,128,58,0.12); --gold-tint-strong:rgba(240,128,58,0.26);
+  --sage:#3DC486; --sage-tint:rgba(61,196,134,0.12);
+  --sage-strong:rgba(61,196,134,0.28); --sage-tint-strong:rgba(61,196,134,0.28);
+  --rust:#F06A6A; --rust-tint:rgba(240,106,106,0.12);
+  --rust-strong:rgba(240,106,106,0.28); --rust-tint-strong:rgba(240,106,106,0.28);
+  --plum:#B195DE; --plum-tint:rgba(177,149,222,0.12);
+  --violet:#B195DE; --violet-tint:rgba(177,149,222,0.12);
+  --sky:#5AA6F0; --sky-tint:rgba(90,166,240,0.12);
+  --green:#3DC486; --green-tint:rgba(61,196,134,0.12);
+  --blue:#5AA6F0; --blue-tint:rgba(90,166,240,0.12);
+  --shadow-1:0 1px 3px rgba(0,0,0,0.40),0 2px 12px rgba(0,0,0,0.30);
+  --shadow-2:0 8px 32px rgba(0,0,0,0.55),0 2px 8px rgba(0,0,0,0.35);
+  --shadow-lift:0 20px 60px -20px rgba(0,0,0,0.6);
+}
+
+/* ── 2. PAGE BACKGROUND ─────────────────────────────────────────── */
+html[data-theme="dark"]{background:#0E0F14 !important}
+html[data-theme="dark"] body{
+  background:
+    radial-gradient(ellipse 90% 50% at 50% -8%, rgba(224,98,26,0.22) 0%, rgba(224,98,26,0) 60%),
+    radial-gradient(ellipse 55% 45% at 5% 95%, rgba(90,110,200,0.10) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 45% at 95% 90%, rgba(90,110,200,0.08) 0%, transparent 65%),
+    #0E0F14 !important;
+  background-attachment:fixed !important;
+  color:var(--ink) !important;
+}
+html[data-theme="dark"] ::selection{background:rgba(240,128,58,0.30);color:#fff}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.14)}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.24)}
+
+/* ── 3. NAV · SIDEBAR · BOTTOM NAV · SIDE PANELS ────────────────── */
+html[data-theme="dark"] .nav,
+html[data-theme="dark"] .top-bar{
+  background:rgba(14,15,20,0.86);
+  backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+  border-bottom:1px solid var(--border);
+  box-shadow:none;
+}
+html[data-theme="dark"] .sidebar{
+  background:rgba(18,19,26,0.88);
+  border-right:1px solid var(--border);
+}
+html[data-theme="dark"] .sidebar-divider{background:var(--border)}
+html[data-theme="dark"] .sidebar-nav-btn:hover{background:var(--gold-tint)}
+html[data-theme="dark"] .bottom-nav{
+  background:rgba(14,15,20,0.96);
+  border-top:1px solid var(--border);
+  box-shadow:0 -4px 24px rgba(0,0,0,0.5);
+}
+html[data-theme="dark"] .right-panel:not(.login-right){
+  background:rgba(18,19,26,0.70);
+  border-left:1px solid var(--border);
+}
+html[data-theme="dark"] .tab-bar{background:var(--paper)}
+
+/* ── 4. CARDS & SURFACES (pages that hard-coded white) ──────────── */
+html[data-theme="dark"] :is(
+  .card,.stat-card,.action-card,.person-block,.empty,.hero-stats,
+  .recorder-card,.dropzone,.context-panel,.mp-panel,.settings-row,.settings-row-3,
+  .sp-wrap,.processing-card,.review-header,.mom-edit-card,.additional-notes-box,
+  .right-card:not([style*="gradient"]),.steps-wrap,.free-tier-bar,.trial-bar,.input-tabs,
+  .settings-box,#rec-guard-modal,.confirm-box,.action-item-card,.toolbar,.table-wrap,
+  .stat-grid,.service-card,.plan,.explainer,.faq-item,.balance-bar,.modal,.edit-modal
+){
+  background:var(--card) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] .right-card[style*="var(--paper2)"]{background:var(--paper2) !important}
+html[data-theme="dark"] .action-card.done-card,
+html[data-theme="dark"] .action-row.done-row{background:var(--sage-tint) !important}
+html[data-theme="dark"] .stat-card:hover{background:var(--paper2) !important}
+
+/* Top highlight lines on cards: keep, but softer */
+html[data-theme="dark"] .recorder-card::before,
+html[data-theme="dark"] .context-panel::before,
+html[data-theme="dark"] .mp-panel::before,
+html[data-theme="dark"] .right-card::before{
+  background:linear-gradient(90deg,transparent,rgba(240,128,58,0.45),transparent);
+}
+
+/* Faint inner wells */
+html[data-theme="dark"] :is(.waveform-wrap,.rec-playback-wrap,.media-player-wrap,.ctx-file-zone,.mp-file-zone){
+  background:rgba(255,255,255,0.03) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.ctx-textarea,.mp-textarea,.rec-notes-ta,#session-prompt-input,
+  #ctx-points-list input,#mp-points-list input,.mom-edit-input,.mom-edit-textarea,
+  .settings-input,.settings-textarea,.form-input,.field-input,.edit-input,.edit-textarea,
+  .edit-select,.search-wrap input,.filter-input,.filter-select,.aap-search,.ac-email-inp){
+  background:var(--paper2) !important;
+  border-color:var(--border-strong) !important;
+  color:var(--ink) !important;
+}
+html[data-theme="dark"] :is(input,textarea)::placeholder{color:var(--ink4) !important}
+html[data-theme="dark"] :is(.ctx-textarea,.mp-textarea,.rec-notes-ta,#session-prompt-input,
+  .mom-edit-input,.mom-edit-textarea,.settings-input,.settings-textarea,.form-input,
+  .field-input,.edit-input,.edit-textarea,.search-wrap input):focus{
+  border-color:var(--gold) !important;
+  box-shadow:0 0 0 3px var(--gold-tint) !important;
+}
+html[data-theme="dark"] select option{background:var(--card);color:var(--ink)}
+
+/* ── 5. SMALL CONTROLS (pills, chips, secondary buttons) ────────── */
+html[data-theme="dark"] :is(.btn-nav,.btn-sm,.status-chip,.chip,.sp-chip,.quick-action-btn,
+  .provider-btn,.sp-clear,.btn-action.secondary,.btn-secondary,.btn-cancel,.icon-btn,
+  .page-btn,.period-btn,.vol-tab,.aap-filter-btn,.rec-notes-clear,.rrb-btn-dismiss){
+  background:rgba(255,255,255,0.05);
+  border-color:var(--border-strong);
+  color:var(--ink2);
+}
+html[data-theme="dark"] :is(.btn-nav,.btn-sm,.sp-chip,.quick-action-btn,.provider-btn,
+  .btn-secondary,.icon-btn,.page-btn,.period-btn,.vol-tab):hover{
+  background:var(--gold-tint);
+  border-color:var(--gold);
+  color:var(--gold);
+}
+html[data-theme="dark"] .icon-btn.del:hover{background:var(--rust-tint);border-color:var(--rust);color:var(--rust)}
+html[data-theme="dark"] :is(.period-btn,.page-btn,.vol-tab,.aap-filter-btn).active{
+  background:var(--navy);border-color:var(--navy);color:var(--gold);
+}
+html[data-theme="dark"] .provider-btn.active{background:var(--gold-tint);border-color:var(--gold);color:var(--gold)}
+html[data-theme="dark"] .sn-circle{background:var(--card);border-color:var(--border-strong)}
+html[data-theme="dark"] .sn.done .sn-circle{background:var(--sage-tint);border-color:var(--sage);color:var(--sage)}
+
+/* Things that used near-black #18182C as a fill */
+html[data-theme="dark"] :is(.filter-btn.active,.view-tab.active,.tab-btn-mode.active,
+  .ctx-tab-btn.active,.mp-tab.active,.prompt-tab-btn.active,.ac-owner,.ac-email-send,
+  .btn-action:not(.secondary),.modal-btn,.btn-save,.btn-buy-credits,.plan-btn.primary,
+  .toast.info){
+  background:var(--navy-h) !important;
+  color:#fff !important;
+  border-color:var(--navy-h) !important;
+}
+html[data-theme="dark"] .view-tab.active,
+html[data-theme="dark"] .btn-save{color:var(--gold) !important}
+html[data-theme="dark"] .tab-btn:not(.active):hover{background:rgba(255,255,255,0.06)}
+html[data-theme="dark"] .tab-btn.active{background:var(--card);color:var(--gold)}
+
+/* ── 6. PRIMARY CTA — saffron so it stands out on dark ─────────── */
+html[data-theme="dark"] .btn-primary{
+  background:linear-gradient(135deg,#E0621A,#F08030) !important;
+  color:#fff !important;
+  border:none !important;
+  box-shadow:0 4px 20px rgba(224,98,26,0.30) !important;
+}
+html[data-theme="dark"] .btn-primary:hover:not(:disabled){
+  background:linear-gradient(135deg,#EC6E24,#F59A5A) !important;
+  box-shadow:0 6px 28px rgba(224,98,26,0.45) !important;
+}
+html[data-theme="dark"] .btn-primary:disabled{
+  background:rgba(255,255,255,0.08) !important;
+  color:var(--ink4) !important;
+  box-shadow:none !important;
+}
+
+/* ── 7. TEXT that used --navy as a colour → readable ink
+   :where() keeps specificity low so coloured variants
+   (.kpi.gold .kpi-val, .stat-card.green .stat-val …) still win. */
+:where(html[data-theme="dark"]) :is(.kpi-val,.margin-item-val,.margin-val,.stat-val,
+  .slider-big,.page-title,.modal-title,.person-name,.tasks-title-txt){color:var(--ink)}
+:where(html[data-theme="dark"]) .tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+html[data-theme="dark"] :is(#stat-credits-consumed,#stat-credits-avg){color:var(--ink) !important}
+html[data-theme="dark"] .modal-head .modal-title{color:#fff}
+
+/* Inline dark text colours injected by JS (error boxes, plan cards…) */
+html[data-theme="dark"] :is([style*="color:#0F1B3D"],[style*="color:#0F1524"],
+  [style*="color:#18182C"],[style*="color:#0D1526"]){color:var(--ink) !important}
+html[data-theme="dark"] [style*="color:#4A5468"]{color:var(--ink2) !important}
+html[data-theme="dark"] [style*="border:1px solid #E8E4D8"]{border-color:var(--border-strong) !important}
+html[data-theme="dark"] #error-box [style*="background:rgba(15,27,61,0.05)"]{background:rgba(255,255,255,0.04) !important}
+
+/* ── 8. TOASTS / MODALS / OVERLAYS ──────────────────────────────── */
+html[data-theme="dark"] .toast[class*="t-"]{
+  background:var(--card) !important;
+  border-color:var(--border-strong) !important;
+  box-shadow:var(--shadow-2) !important;
+}
+html[data-theme="dark"] :is(.settings-modal,.confirm-overlay,#rec-guard-overlay,.overlay,.edit-overlay){
+  background:rgba(4,5,8,0.78) !important;
+}
+
+/* ── 9. PROFILE HERO (orange gradient → deep ember) ─────────────── */
+html[data-theme="dark"] .profile-hero{
+  background:linear-gradient(118deg,#8A3610 0%,#A8461A 30%,#4A2A1C 66%,#0E0F14 100%) !important;
+}
+html[data-theme="dark"] .hero-name{color:#F7EFE8}
+html[data-theme="dark"] .hero-email{color:rgba(255,255,255,0.62)}
+html[data-theme="dark"] .badge-free,
+html[data-theme="dark"] .hero-so{background:rgba(255,255,255,0.12);color:#fff;border-color:rgba(255,255,255,0.22)}
+html[data-theme="dark"] .hero-stats{box-shadow:var(--shadow-2) !important}
+html[data-theme="dark"] .hero-stat{border-right-color:var(--border)}
+html[data-theme="dark"] .hero-stat-val{color:var(--ink)}
+html[data-theme="dark"] .hero-stat-lbl{color:var(--ink3)}
+html[data-theme="dark"] :is(.session-row,.purchase-row){border-bottom-color:var(--border)}
+html[data-theme="dark"] .card-body .divider{background:var(--border)}
+html[data-theme="dark"] .card-head{border-bottom-color:var(--border)}
+
+/* ── 10. LOGIN PAGE ─────────────────────────────────────────────── */
+html[data-theme="dark"] .left-panel{
+  background:linear-gradient(118deg,#7A2E08 0%,#9C3F16 28%,#4A2A1C 62%,#15161D 88%,#0E0F14 100%) !important;
+}
+html[data-theme="dark"] :is(.brand-name,.hero-title,.feat-item strong,.stat-num){color:#F7EFE8 !important}
+html[data-theme="dark"] .hero-title em{color:#FFB27A !important}
+html[data-theme="dark"] :is(.hero-desc,.feat-item){color:rgba(255,255,255,0.68) !important}
+html[data-theme="dark"] :is(.brand-sub,.hero-eyebrow,.stat-lbl,.left-footer){color:rgba(255,255,255,0.45) !important}
+html[data-theme="dark"] .feat-icon{background:rgba(255,255,255,0.08) !important;border-color:rgba(255,255,255,0.14) !important}
+html[data-theme="dark"] .right-panel.login-right{box-shadow:-20px 0 60px rgba(0,0,0,0.5) !important}
+html[data-theme="dark"] .bg-grid{opacity:0.5}
+html[data-theme="dark"] .bg-orb-2{background:radial-gradient(circle,rgba(224,98,26,0.10) 0%,transparent 70%)}
+
+/* ── 11. MISC ───────────────────────────────────────────────────── */
+html[data-theme="dark"] .rec-btn{box-shadow:0 4px 24px rgba(224,98,26,0.40)}
+html[data-theme="dark"] .rec-btn.recording{box-shadow:0 4px 24px rgba(216,48,48,0.45)}
+html[data-theme="dark"] .person-progress{background:var(--border)}
+html[data-theme="dark"] .person-block-head:hover,
+html[data-theme="dark"] .task-row:hover{background:var(--gold-tint)}
+html[data-theme="dark"] tbody tr:hover{background:var(--gold-tint)}
+html[data-theme="dark"] .loader-mark{background:var(--navy);color:var(--gold)}
+html[data-theme="dark"] #page-loader{background:var(--paper)}
+html[data-theme="dark"] .readonly-bar{background:var(--gold-tint)}

@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<script src="/js/theme.js"></script>
+<title>User Activity · AiX Track</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0F1524;--ink2:#4A5468;--ink3:#8A93A8;--ink4:#B8BFCC;
+  --paper:#FAF8F3;--paper2:#F4F0E6;--card:#FFFFFF;
+  --border:#E8E4D8;--border-strong:#D4CFC0;
+  --navy:#0F1B3D;--navy-h:#1F2D57;
+  --gold:#B8912A;--gold-h:#C89A3D;--gold-tint:rgba(184,145,42,0.10);
+  --sage:#4A7C59;--sage-tint:rgba(74,124,89,0.10);
+  --rust:#A0472E;--rust-tint:rgba(160,71,46,0.10);
+  --violet:#7C3AED;--violet-tint:rgba(124,58,237,0.10);
+  --blue:#2563EB;--blue-tint:rgba(37,99,235,0.10);
+  --shadow-1:0 1px 2px rgba(15,21,36,0.04),0 2px 6px rgba(15,21,36,0.03);
+  --shadow-2:0 4px 20px rgba(15,21,36,0.06),0 12px 48px rgba(15,21,36,0.06);
+  --serif:'Roboto',Georgia,serif;
+  --sans:'Roboto',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'Roboto Mono',ui-monospace,monospace;
+}
+[data-theme="dark"]{
+  --ink:#F5F1E6;--ink2:#B8B0A0;--ink3:#6B6455;--ink4:#3D3830;
+  --paper:#0C0D10;--paper2:#141519;--card:#161820;
+  --border:#25272F;--border-strong:#333540;
+  --navy:#4A5B8C;--gold:#D4A94A;--gold-tint:rgba(212,169,74,0.10);
+  --sage:#7BA88C;--rust:#D07358;--violet:#A78BFA;
+  --shadow-2:0 4px 20px rgba(0,0,0,0.4);
+}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh}
+
+/* NAV */
+.nav{background:var(--card);border-bottom:1px solid var(--border);height:60px;padding:0 1.75rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-brand{display:flex;align-items:center;gap:12px}
+.nav-mark{width:32px;height:32px;background:var(--navy);color:var(--gold);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-size:20px;padding-bottom:3px}
+.nav-title{font-family:var(--serif);font-size:20px;letter-spacing:-0.01em}
+.nav-title em{font-style:italic;color:var(--gold)}
+.nav-sub{font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:0.14em;text-transform:uppercase;margin-top:1px}
+.nav-right{display:flex;align-items:center;gap:8px}
+.btn-nav{padding:7px 12px;font-size:12px;font-weight:500;background:var(--card);color:var(--ink2);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all 0.15s}
+.btn-nav:hover{border-color:var(--gold);color:var(--gold)}
+.role-badge{padding:3px 8px;border-radius:4px;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase}
+.role-admin{background:var(--rust-tint);color:var(--rust)}
+.role-developer{background:var(--violet-tint);color:var(--violet)}
+.role-user{background:var(--sage-tint);color:var(--sage)}
+
+/* LAYOUT */
+.page{max-width:1200px;margin:0 auto;padding:2rem 1.25rem 4rem}
+.page-header{margin-bottom:2rem}
+.page-title{font-family:var(--serif);font-size:2rem;font-style:italic;letter-spacing:-0.02em;color:var(--navy)}
+.page-meta{font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:0.1em;text-transform:uppercase;margin-top:4px}
+
+/* ACCESS GATE */
+.access-gate{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:2rem;margin-bottom:2rem;display:flex;align-items:center;gap:1rem}
+.gate-label{font-family:var(--mono);font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px}
+#secretInput{padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:13px;background:var(--paper2);color:var(--ink);outline:none;width:260px}
+#secretInput:focus{border-color:var(--gold)}
+.btn-primary{padding:8px 16px;background:var(--navy);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background 0.15s}
+.btn-primary:hover{background:var(--navy-h)}
+.btn-sm{padding:5px 10px;font-size:11px;border-radius:5px}
+
+/* KPIs */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:2rem}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem 1.5rem;box-shadow:var(--shadow-1)}
+.kpi-label{font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px}
+.kpi-val{font-size:2rem;font-weight:700;color:var(--ink);line-height:1}
+.kpi-sub{font-size:11px;color:var(--ink3);margin-top:4px}
+.kpi.accent .kpi-val{color:var(--gold)}
+.kpi.green .kpi-val{color:var(--sage)}
+.kpi.red .kpi-val{color:var(--rust)}
+.kpi.purple .kpi-val{color:var(--violet)}
+
+/* FILTERS */
+.filters{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem;flex-wrap:wrap}
+.filter-label{font-family:var(--mono);font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.1em}
+select,input[type=text]{padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:12px;background:var(--card);color:var(--ink);cursor:pointer;outline:none}
+select:focus,input[type=text]:focus{border-color:var(--gold)}
+.search-box{position:relative}
+.search-box input{padding-left:30px;width:220px}
+.search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--ink3);font-size:13px}
+.auto-refresh{display:flex;align-items:center;gap:6px;margin-left:auto;font-size:12px;color:var(--ink2)}
+.auto-refresh input{cursor:pointer}
+
+/* TABS */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:1.5rem}
+.tab{padding:9px 16px;font-size:12px;font-weight:500;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;font-family:inherit;background:none;border-top:none;border-left:none;border-right:none}
+.tab.active{color:var(--navy);border-bottom-color:var(--navy);font-weight:600}
+.tab:hover:not(.active){color:var(--ink)}
+
+/* TABLES */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow-1);margin-bottom:1.5rem}
+.table-header{padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.table-title{font-size:13px;font-weight:600;color:var(--ink)}
+.table-count{font-family:var(--mono);font-size:10px;color:var(--ink3)}
+table{width:100%;border-collapse:collapse}
+th{padding:8px 14px;text-align:left;font-family:var(--mono);font-size:9px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.1em;background:var(--paper2);border-bottom:1px solid var(--border)}
+td{padding:10px 14px;font-size:12px;color:var(--ink);border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--paper2)}
+.mono{font-family:var(--mono);font-size:11px}
+.text-right{text-align:right}
+.text-center{text-align:center}
+
+/* STATUS BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em}
+.badge.processing{background:rgba(184,145,42,0.15);color:var(--gold)}
+.badge.done{background:var(--sage-tint);color:var(--sage)}
+.badge.error{background:var(--rust-tint);color:var(--rust)}
+.badge.idle{background:var(--paper2);color:var(--ink3)}
+
+/* SERVICE PILLS */
+.svc{display:inline-block;padding:1px 6px;border-radius:3px;font-family:var(--mono);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em}
+.svc.sarvam{background:var(--violet-tint);color:var(--violet)}
+.svc.claude{background:var(--gold-tint);color:var(--gold)}
+.svc.openai{background:var(--sage-tint);color:var(--sage)}
+
+/* USER ROW */
+.user-cell{display:flex;align-items:center;gap:8px}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--navy);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.user-name{font-size:12px;font-weight:500}
+.user-email{font-size:10px;color:var(--ink3);font-family:var(--mono)}
+
+/* TIMELINE BAR */
+.cost-bar{height:4px;background:var(--paper2);border-radius:2px;overflow:hidden;min-width:60px}
+.cost-fill{height:100%;background:var(--gold);border-radius:2px}
+
+/* LIVE PULSE */
+.pulse{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--sage);margin-right:5px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.85)}}
+
+/* LOADING */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-row td{text-align:center;padding:24px;color:var(--ink3);font-size:12px}
+
+/* EMPTY */
+.empty-state{padding:3rem;text-align:center;color:var(--ink3);font-size:13px}
+.empty-state .icon{font-size:2rem;margin-bottom:8px;display:block}
+
+/* USER DETAIL PANEL */
+.detail-panel{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.5rem;margin-top:1rem;display:none}
+.detail-panel.open{display:block}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem}
+.detail-kpi{background:var(--paper2);border-radius:8px;padding:12px 14px}
+.detail-kpi-label{font-family:var(--mono);font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px}
+.detail-kpi-val{font-size:1.4rem;font-weight:700}
+
+/* MINI CHART */
+.mini-chart{display:flex;align-items:flex-end;gap:2px;height:36px}
+.bar{background:var(--gold);border-radius:2px 2px 0 0;min-width:8px;flex:1;transition:height 0.4s}
+
+/* COST BREAKDOWN */
+.cost-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+.cost-row:last-child{border-bottom:none;font-weight:600}
+.cost-label{display:flex;align-items:center;gap:6px}
+.cost-dot{width:8px;height:8px;border-radius:50%}
+
+/* ACCESS DENIED */
+.access-denied{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:3rem;text-align:center;color:var(--ink3)}
+
+/* RESPONSIVE */
+@media(max-width:700px){
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .detail-grid{grid-template-columns:1fr 1fr}
+  th:nth-child(n+4),td:nth-child(n+4){display:none}
+}
+</style>
+<link rel="stylesheet" href="/css/theme-dark.css">
+<link rel="stylesheet" href="/css/aix-uniform.css">
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-mark">A</div>
+    <div>
+      <div class="nav-title">AiX <em>Track</em></div>
+      <div class="nav-sub">User Activity</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <span id="currentRoleBadge" class="role-badge role-admin" style="display:none"></span>
+    <a href="/" class="btn-nav">← Dashboard</a>
+    <a href="/usage" class="btn-nav">Usage</a>
+    <button class="btn-nav" onclick="toggleTheme()" id="theme-btn">☾</button>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="page-title">User Activity</div>
+    <div class="page-meta" id="lastRefreshed">Loading…</div>
+  </div>
+
+  <!-- ACCESS GATE (shown if no session role) -->
+  <div class="access-gate" id="accessGate" style="display:none">
+    <div style="flex:1">
+      <div class="gate-label">Admin / Developer Access</div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <input type="password" id="secretInput" placeholder="Enter admin secret…"/>
+        <button class="btn-primary" onclick="unlockWithSecret()">Unlock</button>
+      </div>
+      <div id="gateError" style="color:var(--rust);font-size:11px;margin-top:6px;display:none"></div>
+    </div>
+    <div style="color:var(--ink3);font-size:12px;max-width:240px;line-height:1.5">
+      This page is restricted to <strong>Admin</strong> and <strong>Developer</strong> roles. Regular users see only their own session data.
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="mainContent" style="display:none">
+
+    <!-- KPI ROW -->
+    <div class="kpi-grid">
+      <div class="kpi accent">
+        <div class="kpi-label">Active Today</div>
+        <div class="kpi-val" id="kpiActiveToday">—</div>
+        <div class="kpi-sub">unique users</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Sessions Today</div>
+        <div class="kpi-val" id="kpiSessionsToday">—</div>
+        <div class="kpi-sub">MOC generations</div>
+      </div>
+      <div class="kpi green">
+        <div class="kpi-label">Sarvam Cost (today)</div>
+        <div class="kpi-val" id="kpiSarvamToday">—</div>
+        <div class="kpi-sub" id="kpiSarvamInr">₹—</div>
+      </div>
+      <div class="kpi accent">
+        <div class="kpi-label">Claude/GPT Cost (today)</div>
+        <div class="kpi-val" id="kpiAiToday">—</div>
+        <div class="kpi-sub" id="kpiAiInr">₹—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Total Cost (30d)</div>
+        <div class="kpi-val" id="kpiTotal30">—</div>
+        <div class="kpi-sub" id="kpiTotal30Inr">₹—</div>
+      </div>
+      <div class="kpi purple">
+        <div class="kpi-label">Total Users</div>
+        <div class="kpi-val" id="kpiTotalUsers">—</div>
+        <div class="kpi-sub">all time</div>
+      </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filters">
+      <span class="filter-label">Period</span>
+      <select id="filterDays" onchange="loadData()">
+        <option value="1">Today</option>
+        <option value="7">Last 7 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="90">Last 90 days</option>
+        <option value="0">All time</option>
+      </select>
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchBox" placeholder="Search user or conversation…" oninput="applySearch()"/>
+      </div>
+      <select id="filterService" onchange="applySearch()">
+        <option value="">All services</option>
+        <option value="sarvam">Sarvam</option>
+        <option value="claude">Claude</option>
+        <option value="openai">OpenAI</option>
+      </select>
+      <label class="auto-refresh">
+        <input type="checkbox" id="autoRefreshToggle" checked onchange="toggleAutoRefresh()"/>
+        <span class="pulse"></span> Auto-refresh (30s)
+      </label>
+      <button class="btn-nav btn-sm" onclick="loadData()">↻ Refresh</button>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('users',this)">👥 Users</button>
+      <button class="tab" onclick="showTab('sessions',this)">📋 Sessions</button>
+      <button class="tab" onclick="showTab('log',this)">📊 API Log</button>
+    </div>
+
+    <!-- USERS TAB -->
+    <div id="tab-users">
+      <div class="table-wrap">
+        <div class="table-header">
+          <span class="table-title">User Activity</span>
+          <span class="table-count" id="userCount">Loading…</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th class="text-center">Conversations</th>
+              <th class="text-right">Sarvam Cost</th>
+              <th class="text-right">AI Cost</th>
+              <th class="text-right">Total Cost</th>
+              <th class="text-right">Share</th>
+              <th>Last Active</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody">
+            <tr class="loading-row"><td colspan="8"><span class="spinner"></span>Loading users…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- User detail panel -->
+      <div class="detail-panel" id="userDetailPanel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <div style="font-size:14px;font-weight:600" id="detailEmail">—</div>
+          <button class="btn-nav btn-sm" onclick="closeDetail()">✕ Close</button>
+        </div>
+        <div class="detail-grid" id="detailKpis"></div>
+        <div class="table-wrap" style="margin-top:1rem">
+          <div class="table-header"><span class="table-title">Sessions for this user</span></div>
+          <table><thead><tr>
+            <th>Conversation</th><th>Date</th><th class="text-center">Duration</th>
+            <th class="text-right">Sarvam</th><th class="text-right">AI</th><th class="text-right">Total</th>
+          </tr></thead>
+          <tbody id="detailSessions"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SESSIONS TAB -->
+    <div id="tab-sessions" style="display:none">
+      <div class="table-wrap">
+        <div class="table-header">
+          <span class="table-title">MOC Sessions</span>
+          <span class="table-count" id="sessionCount">Loading…</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Conversation</th>
+              <th>User</th>
+              <th class="text-center">Duration</th>
+              <th>AI Provider</th>
+              <th class="text-right">Sarvam</th>
+              <th class="text-right">AI Cost</th>
+              <th class="text-right">Total</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody id="sessionTableBody">
+            <tr class="loading-row"><td colspan="8"><span class="spinner"></span>Loading sessions…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- API LOG TAB -->
+    <div id="tab-log" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:1rem">
+        <!-- Service breakdown -->
+        <div class="table-wrap">
+          <div class="table-header"><span class="table-title">Cost by Service</span></div>
+          <table>
+            <thead><tr>
+              <th>Service</th><th class="text-right">Calls</th>
+              <th class="text-right">Units</th><th class="text-right">USD</th>
+            </tr></thead>
+            <tbody id="serviceBreakdown">
+              <tr class="loading-row"><td colspan="4"><span class="spinner"></span>Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Daily cost chart -->
+        <div class="table-wrap" style="overflow:visible">
+          <div class="table-header"><span class="table-title">Daily Cost — Last 14 Days</span></div>
+          <div style="padding:1rem 1.25rem">
+            <div style="display:flex;align-items:flex-end;gap:3px;height:80px" id="dailyChart">
+              <div style="text-align:center;color:var(--ink3);font-size:11px;width:100%">Loading chart…</div>
+            </div>
+            <div id="dailyLabels" style="display:flex;gap:3px;margin-top:4px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Raw log table -->
+      <div class="table-wrap">
+        <div class="table-header">
+          <span class="table-title">Recent API Calls</span>
+          <span class="table-count" id="logCount"></span>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Time (IST)</th><th>Service</th><th>User</th>
+            <th>Detail</th><th class="text-right">Units</th>
+            <th>Type</th><th class="text-right">Cost USD</th>
+          </tr></thead>
+          <tbody id="logTableBody">
+            <tr class="loading-row"><td colspan="7"><span class="spinner"></span>Loading log…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- end mainContent -->
+
+  <!-- USER-ONLY VIEW (for non-admin) -->
+  <div id="userSelfView" style="display:none">
+    <div style="background:var(--blue-tint);border:1px solid rgba(37,99,235,0.2);border-radius:8px;padding:12px 16px;margin-bottom:1.5rem;font-size:12px;color:var(--ink2)">
+      📊 You are viewing your own activity. Admin and Developer roles can see all users.
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">My Conversations</div><div class="kpi-val" id="myMeetings">—</div></div>
+      <div class="kpi accent"><div class="kpi-label">Total Cost</div><div class="kpi-val" id="myCost">—</div></div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-header"><span class="table-title">My Sessions</span></div>
+      <table>
+        <thead><tr>
+          <th>Conversation</th><th>Date</th><th class="text-center">Duration</th><th class="text-right">Cost</th>
+        </tr></thead>
+        <tbody id="mySessions">
+          <tr class="loading-row"><td colspan="4"><span class="spinner"></span>Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- end page -->
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+let adminSecret = localStorage.getItem('adminSecret') || '';
+let currentRole = null; // 'admin', 'developer', 'user'
+let allSessions = [], allUsers = [], allLog = [];
+let maxCost = 1;
+let refreshTimer = null;
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+async function init() {
+  // Check session role
+  try {
+    const me = await fetch('/auth/me').then(r => r.json());
+    if (me.user) {
+      // Check admin/developer via secret or role field
+      if (me.user.role === 'admin' || me.user.role === 'developer') {
+        setRole(me.user.role);
+        return;
+      }
+      // Try saved secret
+      if (adminSecret) {
+        const ok = await trySecret(adminSecret);
+        if (ok) return;
+      }
+      // Show gate for logged-in users without role
+      showAccessGate();
+    } else {
+      window.location.href = '/login.html';
+    }
+  } catch(e) {
+    showAccessGate();
+  }
+}
+
+function showAccessGate() {
+  document.getElementById('accessGate').style.display = 'flex';
+  // Still load user's own data
+  currentRole = 'user';
+  loadUserSelfView();
+}
+
+async function unlockWithSecret() {
+  const val = document.getElementById('secretInput').value.trim();
+  const ok = await trySecret(val);
+  if (!ok) {
+    const err = document.getElementById('gateError');
+    err.textContent = 'Invalid secret. Contact your administrator.';
+    err.style.display = 'block';
+  }
+}
+
+async function trySecret(secret) {
+  if (!secret) return false;
+  try {
+    const r = await fetch(`/api/admin/usage?days=1&secret=${encodeURIComponent(secret)}`);
+    if (r.ok) {
+      adminSecret = secret;
+      localStorage.setItem('adminSecret', secret);
+      document.getElementById('accessGate').style.display = 'none';
+      setRole('admin');
+      return true;
+    }
+    return false;
+  } catch { return false; }
+}
+
+function setRole(role) {
+  currentRole = role;
+  const badge = document.getElementById('currentRoleBadge');
+  badge.textContent = role.toUpperCase();
+  badge.className = `role-badge role-${role}`;
+  badge.style.display = 'inline-block';
+  document.getElementById('userSelfView').style.display = 'none';
+  document.getElementById('mainContent').style.display = 'block';
+  loadData();
+  scheduleAutoRefresh();
+}
+
+// ── Data Loading ───────────────────────────────────────────────────────────────
+async function loadData() {
+  const days = document.getElementById('filterDays').value;
+  const headers = adminSecret ? { 'x-admin-secret': adminSecret } : {};
+
+  try {
+    // Load sessions + users in parallel
+    const [usersRes, sessionsRes, dailyRes] = await Promise.all([
+      fetch(`/api/admin/usage-users?days=${days}`, { headers }),
+      fetch(`/api/admin/usage-per-session?days=${days}`, { headers }),
+      fetch(`/api/admin/usage-daily`, { headers }),
+    ]);
+
+    if (usersRes.ok) {
+      const d = await usersRes.json();
+      allUsers = d.users || [];
+    }
+    if (sessionsRes.ok) {
+      const d = await sessionsRes.json();
+      allSessions = d.sessions || [];
+    }
+
+    renderKPIs();
+    renderUsers();
+    renderSessions();
+    renderServiceBreakdown();
+
+    if (dailyRes.ok) {
+      const d = await dailyRes.json();
+      renderDailyChart(d.daily || []);
+    }
+
+    // Load raw log
+    loadRawLog(days, headers);
+
+    document.getElementById('lastRefreshed').textContent =
+      `Last refreshed: ${new Date().toLocaleTimeString('en-IN')} · Period: ${days == 0 ? 'All time' : `${days}d`}`;
+
+  } catch(err) {
+    console.error('Load failed:', err);
+  }
+}
+
+async function loadRawLog(days, headers) {
+  try {
+    const r = await fetch(`/api/admin/usage?days=${days}`, { headers });
+    if (!r.ok) return;
+    const d = await r.json();
+    allLog = d.recent_log || d.log || [];
+    renderLog();
+    renderServiceBreakdown(d.by_service || []);
+  } catch {}
+}
+
+async function loadUserSelfView() {
+  try {
+    const r = await fetch('/api/history');
+    if (!r.ok) return;
+    const d = await r.json();
+    const sessions = d.sessions || [];
+    document.getElementById('myMeetings').textContent = sessions.length;
+    document.getElementById('mySessions').innerHTML = sessions.slice(0,20).map(s => `
+      <tr>
+        <td>${s.meeting_title || 'Untitled'}</td>
+        <td class="mono">${s.meeting_date || '—'}</td>
+        <td class="text-center mono">${s.duration_seconds ? formatDuration(s.duration_seconds) : '—'}</td>
+        <td class="text-right mono">—</td>
+      </tr>`).join('') || '<tr><td colspan="4" class="empty-state">No sessions yet</td></tr>';
+    document.getElementById('userSelfView').style.display = 'block';
+  } catch {}
+}
+
+// ── Render KPIs ────────────────────────────────────────────────────────────────
+function renderKPIs() {
+  const today = new Date().toISOString().slice(0,10);
+  const todaySessions = allSessions.filter(s => (s.created_at||'').startsWith(today));
+  const activeToday = new Set(todaySessions.map(s => s.user_email)).size;
+  const sarvamToday = todaySessions.reduce((a,s) => a + parseFloat(s.sarvam_cost||0), 0);
+  const aiToday = todaySessions.reduce((a,s) => a + parseFloat(s.ai_cost||0), 0);
+  const total30 = allSessions.reduce((a,s) => a + parseFloat(s.total_cost||0), 0);
+
+  document.getElementById('kpiActiveToday').textContent = activeToday;
+  document.getElementById('kpiSessionsToday').textContent = todaySessions.length;
+  document.getElementById('kpiSarvamToday').textContent = `$${sarvamToday.toFixed(4)}`;
+  document.getElementById('kpiSarvamInr').textContent = `₹${(sarvamToday*84).toFixed(2)}`;
+  document.getElementById('kpiAiToday').textContent = `$${aiToday.toFixed(4)}`;
+  document.getElementById('kpiAiInr').textContent = `₹${(aiToday*84).toFixed(2)}`;
+  document.getElementById('kpiTotal30').textContent = `$${total30.toFixed(4)}`;
+  document.getElementById('kpiTotal30Inr').textContent = `₹${(total30*84).toFixed(2)}`;
+  document.getElementById('kpiTotalUsers').textContent = allUsers.length;
+}
+
+// ── Render Users ───────────────────────────────────────────────────────────────
+function renderUsers() {
+  const q = (document.getElementById('searchBox').value||'').toLowerCase();
+  const svc = document.getElementById('filterService').value;
+  let users = allUsers;
+  if (q) users = users.filter(u => (u.user_email||'').toLowerCase().includes(q));
+
+  const totalCost = users.reduce((a,u) => a + parseFloat(u.total_cost_usd||0), 0);
+  document.getElementById('userCount').textContent = `${users.length} user${users.length===1?'':'s'}`;
+
+  const body = document.getElementById('userTableBody');
+  if (!users.length) {
+    body.innerHTML = `<tr><td colspan="8" class="empty-state"><span class="icon">👤</span>No user activity in this period</td></tr>`;
+    return;
+  }
+
+  body.innerHTML = users.map(u => {
+    const cost = parseFloat(u.total_cost_usd||0);
+    const pct = totalCost > 0 ? (cost / totalCost * 100) : 0;
+    const initials = (u.user_email||'?')[0].toUpperCase();
+    const sarvamEst = cost * 0.65; // approximate split
+    const aiEst = cost * 0.35;
+    return `
+    <tr>
+      <td>
+        <div class="user-cell">
+          <div class="avatar">${initials}</div>
+          <div>
+            <div class="user-email">${u.user_email||'—'}</div>
+          </div>
+        </div>
+      </td>
+      <td class="text-center mono">${u.meetings||0}</td>
+      <td class="text-right"><span class="mono">$${sarvamEst.toFixed(4)}</span></td>
+      <td class="text-right"><span class="mono">$${aiEst.toFixed(4)}</span></td>
+      <td class="text-right"><span class="mono" style="color:var(--gold);font-weight:600">$${cost.toFixed(4)}</span><br><span style="font-size:9px;color:var(--ink3)">₹${(cost*84).toFixed(0)}</span></td>
+      <td class="text-right">
+        <div class="cost-bar"><div class="cost-fill" style="width:${pct}%"></div></div>
+        <div style="font-size:9px;color:var(--ink3);margin-top:2px">${pct.toFixed(1)}%</div>
+      </td>
+      <td class="mono" style="font-size:10px;color:var(--ink3)">${formatAge(u.last_active)}</td>
+      <td><button class="btn-nav btn-sm" onclick="showUserDetail('${u.user_email}')">Detail →</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── User Detail ────────────────────────────────────────────────────────────────
+function showUserDetail(email) {
+  const panel = document.getElementById('userDetailPanel');
+  panel.classList.add('open');
+  document.getElementById('detailEmail').textContent = email;
+
+  const sessions = allSessions.filter(s => s.user_email === email);
+  const totalCost = sessions.reduce((a,s) => a + parseFloat(s.total_cost||0), 0);
+  const totalMin = sessions.reduce((a,s) => a + parseFloat(s.duration_seconds||0), 0) / 60;
+
+  document.getElementById('detailKpis').innerHTML = `
+    <div class="detail-kpi"><div class="detail-kpi-label">Sessions</div><div class="detail-kpi-val">${sessions.length}</div></div>
+    <div class="detail-kpi"><div class="detail-kpi-label">Audio Minutes</div><div class="detail-kpi-val">${totalMin.toFixed(0)}</div></div>
+    <div class="detail-kpi"><div class="detail-kpi-label" style="color:var(--gold)">Total Cost</div><div class="detail-kpi-val" style="color:var(--gold)">$${totalCost.toFixed(4)}</div></div>
+  `;
+
+  document.getElementById('detailSessions').innerHTML = sessions.map(s => `
+    <tr>
+      <td>${s.meeting_title||'Untitled'}</td>
+      <td class="mono" style="font-size:10px">${(s.created_at||'').slice(0,10)}</td>
+      <td class="text-center mono">${s.duration_seconds ? formatDuration(s.duration_seconds) : '—'}</td>
+      <td class="text-right mono">$${parseFloat(s.sarvam_cost||0).toFixed(4)}</td>
+      <td class="text-right mono">$${parseFloat(s.ai_cost||0).toFixed(4)}</td>
+      <td class="text-right mono" style="color:var(--gold);font-weight:600">$${parseFloat(s.total_cost||0).toFixed(4)}</td>
+    </tr>`).join('') || '<tr><td colspan="6" class="empty-state">No sessions</td></tr>';
+
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeDetail() {
+  document.getElementById('userDetailPanel').classList.remove('open');
+}
+
+// ── Render Sessions ────────────────────────────────────────────────────────────
+function renderSessions() {
+  const q = (document.getElementById('searchBox').value||'').toLowerCase();
+  let sessions = allSessions;
+  if (q) sessions = sessions.filter(s =>
+    (s.user_email||'').toLowerCase().includes(q) ||
+    (s.meeting_title||'').toLowerCase().includes(q)
+  );
+
+  document.getElementById('sessionCount').textContent = `${sessions.length} session${sessions.length===1?'':'s'}`;
+
+  const body = document.getElementById('sessionTableBody');
+  if (!sessions.length) {
+    body.innerHTML = `<tr><td colspan="8" class="empty-state"><span class="icon">📋</span>No sessions in this period</td></tr>`;
+    return;
+  }
+
+  body.innerHTML = sessions.map(s => {
+    const svc = s.ai_service || 'claude';
+    return `
+    <tr>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.meeting_title||'Untitled'}</td>
+      <td class="mono" style="font-size:10px;color:var(--ink3)">${(s.user_email||'').split('@')[0]}</td>
+      <td class="text-center mono">${s.duration_seconds ? formatDuration(s.duration_seconds) : '—'}</td>
+      <td><span class="svc ${svc}">${svc}</span></td>
+      <td class="text-right mono">$${parseFloat(s.sarvam_cost||0).toFixed(4)}</td>
+      <td class="text-right mono">$${parseFloat(s.ai_cost||0).toFixed(4)}</td>
+      <td class="text-right mono" style="color:var(--gold);font-weight:600">$${parseFloat(s.total_cost||0).toFixed(4)}</td>
+      <td class="mono" style="font-size:10px;color:var(--ink3)">${(s.created_at||'').slice(0,16).replace('T',' ')}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Render Service Breakdown ───────────────────────────────────────────────────
+function renderServiceBreakdown(services) {
+  if (!services) return;
+  const body = document.getElementById('serviceBreakdown');
+  if (!services.length) {
+    body.innerHTML = `<tr><td colspan="4" class="empty-state">No data</td></tr>`;
+    return;
+  }
+  body.innerHTML = services.map(s => `
+    <tr>
+      <td><span class="svc ${s.service}">${s.service}</span></td>
+      <td class="text-right mono">${s.calls||0}</td>
+      <td class="text-right mono">${parseFloat(s.units||0).toFixed(0)}</td>
+      <td class="text-right mono" style="color:var(--gold)">$${parseFloat(s.cost_usd||0).toFixed(4)}</td>
+    </tr>`).join('');
+}
+
+// ── Render Raw Log ─────────────────────────────────────────────────────────────
+function renderLog() {
+  const body = document.getElementById('logTableBody');
+  document.getElementById('logCount').textContent = `${allLog.length} entries`;
+
+  if (!allLog.length) {
+    body.innerHTML = `<tr><td colspan="7" class="empty-state">No log entries</td></tr>`;
+    return;
+  }
+
+  body.innerHTML = allLog.slice(0,100).map(l => `
+    <tr>
+      <td class="mono" style="font-size:10px;color:var(--ink3)">${formatIST(l.created_at)}</td>
+      <td><span class="svc ${l.service}">${l.service}</span></td>
+      <td class="mono" style="font-size:10px">${(l.user_email||'—').split('@')[0]}</td>
+      <td style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.detail||'—'}</td>
+      <td class="text-right mono">${parseFloat(l.units||0).toFixed(0)}</td>
+      <td class="mono" style="font-size:9px;color:var(--ink3)">${l.unit_type||''}</td>
+      <td class="text-right mono" style="color:var(--gold)">$${parseFloat(l.cost_usd||0).toFixed(5)}</td>
+    </tr>`).join('');
+}
+
+// ── Daily Chart ────────────────────────────────────────────────────────────────
+function renderDailyChart(daily) {
+  const chart = document.getElementById('dailyChart');
+  const labels = document.getElementById('dailyLabels');
+  if (!daily.length) { chart.innerHTML = '<span style="color:var(--ink3);font-size:11px">No data</span>'; return; }
+
+  const maxVal = Math.max(...daily.map(d => parseFloat(d.cost_usd||0)), 0.0001);
+  chart.innerHTML = daily.map(d => {
+    const h = Math.max(4, (parseFloat(d.cost_usd||0) / maxVal) * 72);
+    const date = (d.day||'').slice(5); // MM-DD
+    return `<div title="${date}: $${parseFloat(d.cost_usd||0).toFixed(4)}" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px">
+      <div style="height:${h}px;width:100%;background:var(--gold);border-radius:2px 2px 0 0;opacity:0.85;min-height:4px"></div>
+    </div>`;
+  }).join('');
+
+  labels.innerHTML = daily.map(d => {
+    const day = new Date(d.day).getDate();
+    return `<div style="flex:1;text-align:center;font-family:var(--mono);font-size:8px;color:var(--ink3)">${day}</div>`;
+  }).join('');
+}
+
+// ── Search ─────────────────────────────────────────────────────────────────────
+function applySearch() {
+  const active = document.querySelector('.tab.active');
+  const tabId = active?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+  if (tabId === 'users') renderUsers();
+  else if (tabId === 'sessions') renderSessions();
+  else renderLog();
+}
+
+// ── Tabs ───────────────────────────────────────────────────────────────────────
+function showTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['users','sessions','log'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t === name ? 'block' : 'none';
+  });
+}
+
+// ── Auto Refresh ───────────────────────────────────────────────────────────────
+function scheduleAutoRefresh() {
+  if (refreshTimer) clearInterval(refreshTimer);
+  if (document.getElementById('autoRefreshToggle').checked) {
+    refreshTimer = setInterval(loadData, 30000);
+  }
+}
+function toggleAutoRefresh() {
+  if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+  scheduleAutoRefresh();
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function formatDuration(sec) {
+  const m = Math.floor(sec/60), s = Math.round(sec%60);
+  return m > 0 ? `${m}m${s>0?s+'s':''}` : `${s}s`;
+}
+function formatIST(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleString('en-IN',{timeZone:'Asia/Kolkata',hour12:false,
+    month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+function formatAge(ts) {
+  if (!ts) return '—';
+  const d = Date.now() - new Date(ts).getTime();
+  if (d < 60000) return 'just now';
+  if (d < 3600000) return `${Math.floor(d/60000)}m ago`;
+  if (d < 86400000) return `${Math.floor(d/3600000)}h ago`;
+  return `${Math.floor(d/86400000)}d ago`;
+}
+/* Theme: handled by /js/theme.js */
+
+// Start
+init();
+</script>
+</body>
+</html>

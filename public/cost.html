@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<script src="/js/theme.js"></script>
+<title>Cost Intelligence · MOC Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0F1524;--ink2:#4A5468;--ink3:#8A93A8;--ink4:#B8BFCC;
+  --paper:#FAF8F3;--paper2:#F4F0E6;--card:#FFFFFF;
+  --border:#E8E4D8;--border-strong:#D4CFC0;
+  --navy:#0F1B3D;--navy-h:#1F2D57;
+  --gold:#B8912A;--gold-h:#C89A3D;
+  --gold-tint:rgba(184,145,42,0.10);--gold-tint-strong:rgba(184,145,42,0.22);
+  --sage:#4A7C59;--sage-tint:rgba(74,124,89,0.10);
+  --rust:#A0472E;--rust-tint:rgba(160,71,46,0.10);
+  --plum:#5C3D5C;--plum-tint:rgba(92,61,92,0.10);
+  --c-sarvam:#7C3AED;--c-claude:#B8912A;--c-openai:#10B981;
+  --shadow-1:0 1px 2px rgba(15,21,36,0.04),0 2px 6px rgba(15,21,36,0.03);
+  --shadow-2:0 4px 20px rgba(15,21,36,0.06),0 12px 48px rgba(15,21,36,0.06);
+  --serif:'Roboto',Georgia,serif;
+  --sans:'Roboto',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'Roboto Mono',ui-monospace,monospace;
+}
+[data-theme="dark"]{
+  --ink:#F5F1E6;--ink2:#B8B0A0;--ink3:#6B6455;--ink4:#3D3830;
+  --paper:#0C0D10;--paper2:#141519;--card:#161820;
+  --border:#25272F;--border-strong:#333540;
+  --navy:#4A5B8C;--navy-h:#6274AA;
+  --gold:#D4A94A;--gold-h:#E8BC5A;
+  --gold-tint:rgba(212,169,74,0.10);--gold-tint-strong:rgba(212,169,74,0.20);
+  --sage:#7BA88C;--sage-tint:rgba(123,168,140,0.10);
+  --rust:#D07358;--rust-tint:rgba(208,115,88,0.10);
+  --shadow-1:0 1px 2px rgba(0,0,0,0.3);--shadow-2:0 4px 20px rgba(0,0,0,0.4);
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;transition:background 0.3s,color 0.3s}
+
+/* ── NAV ── */
+.nav{background:var(--card);border-bottom:1px solid var(--border);height:60px;padding:0 1.75rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;transition:background 0.3s}
+.nav-brand{display:flex;align-items:center;gap:12px}
+.nav-mark{width:32px;height:32px;background:var(--navy);color:var(--gold);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-size:20px;line-height:1;padding-bottom:3px}
+.nav-title{font-family:var(--serif);font-size:20px;letter-spacing:-0.01em}
+.nav-title em{font-style:italic;color:var(--gold)}
+.nav-sub{font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:0.14em;text-transform:uppercase;margin-top:1px}
+.nav-right{display:flex;align-items:center;gap:8px}
+.btn-nav{padding:7px 12px;font-size:12px;font-weight:500;background:var(--card);color:var(--ink2);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all 0.15s}
+.btn-nav:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ── PAGE ── */
+.page{max-width:1200px;margin:0 auto;padding:2rem 1.25rem 5rem}
+.page-eyebrow{font-family:var(--mono);font-size:10px;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px}
+.page-title{font-family:var(--serif);font-size:30px;letter-spacing:-.01em;margin-bottom:6px}
+.page-title em{font-style:italic;color:var(--gold)}
+.page-sub{font-size:13px;color:var(--ink3);margin-bottom:2rem}
+
+/* ── STAT LEDGER (top row) ── */
+.stat-ledger{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--card);box-shadow:var(--shadow-1);margin-bottom:2rem}
+.stat-card{padding:1.1rem 1.25rem;border-right:1px solid var(--border);position:relative;overflow:hidden}
+.stat-card:last-child{border-right:none}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:0.5}
+.stat-label{font-family:var(--mono);font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.12em;margin-bottom:5px}
+.stat-val{font-family:var(--serif);font-size:1.7rem;font-style:italic;color:var(--navy);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat-sub{font-size:10px;color:var(--ink3);margin-top:3px;font-family:var(--mono)}
+.stat-card.green .stat-val{color:var(--sage)}
+.stat-card.gold .stat-val{color:var(--gold)}
+.stat-card.rust .stat-val{color:var(--rust)}
+.stat-card.plum .stat-val{color:var(--plum)}
+
+/* ── SECTION / TABLE ── */
+.section{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:1.5rem;box-shadow:var(--shadow-1)}
+.section-head{padding:13px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.section-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;color:var(--ink)}
+.section-meta{font-family:var(--mono);font-size:10px;color:var(--ink3)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{font-family:var(--mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);padding:9px 16px;background:var(--paper2);text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+th.right,td.right{text-align:right}
+th.center,td.center{text-align:center}
+td{padding:9px 16px;font-size:12.5px;border-bottom:1px solid var(--border);color:var(--ink);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--paper2)}
+.mono{font-family:var(--mono);font-size:11px}
+.no-data{text-align:center;color:var(--ink3);font-family:var(--mono);font-size:11px;padding:1.5rem}
+
+/* ── SERVICE PILLS ── */
+.svc-pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;font-weight:600;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:.06em}
+.svc-pill.sarvam{background:rgba(124,58,237,0.10);color:#7C3AED;border:1px solid rgba(124,58,237,0.25)}
+.svc-pill.claude{background:var(--gold-tint);color:var(--gold);border:1px solid var(--gold-tint-strong)}
+.svc-pill.openai{background:rgba(16,185,129,0.10);color:#10B981;border:1px solid rgba(16,185,129,0.25)}
+.svc-dot{width:6px;height:6px;border-radius:50%}
+.dot-sarvam{background:#7C3AED}
+.dot-claude{background:var(--gold)}
+.dot-openai{background:#10B981}
+
+/* ── RATE CARDS ── */
+.rate-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem}
+.rate-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;box-shadow:var(--shadow-1)}
+.rate-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.rate-card-name{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.rate-badge{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:4px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.rate-badge.active{background:var(--sage-tint);color:var(--sage);border:1px solid rgba(74,124,89,0.3)}
+.rate-badge.optional{background:var(--gold-tint);color:var(--gold);border:1px solid var(--gold-tint-strong)}
+.rate-badge.fallback{background:var(--rust-tint);color:var(--rust);border:1px solid rgba(160,71,46,0.3)}
+.rate-row{display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-top:1px solid var(--border)}
+.rate-row:first-of-type{border-top:none}
+.rate-key{font-size:11px;color:var(--ink3)}
+.rate-val{text-align:right;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink)}
+.rate-val small{display:block;font-size:9px;color:var(--ink3);font-weight:400}
+
+/* ── TWO-COL ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1.5rem}
+
+/* ── MARGIN BLOCK ── */
+.margin-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;padding:1.25rem}
+.margin-item{background:var(--paper2);border-radius:8px;padding:12px 14px;text-align:center}
+.margin-label{font-family:var(--mono);font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px}
+.margin-val{font-size:1.35rem;font-weight:700;color:var(--navy)}
+.margin-val.green{color:var(--sage)}
+.margin-val.gold{color:var(--gold)}
+.margin-val.rust{color:var(--rust)}
+
+/* ── BAR CHART ── */
+.bar-chart-wrap{padding:1rem 1.25rem 0.75rem}
+.bar-chart{display:flex;align-items:flex-end;gap:3px;height:80px}
+.bar-day{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0}
+.bar-seg-wrap{display:flex;flex-direction:column;justify-content:flex-end;height:72px;width:100%;gap:1px}
+.bar-seg{border-radius:1px 1px 0 0;min-height:2px;transition:height 0.3s}
+.bar-seg.sarvam{background:#7C3AED;opacity:0.8}
+.bar-seg.ai{background:var(--gold);opacity:0.9}
+.bar-lbl{font-family:var(--mono);font-size:7.5px;color:var(--ink4);transform:rotate(-45deg);transform-origin:top center;margin-top:2px;white-space:nowrap}
+.bar-chart-legend{display:flex;gap:14px;padding:6px 1.25rem 12px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;color:var(--ink3)}
+.legend-dot{width:8px;height:8px;border-radius:2px}
+
+/* ── CALCULATOR ── */
+.calc-wrap{padding:1.25rem}
+.calc-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.calc-field label{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);display:block;margin-bottom:4px}
+.calc-field input{width:100%;background:var(--paper2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--ink);font-family:var(--mono);font-size:13px;outline:none;transition:border-color 0.15s}
+.calc-field input:focus{border-color:var(--gold)}
+.slider-field{grid-column:1/-1}
+.slider-field label{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);display:block;margin-bottom:6px}
+.slider-big{font-family:var(--serif);font-style:italic;font-size:2rem;color:var(--navy);text-align:center;margin:4px 0 6px}
+.slider-big small{font-size:1rem;color:var(--ink3);font-style:normal}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--border);border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--gold);cursor:pointer}
+
+.breakdown-table{width:100%;border-collapse:collapse;margin-top:10px}
+.breakdown-table td{padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}
+.breakdown-table tr:last-child td{border-bottom:none}
+.breakdown-table .lbl{color:var(--ink3);display:flex;align-items:center;gap:7px}
+.breakdown-table .cost{text-align:right;font-family:var(--mono);font-weight:600}
+.breakdown-table .cost small{display:block;font-size:10px;color:var(--ink3);font-weight:400}
+.total-row{background:var(--gold-tint);border-radius:6px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.total-row .lbl{font-size:12px;font-weight:600;color:var(--gold)}
+.total-row .cost{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--gold);text-align:right}
+.total-row .cost small{font-size:10px;color:var(--ink3);font-weight:400}
+
+.revenue-row{background:var(--sage-tint);border-radius:6px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.revenue-row .lbl{font-size:12px;font-weight:600;color:var(--sage)}
+.revenue-row .cost{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--sage);text-align:right}
+
+.profit-row{border-radius:6px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.profit-row .lbl{font-size:12px;font-weight:600}
+.profit-row .cost{font-family:var(--mono);font-size:15px;font-weight:700;text-align:right}
+
+/* ── DECISION BOX ── */
+.decision-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:1.25rem}
+.decision-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px}
+.decision-item.yes{background:var(--sage-tint);border:1px solid rgba(74,124,89,0.2)}
+.decision-item.warn{background:var(--gold-tint);border:1px solid var(--gold-tint-strong)}
+.decision-item.no{background:var(--rust-tint);border:1px solid rgba(160,71,46,0.2)}
+.decision-icon{font-size:14px;margin-top:1px;flex-shrink:0}
+.decision-title{font-size:11px;font-weight:700;margin-bottom:3px}
+.decision-item.yes .decision-title{color:var(--sage)}
+.decision-item.warn .decision-title{color:var(--gold)}
+.decision-item.no .decision-title{color:var(--rust)}
+.decision-body{font-size:11px;color:var(--ink3);line-height:1.5}
+
+/* ── PRICING NOTE ── */
+.pricing-note{background:var(--gold-tint);border:1px solid var(--gold-tint-strong);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:10px;color:var(--ink2);letter-spacing:.03em;margin-bottom:1.5rem;line-height:1.6}
+.pricing-note strong{color:var(--gold)}
+
+/* ── LOADING ── */
+.loading-spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── VOLUME TABLE ── */
+.vol-tabs{display:flex;gap:6px;margin-bottom:10px}
+.vol-tab{font-family:var(--mono);font-size:10px;padding:4px 10px;border:1px solid var(--border);border-radius:5px;cursor:pointer;background:var(--card);color:var(--ink3);transition:all .15s}
+.vol-tab.active{background:var(--navy);color:var(--gold);border-color:var(--navy)}
+
+@media(max-width:900px){
+  .stat-ledger{grid-template-columns:repeat(3,1fr)}
+  .stat-card:nth-child(3){border-right:none}
+  .stat-card:nth-child(n+4){border-top:1px solid var(--border)}
+  .rate-grid{grid-template-columns:1fr}
+  .two-col{grid-template-columns:1fr}
+  .margin-grid{grid-template-columns:repeat(2,1fr)}
+  .decision-grid{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .nav{padding:0 1rem}
+  .nav-sub{display:none}
+  .page{padding:1rem 0.75rem 3rem}
+  .stat-ledger{grid-template-columns:1fr 1fr}
+  .stat-card:nth-child(2n){border-right:none}
+  .margin-grid{grid-template-columns:1fr 1fr}
+  .calc-row{grid-template-columns:1fr}
+}
+</style>
+<link rel="stylesheet" href="/css/theme-dark.css">
+<link rel="stylesheet" href="/css/aix-uniform.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-mark">A</div>
+    <div>
+      <div class="nav-title">AiX <em>Track</em></div>
+      <div class="nav-sub">Cost Intelligence</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <button class="btn-nav" onclick="toggleTheme()" id="theme-btn">◐</button>
+    <a href="/" class="btn-nav">← Generator</a>
+    <a href="/history" class="btn-nav">Archive</a>
+    <a href="/usage" class="btn-nav">Usage</a>
+    <a href="/credits" class="btn-nav">Credits</a>
+    <a href="/admin" class="btn-nav">Admin</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div class="page-eyebrow">Cost Intelligence</div>
+  <h1 class="page-title">What you pay, what you earn, <em>what to do about it</em></h1>
+  <p class="page-sub">Live actuals from api_usage_log + static rate card from COST constants · ₹84/USD · 1 credit = ₹1</p>
+
+  <div class="pricing-note">
+    <strong>Rate sources:</strong>
+    Sarvam saarika:v2.5 — $0.0002/sec (₹1.008/min) ·
+    Claude Haiku 4.5 (default) — $0.25/MTok input · $1.25/MTok output ·
+    ChatGPT GPT-4o (custom prompt) — $5/MTok input · $15/MTok output ·
+    Both used for MOC generation — Claude is default, ChatGPT activates when custom instructions are filled ·
+    Pricing from server.js COST constants. Verify against provider dashboards before financial decisions.
+  </div>
+
+  <!-- ── KPI TOP LEDGER ── -->
+  <div class="stat-ledger">
+    <div class="stat-card gold">
+      <div class="stat-label">Lifetime API cost</div>
+      <div class="stat-val" id="k-lifetime">—</div>
+      <div class="stat-sub" id="k-lifetime-inr">loading…</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg cost / conversation</div>
+      <div class="stat-val" id="k-avg-cost">—</div>
+      <div class="stat-sub" id="k-avg-dur">—</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">Gross margin (actual)</div>
+      <div class="stat-val" id="k-margin">—</div>
+      <div class="stat-sub" id="k-margin-sub">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Sarvam cost share</div>
+      <div class="stat-val" id="k-sarvam-pct">—</div>
+      <div class="stat-sub">dominant cost driver</div>
+    </div>
+    <div class="stat-card plum">
+      <div class="stat-label">Revenue (credits ₹)</div>
+      <div class="stat-val" id="k-revenue">—</div>
+      <div class="stat-sub" id="k-credits-charged">—</div>
+    </div>
+  </div>
+
+  <!-- ── PROVIDER RATE CARDS ── -->
+  <div class="rate-grid">
+
+    <div class="rate-card">
+      <div class="rate-card-header">
+        <div class="rate-card-name">
+          <span class="svc-dot dot-sarvam"></span>
+          Sarvam AI — saarika:v2.5
+        </div>
+        <span class="rate-badge active">Active</span>
+      </div>
+      <div class="rate-row"><span class="rate-key">Per second</span><span class="rate-val">$0.000200<small>₹0.01680</small></span></div>
+      <div class="rate-row"><span class="rate-key">Per minute</span><span class="rate-val">$0.0120<small>₹1.008</small></span></div>
+      <div class="rate-row"><span class="rate-key">Per hour</span><span class="rate-val">$0.720<small>₹60.48</small></span></div>
+      <div class="rate-row"><span class="rate-key">Hindi accuracy</span><span class="rate-val" style="color:var(--sage)">✓ Best in India</span></div>
+      <div class="rate-row"><span class="rate-key">Hard chunk limit</span><span class="rate-val" style="color:var(--rust)">30 sec/call</span></div>
+    </div>
+
+    <div class="rate-card">
+      <div class="rate-card-header">
+        <div class="rate-card-name">
+          <span class="svc-dot dot-claude"></span>
+          AI Engine — Claude Haiku 4.5
+        </div>
+        <span class="rate-badge active">Default</span>
+      </div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--ink3);padding:6px 0 8px;letter-spacing:0.06em">Used when no custom prompt is filled</div>
+      <div class="rate-row"><span class="rate-key">Input tokens</span><span class="rate-val">$0.25 / MTok<small>₹21 / MTok</small></span></div>
+      <div class="rate-row"><span class="rate-key">Output tokens</span><span class="rate-val">$1.25 / MTok<small>₹105 / MTok</small></span></div>
+      <div class="rate-row"><span class="rate-key">Per MOC (30 min avg)</span><span class="rate-val">~$0.006<small>₹~0.50</small></span></div>
+      <div class="rate-row"><span class="rate-key">Cost share vs Sarvam</span><span class="rate-val" style="color:var(--sage)">~2%</span></div>
+      <div class="rate-row"><span class="rate-key">Verdict</span><span class="rate-val" style="color:var(--sage)">Low cost · keep as default</span></div>
+    </div>
+
+    <div class="rate-card">
+      <div class="rate-card-header">
+        <div class="rate-card-name">
+          <span class="svc-dot dot-openai"></span>
+          AI Engine — ChatGPT GPT-4o
+        </div>
+        <span class="rate-badge active">Custom Prompt</span>
+      </div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--ink3);padding:6px 0 8px;letter-spacing:0.06em">Activates when user fills custom instructions box</div>
+      <div class="rate-row"><span class="rate-key">Input tokens</span><span class="rate-val">$5.00 / MTok<small>₹420 / MTok</small></span></div>
+      <div class="rate-row"><span class="rate-key">Output tokens</span><span class="rate-val">$15.00 / MTok<small>₹1,260 / MTok</small></span></div>
+      <div class="rate-row"><span class="rate-key">Per MOC (30 min avg)</span><span class="rate-val">~$0.095<small>₹~7.98</small></span></div>
+      <div class="rate-row"><span class="rate-key">vs Haiku</span><span class="rate-val" style="color:var(--gold)">20× but higher intelligence</span></div>
+      <div class="rate-row"><span class="rate-key">Verdict</span><span class="rate-val" style="color:var(--sage)">Use for complex / priority conversations</span></div>
+    </div>
+
+  </div>
+
+  <!-- ── MARGIN BLOCK ── -->
+  <div class="section" style="margin-bottom:1.5rem">
+    <div class="section-head">
+      <div class="section-title">📊 Margin Reconciliation — Credits charged vs API cost (all time)</div>
+    </div>
+    <div class="margin-grid">
+      <div class="margin-item">
+        <div class="margin-label">Revenue (credits ₹)</div>
+        <div class="margin-val gold" id="m-rev">—</div>
+      </div>
+      <div class="margin-item">
+        <div class="margin-label">API cost (₹)</div>
+        <div class="margin-val rust" id="m-cost">—</div>
+      </div>
+      <div class="margin-item">
+        <div class="margin-label">Gross profit (₹)</div>
+        <div class="margin-val green" id="m-profit">—</div>
+      </div>
+      <div class="margin-item">
+        <div class="margin-label">Gross margin %</div>
+        <div class="margin-val green" id="m-pct">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TWO COL: Daily trend + Calculator ── -->
+  <div class="two-col">
+
+    <!-- Daily trend bar chart -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">📈 Daily cost trend — last 30 days</div>
+        <div class="section-meta" id="trend-meta">loading…</div>
+      </div>
+      <div class="bar-chart-wrap">
+        <div class="bar-chart" id="bar-chart">
+          <div style="color:var(--ink3);font-family:var(--mono);font-size:11px;display:flex;align-items:center;gap:6px">
+            <span class="loading-spinner"></span>Loading…
+          </div>
+        </div>
+      </div>
+      <div class="bar-chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#7C3AED;opacity:.8"></div>Sarvam</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>Claude / OpenAI</div>
+      </div>
+    </div>
+
+    <!-- Per-instance calculator -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">🧮 Per-Meeting Calculator</div>
+        <div class="section-meta">client-side · no API call needed</div>
+      </div>
+      <div class="calc-wrap">
+        <div class="calc-row">
+          <div class="calc-field slider-field">
+            <label>Conversation duration · <span id="c-dur-lbl">30 min</span></label>
+            <div class="slider-big"><span id="c-dur-big">30</span> <small>minutes</small></div>
+            <input type="range" id="c-slider" min="1" max="120" value="30" step="1">
+          </div>
+          <div class="calc-field">
+            <label>Input tokens (est.)</label>
+            <input type="number" id="c-in-tok" value="10000" min="0">
+          </div>
+          <div class="calc-field">
+            <label>Output tokens (est.)</label>
+            <input type="number" id="c-out-tok" value="3000" min="0">
+          </div>
+        </div>
+
+        <!-- AI toggle -->
+        <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center">
+          <span style="font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:0.08em;text-transform:uppercase">AI Engine:</span>
+          <button onclick="setAI(this,'claude')" id="ai-btn-claude"
+            style="font-family:var(--mono);font-size:10px;font-weight:600;padding:4px 10px;border-radius:5px;border:1px solid var(--gold);background:var(--gold-tint);color:var(--gold);cursor:pointer">
+            Claude (default)
+          </button>
+          <button onclick="setAI(this,'gpt4o')" id="ai-btn-gpt4o"
+            style="font-family:var(--mono);font-size:10px;font-weight:600;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--ink3);cursor:pointer">
+            ChatGPT GPT-4o
+          </button>
+        </div>
+
+        <table class="breakdown-table">
+          <tr>
+            <td class="lbl"><span class="svc-dot dot-sarvam"></span>Sarvam transcription</td>
+            <td class="cost"><span id="c-sarvam-usd">$0.360</span><small id="c-sarvam-inr">₹30.24</small></td>
+          </tr>
+          <tr>
+            <td class="lbl"><span id="c-ai-label"><span class="svc-dot dot-claude"></span>Claude Haiku (MOC)</span></td>
+            <td class="cost"><span id="c-claude-usd">$0.00625</span><small id="c-claude-inr">₹0.53</small></td>
+          </tr>
+          <tr>
+            <td class="lbl" style="color:var(--ink3);font-size:10px;font-family:var(--mono)">Sarvam % of total</td>
+            <td class="cost" style="color:var(--c-sarvam)"><span id="c-sar-pct">98%</span></td>
+          </tr>
+        </table>
+
+        <div class="total-row">
+          <div class="lbl">Total API cost</div>
+          <div class="cost"><span id="c-total-usd">$0.366</span><small id="c-total-inr">₹30.77</small></div>
+        </div>
+        <div class="revenue-row">
+          <div class="lbl">Credits charged → revenue</div>
+          <div class="cost"><span id="c-credits">68</span> cr &nbsp;·&nbsp; <span id="c-rev-inr">₹68</span></div>
+        </div>
+        <div class="profit-row" id="c-profit-row">
+          <div class="lbl" id="c-profit-lbl">Gross profit on this conversation</div>
+          <div class="cost"><span id="c-profit-inr">₹37.23</span><small id="c-margin-pct">54.7% margin</small></div>
+        </div>
+
+        <!-- Volume tab -->
+        <div style="margin-top:14px">
+          <div class="vol-tabs">
+            <button class="vol-tab active" onclick="setVol(this,10)">10/mo</button>
+            <button class="vol-tab" onclick="setVol(this,50)">50/mo</button>
+            <button class="vol-tab" onclick="setVol(this,100)">100/mo</button>
+            <button class="vol-tab" onclick="setVol(this,500)">500/mo</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px" id="vol-cells">
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SERVICE BREAKDOWN TABLE ── -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">⚡ Actual spend by service (all time)</div>
+      <div class="section-meta" id="svc-meta">loading…</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th class="right">Calls</th>
+            <th class="right">Conversations</th>
+            <th class="right">Units</th>
+            <th class="right">Cost (USD)</th>
+            <th class="right">Cost (INR)</th>
+            <th class="right">Avg / call</th>
+            <th>Last used</th>
+          </tr>
+        </thead>
+        <tbody id="svc-tbody">
+          <tr><td colspan="8" class="no-data"><span class="loading-spinner"></span>Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── TWO-COL: Top users + Per-session ── -->
+  <div class="two-col">
+
+    <!-- Top users by cost -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">👤 Top users by API cost</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th class="right">Conversations</th>
+              <th class="right">Audio (min)</th>
+              <th class="right">Cost (₹)</th>
+              <th class="right">Cr used</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody">
+            <tr><td colspan="5" class="no-data"><span class="loading-spinner"></span>Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Decision guide -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">🎯 Decision Guide</div>
+      </div>
+      <div class="decision-grid">
+        <div class="decision-item yes">
+          <span class="decision-icon">✓</span>
+          <div>
+            <div class="decision-title">Keep Sarvam</div>
+            <div class="decision-body">Despite being 97%+ of cost, accuracy for Hindi/Gujarati is unmatched. Negotiate volume pricing at scale — Sarvam is the only lever that matters.</div>
+          </div>
+        </div>
+        <div class="decision-item yes">
+          <span class="decision-icon">✓</span>
+          <div>
+            <div class="decision-title">Keep Claude Haiku</div>
+            <div class="decision-body">~₹0.50/MOC. Essentially free relative to Sarvam. Only upgrade to Sonnet if MOC quality complaints arise from users.</div>
+          </div>
+        </div>
+        <div class="decision-item warn">
+          <span class="decision-icon">✦</span>
+          <div>
+            <div class="decision-title">ChatGPT for custom instructions</div>
+            <div class="decision-body">20× more than Claude but worth it for complex/priority conversations. Auto-activates when user fills the custom instructions box. Falls back to Claude if OpenAI quota hits.</div>
+          </div>
+        </div>
+        <div class="decision-item warn">
+          <span class="decision-icon">!</span>
+          <div>
+            <div class="decision-title">Pricing lever</div>
+            <div class="decision-body">Current 2 cr/min = ~55% margin. At 3 cr/min → ~67% margin. Test on a premium tier. Breakeven is well below 1 cr/min.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── PER-SESSION TABLE ── -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">📋 Recent sessions — actual API cost per conversation</div>
+      <div class="section-meta" id="sess-meta">last 200 sessions</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Conversation</th>
+            <th>User</th>
+            <th class="right">Duration</th>
+            <th class="right">Sarvam (₹)</th>
+            <th class="right">AI (₹)</th>
+            <th class="right">Total (₹)</th>
+            <th class="right">₹/min</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="sess-tbody">
+          <tr><td colspan="8" class="no-data"><span class="loading-spinner"></span>Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+/* ── Theme ── */
+/* Theme: handled by /js/theme.js */
+
+/* ── Helpers ── */
+const urlParams   = new URLSearchParams(window.location.search);
+const adminSecret = urlParams.get('secret') || '';
+function authHeaders(){ return { 'x-admin-secret': adminSecret }; }
+const USD_INR = 84;
+function fmt$(v,d=4){ return '$'+parseFloat(v||0).toFixed(d); }
+function fmtINR(v){ return '₹'+parseFloat((parseFloat(v||0)*USD_INR)).toFixed(2); }
+function fmtI(v){ return '₹'+parseFloat(v||0).toFixed(2); }
+function fmtNum(v){ return Number(parseInt(v||0)).toLocaleString('en-IN'); }
+function fmtDate(d){ if(!d) return '—'; return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }
+function fmtDur(s){ const m=Math.floor(s/60),sec=Math.floor(s%60); return m>0?`${m}m ${sec}s`:`${sec}s`; }
+function email2initials(e){ if(!e) return '?'; const p=e.split('@')[0]; return p.substring(0,2).toUpperCase(); }
+
+/* ── Load ── */
+async function loadAll(){
+  try {
+    const res = await fetch(`/api/admin/cost-intelligence?secret=${adminSecret}`, { headers: authHeaders() });
+    if (!res.ok){
+      if (res.status === 403){
+        document.body.innerHTML = '<div style="padding:4rem;text-align:center;font-family:monospace;color:#A0472E;font-size:14px">🔒 Access denied — append <strong>?secret=YOUR_ADMIN_SECRET</strong> to the URL</div>';
+        return;
+      }
+      throw new Error(await res.text());
+    }
+    const data = await res.json();
+    renderKPIs(data);
+    renderMargin(data.margin);
+    renderServices(data.by_service);
+    renderDailyChart(data.daily_trend);
+    renderUsers(data.top_users);
+    renderSessions(data.per_session);
+  } catch(err){
+    console.error('[cost-intel]', err);
+    document.getElementById('svc-tbody').innerHTML = `<tr><td colspan="8" style="color:var(--rust);text-align:center;padding:1rem;font-family:var(--mono);font-size:11px">Error: ${err.message}</td></tr>`;
+  }
+}
+
+function renderKPIs(data){
+  const m   = data.margin || {};
+  const avg = data.avg_meeting || {};
+  const svc = data.by_service || [];
+
+  const lifetimeUsd = parseFloat(m.actual_cost_usd || 0);
+  document.getElementById('k-lifetime').textContent = fmt$(lifetimeUsd, 2);
+  document.getElementById('k-lifetime-inr').textContent = '₹'+parseFloat(lifetimeUsd*USD_INR).toFixed(2);
+
+  document.getElementById('k-avg-cost').textContent = fmt$(avg.cost_usd || 0, 4);
+  document.getElementById('k-avg-dur').textContent = avg.duration_sec ? fmtDur(avg.duration_sec) + ' avg duration' : '—';
+
+  const margin = parseFloat(m.gross_margin_pct || 0);
+  const mEl = document.getElementById('k-margin');
+  mEl.textContent = margin.toFixed(1) + '%';
+  mEl.closest('.stat-card').classList.toggle('green', margin > 40);
+  mEl.closest('.stat-card').classList.toggle('rust', margin < 20);
+  document.getElementById('k-margin-sub').textContent = `₹${parseFloat(m.gross_profit_inr||0).toFixed(0)} gross profit`;
+
+  const sarRow = svc.find(r => r.service === 'sarvam');
+  const total  = svc.reduce((s,r) => s + parseFloat(r.total_cost_usd||0), 0);
+  const sarPct = total > 0 && sarRow ? (parseFloat(sarRow.total_cost_usd)/total*100).toFixed(1) : '—';
+  document.getElementById('k-sarvam-pct').textContent = sarPct + '%';
+
+  document.getElementById('k-revenue').textContent = '₹' + parseFloat(m.revenue_inr||0).toFixed(0);
+  document.getElementById('k-credits-charged').textContent = fmtNum(m.total_credits_charged) + ' credits charged';
+}
+
+function renderMargin(m){
+  if (!m) return;
+  document.getElementById('m-rev').textContent    = '₹' + parseFloat(m.revenue_inr||0).toFixed(0);
+  document.getElementById('m-cost').textContent   = '₹' + parseFloat(m.actual_cost_inr||0).toFixed(2);
+  document.getElementById('m-profit').textContent = '₹' + parseFloat(m.gross_profit_inr||0).toFixed(2);
+  const pct = parseFloat(m.gross_margin_pct || 0);
+  const pEl = document.getElementById('m-pct');
+  pEl.textContent = pct.toFixed(1) + '%';
+  pEl.classList.toggle('green', pct > 40);
+  pEl.classList.toggle('rust', pct < 10);
+  pEl.classList.toggle('gold', pct >= 10 && pct <= 40);
+}
+
+function renderServices(rows){
+  if (!rows || !rows.length){ document.getElementById('svc-tbody').innerHTML = '<tr><td colspan="8" class="no-data">No usage recorded yet</td></tr>'; return; }
+  const total = rows.reduce((s,r) => s + parseFloat(r.total_cost_usd||0), 0);
+  document.getElementById('svc-meta').textContent = `Total: ${fmt$(total,4)} · ₹${(total*USD_INR).toFixed(2)}`;
+  document.getElementById('svc-tbody').innerHTML = rows.map(r => {
+    const costUsd = parseFloat(r.total_cost_usd||0);
+    const pct     = total > 0 ? (costUsd/total*100).toFixed(1) : '0.0';
+    const unitLbl = r.service === 'sarvam'
+      ? `${parseFloat(r.total_units||0).toFixed(0)} sec`
+      : `${parseFloat(r.total_units||0).toLocaleString('en-IN')} tokens`;
+    const svcClass = r.service === 'sarvam' ? 'sarvam' : r.service === 'claude' ? 'claude' : 'openai';
+    return `<tr>
+      <td><span class="svc-pill ${svcClass}"><span class="svc-dot dot-${svcClass}"></span>${r.service}</span> <span style="font-family:var(--mono);font-size:9px;color:var(--ink3)">${pct}%</span></td>
+      <td class="right mono">${fmtNum(r.calls)}</td>
+      <td class="right mono">${fmtNum(r.meetings)}</td>
+      <td class="right mono">${unitLbl}</td>
+      <td class="right mono" style="color:var(--rust)">${fmt$(costUsd,4)}</td>
+      <td class="right mono">${fmtI(costUsd*USD_INR)}</td>
+      <td class="right mono">${fmt$(parseFloat(r.avg_cost_usd||0),6)}</td>
+      <td style="font-size:11px;color:var(--ink3)">${fmtDate(r.last_seen)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderDailyChart(rows){
+  if (!rows || !rows.length){
+    document.getElementById('bar-chart').innerHTML = '<span style="color:var(--ink4);font-family:var(--mono);font-size:11px">No data for last 30 days</span>';
+    return;
+  }
+  const maxCost = Math.max(...rows.map(r => parseFloat(r.cost_usd||0)), 0.000001);
+  let totalMeetings = 0, totalCost = 0;
+  rows.forEach(r => { totalMeetings += parseInt(r.meetings||0); totalCost += parseFloat(r.cost_usd||0); });
+  document.getElementById('trend-meta').textContent = `${fmtNum(totalMeetings)} conversations · ₹${(totalCost*USD_INR).toFixed(2)} total`;
+
+  document.getElementById('bar-chart').innerHTML = rows.map(r => {
+    const sarUsd  = parseFloat(r.sarvam_usd||0);
+    const aiUsd   = parseFloat(r.ai_usd||0);
+    const totUsd  = parseFloat(r.cost_usd||0);
+    const sarH    = Math.max(2, Math.round((sarUsd / maxCost) * 62));
+    const aiH     = Math.max(totUsd > 0 ? 1 : 0, Math.round((aiUsd / maxCost) * 62));
+    const dayLabel = new Date(r.day).toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+    return `<div class="bar-day" title="${dayLabel}: ₹${(totUsd*USD_INR).toFixed(2)} · ${r.meetings} conversations">
+      <div class="bar-seg-wrap">
+        <div class="bar-seg ai" style="height:${aiH}px"></div>
+        <div class="bar-seg sarvam" style="height:${sarH}px"></div>
+      </div>
+      <div class="bar-lbl">${dayLabel}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderUsers(rows){
+  if (!rows || !rows.length){ document.getElementById('users-tbody').innerHTML = '<tr><td colspan="5" class="no-data">No data</td></tr>'; return; }
+  document.getElementById('users-tbody').innerHTML = rows.slice(0,15).map(r => {
+    const costInr = parseFloat(r.total_cost_usd||0) * USD_INR;
+    const audioMin = (parseFloat(r.audio_seconds||0)/60).toFixed(1);
+    return `<tr>
+      <td><span style="font-family:var(--mono);font-size:10px">${r.user_email || '—'}</span></td>
+      <td class="right mono">${r.meetings||0}</td>
+      <td class="right mono">${audioMin}</td>
+      <td class="right mono" style="color:var(--rust)">₹${costInr.toFixed(2)}</td>
+      <td class="right mono">${fmtNum(r.credits_used||0)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderSessions(rows){
+  if (!rows || !rows.length){ document.getElementById('sess-tbody').innerHTML = '<tr><td colspan="8" class="no-data">No session data</td></tr>'; return; }
+  document.getElementById('sess-meta').textContent = `${rows.length} sessions loaded`;
+  document.getElementById('sess-tbody').innerHTML = rows.slice(0,100).map(r => {
+    const sarInr   = parseFloat(r.sarvam_cost_usd||0) * USD_INR;
+    const aiInr    = parseFloat(r.ai_cost_usd||0) * USD_INR;
+    const totInr   = parseFloat(r.total_cost_usd||0) * USD_INR;
+    const durSec   = parseFloat(r.duration_seconds||0);
+    const durMin   = durSec > 0 ? durSec/60 : 0;
+    const perMin   = durMin > 0 ? (totInr/durMin).toFixed(3) : '—';
+    const title    = r.meeting_title || '(untitled)';
+    const email    = (r.user_email || '').split('@')[0];
+    return `<tr>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px" title="${r.meeting_title}">${title}</td>
+      <td class="mono">${email}</td>
+      <td class="right mono">${durSec > 0 ? fmtDur(durSec) : '—'}</td>
+      <td class="right mono" style="color:var(--c-sarvam)">₹${sarInr.toFixed(3)}</td>
+      <td class="right mono" style="color:var(--gold)" title="Claude or ChatGPT">₹${aiInr.toFixed(4)}</td>
+      <td class="right mono" style="color:var(--rust)">₹${totInr.toFixed(3)}</td>
+      <td class="right mono" style="color:var(--ink3)">${perMin}</td>
+      <td style="font-size:10px;color:var(--ink3)">${fmtDate(r.created_at)}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── Calculator ── */
+const SARVAM_PS = 0.000200;
+const CL_IN     = 0.00000025;
+const CL_OUT    = 0.00000125;
+const OAI_IN    = 0.000005;
+const OAI_OUT   = 0.000015;
+const CR_PM     = 2;
+const CR_MOC    = 8;
+
+let volCount = 10;
+let activeAI = 'claude'; // 'claude' or 'gpt4o'
+
+function setAI(btn, ai){
+  activeAI = ai;
+  const btnC = document.getElementById('ai-btn-claude');
+  const btnG = document.getElementById('ai-btn-gpt4o');
+  const gold = 'font-family:var(--mono);font-size:10px;font-weight:600;padding:4px 10px;border-radius:5px;cursor:pointer;';
+  btnC.style.cssText = gold + (ai==='claude'
+    ? 'border:1px solid var(--gold);background:var(--gold-tint);color:var(--gold)'
+    : 'border:1px solid var(--border);background:transparent;color:var(--ink3)');
+  btnG.style.cssText = gold + (ai==='gpt4o'
+    ? 'border:1px solid var(--c-openai);background:rgba(16,185,129,0.10);color:var(--c-openai)'
+    : 'border:1px solid var(--border);background:transparent;color:var(--ink3)');
+  const lbl = document.getElementById('c-ai-label');
+  if(lbl) lbl.innerHTML = ai==='gpt4o'
+    ? '<span class="svc-dot dot-openai"></span>ChatGPT GPT-4o (MOC)'
+    : '<span class="svc-dot dot-claude"></span>Claude Haiku (MOC)';
+  calcUpdate();
+}
+
+function calcUpdate(){
+  const dur    = parseFloat(document.getElementById('c-slider').value);
+  const inTok  = parseFloat(document.getElementById('c-in-tok').value)  || 0;
+  const outTok = parseFloat(document.getElementById('c-out-tok').value) || 0;
+
+  document.getElementById('c-dur-big').textContent = dur;
+  document.getElementById('c-dur-lbl').textContent = dur + ' min';
+
+  const sarUsd   = dur * 60 * SARVAM_PS;
+  const aiIn     = activeAI === 'gpt4o' ? OAI_IN  : CL_IN;
+  const aiOut    = activeAI === 'gpt4o' ? OAI_OUT : CL_OUT;
+  const claUsd   = inTok * aiIn + outTok * aiOut;
+  const totUsd   = sarUsd + claUsd;
+  const sarPct   = totUsd > 0 ? (sarUsd/totUsd*100).toFixed(0) : 0;
+
+  const cr       = Math.ceil(dur) * CR_PM + CR_MOC;
+  const revInr   = cr;
+  const costInr  = totUsd * USD_INR;
+  const profitInr= revInr - costInr;
+  const margin   = revInr > 0 ? (profitInr/revInr*100).toFixed(1) : 0;
+
+  document.getElementById('c-sarvam-usd').textContent = fmt$(sarUsd,4);
+  document.getElementById('c-sarvam-inr').textContent = '₹'+(sarUsd*USD_INR).toFixed(2);
+  document.getElementById('c-claude-usd').textContent = fmt$(claUsd,6);
+  document.getElementById('c-claude-inr').textContent = '₹'+(claUsd*USD_INR).toFixed(3);
+  document.getElementById('c-sar-pct').textContent    = sarPct+'%';
+  document.getElementById('c-total-usd').textContent  = fmt$(totUsd,5);
+  document.getElementById('c-total-inr').textContent  = '₹'+costInr.toFixed(3);
+  document.getElementById('c-credits').textContent    = cr;
+  document.getElementById('c-rev-inr').textContent    = '₹'+revInr.toFixed(0);
+  document.getElementById('c-profit-inr').textContent = (profitInr >= 0 ? '₹' : '–₹') + Math.abs(profitInr).toFixed(2);
+  document.getElementById('c-margin-pct').textContent = margin + '% margin';
+
+  const pr = document.getElementById('c-profit-row');
+  pr.style.background = profitInr >= 0 ? 'var(--sage-tint)' : 'var(--rust-tint)';
+  document.getElementById('c-profit-lbl').style.color = profitInr >= 0 ? 'var(--sage)' : 'var(--rust)';
+  document.getElementById('c-profit-inr').style.color = profitInr >= 0 ? 'var(--sage)' : 'var(--rust)';
+
+  renderVol(dur, inTok, outTok, volCount);
+}
+
+function renderVol(dur, inTok, outTok, n){
+  const sarUsd  = dur * 60 * SARVAM_PS;
+  const claUsd  = inTok * CL_IN + outTok * CL_OUT;
+  const totUsd  = sarUsd + claUsd;
+  const cr      = Math.ceil(dur) * CR_PM + CR_MOC;
+  const costInr = totUsd * USD_INR;
+  const revInr  = cr;
+  const profInr = revInr - costInr;
+
+  document.getElementById('vol-cells').innerHTML = `
+    <div style="background:var(--rust-tint);border-radius:8px;padding:10px;text-align:center">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--ink3);text-transform:uppercase;margin-bottom:3px">Cost ×${n}</div>
+      <div style="font-family:var(--serif);font-size:1.1rem;color:var(--rust)">₹${(costInr*n).toFixed(0)}</div>
+    </div>
+    <div style="background:var(--sage-tint);border-radius:8px;padding:10px;text-align:center">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--ink3);text-transform:uppercase;margin-bottom:3px">Revenue ×${n}</div>
+      <div style="font-family:var(--serif);font-size:1.1rem;color:var(--sage)">₹${(revInr*n).toFixed(0)}</div>
+    </div>
+    <div style="background:var(--gold-tint);border-radius:8px;padding:10px;text-align:center">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--ink3);text-transform:uppercase;margin-bottom:3px">Profit ×${n}</div>
+      <div style="font-family:var(--serif);font-size:1.1rem;color:var(--gold)">₹${(profInr*n).toFixed(0)}</div>
+    </div>`;
+}
+
+function setVol(btn, n){
+  volCount = n;
+  document.querySelectorAll('.vol-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const dur    = parseFloat(document.getElementById('c-slider').value);
+  const inTok  = parseFloat(document.getElementById('c-in-tok').value)  || 0;
+  const outTok = parseFloat(document.getElementById('c-out-tok').value) || 0;
+  renderVol(dur, inTok, outTok, n);
+}
+
+document.getElementById('c-slider').addEventListener('input', calcUpdate);
+document.getElementById('c-in-tok').addEventListener('input', calcUpdate);
+document.getElementById('c-out-tok').addEventListener('input', calcUpdate);
+calcUpdate();
+
+/* ── Boot ── */
+loadAll();
+</script>
+</body>
+</html>

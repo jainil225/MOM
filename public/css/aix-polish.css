@@ -1,0 +1,141 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   AiX Track — visual polish for the main (New MOC) and Records pages.
+   Loaded after aix-uniform.css. Styling only — no behaviour changes.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Welcome banner (main page title block + Records title block) ───── */
+.section-hd, .aix-banner {
+  position: relative; overflow: hidden;
+  border-radius: 24px !important;
+  padding: 26px 30px 24px !important;
+  margin: 0 0 18px !important;
+  border: none !important;
+  color: #fff;
+  background:
+    radial-gradient(ellipse 60% 120% at 100% 0%, rgba(224,98,26,0.55) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 90% at 0% 100%, rgba(90,100,180,0.35) 0%, transparent 65%),
+    linear-gradient(135deg, #17172C 0%, #221F3D 100%) !important;
+  box-shadow: 0 18px 44px rgba(24,24,44,0.22) !important;
+}
+.section-hd::after, .aix-banner::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background-image: linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(ellipse 70% 90% at 70% 30%, #000 30%, transparent 100%);
+}
+.section-hd > *, .aix-banner > * { position: relative; z-index: 1; }
+.section-hd .section-hd-eyebrow, .aix-banner .hero-eyebrow { color: #FFC08A !important; }
+.aix-banner .hero-eyebrow::before { background: #FFC08A !important; }
+.section-hd .section-hd-title, .aix-banner .hero-title { color: #fff !important; margin: 4px 0 0 !important; }
+.section-hd .section-hd-title em, .aix-banner .hero-title em {
+  background: linear-gradient(90deg, #F08030, #FFC08A);
+  -webkit-background-clip: text; background-clip: text; color: transparent !important;
+}
+.aix-banner .hero-sub, .section-hd .aix-banner-sub { color: rgba(255,255,255,0.72) !important; margin-top: 8px !important; }
+.aix-banner-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.aix-banner-chips span {
+  font-size: 12px; color: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14);
+  padding: 6px 11px; border-radius: 999px;
+}
+.aix-banner .hero-bg { display: none !important; }
+
+/* ── Cards: soft lift + warm accent edge ───────────────────────────── */
+.recorder-card, .context-panel, .mp-panel, .settings-row, .sp-wrap, .dropzone, .free-tier-bar, .toolbar, .table-wrap {
+  border-radius: 20px !important;
+  box-shadow: 0 1px 2px rgba(24,18,12,0.04), 0 10px 30px rgba(24,18,12,0.06) !important;
+}
+.context-panel, .mp-panel { border-left: 4px solid var(--gold) !important; }
+.mp-panel { border-left-color: #2870C0 !important; }
+
+/* ── Free-trial bar: brighter ──────────────────────────────────────── */
+.free-tier-bar {
+  background: linear-gradient(90deg, rgba(26,154,90,0.10), rgba(255,255,255,0.92) 55%) !important;
+  border: 1px solid rgba(26,154,90,0.22) !important;
+}
+.free-tier-bar .ft-label { font-weight: 700 !important; color: #157A47 !important; }
+.free-tier-bar .ft-label::before { content: '🎁 '; }
+.ft-track { height: 8px !important; border-radius: 999px !important; background: rgba(26,154,90,0.14) !important; }
+.ft-fill { background: linear-gradient(90deg, #1A9A5A, #4CC38A) !important; border-radius: 999px !important; }
+
+/* ── Record / Upload tabs ──────────────────────────────────────────── */
+.input-tabs { padding: 5px !important; border-radius: 999px !important; box-shadow: 0 6px 18px rgba(24,18,12,0.07) !important; }
+.tab-btn-mode { padding: 10px 20px !important; font-size: 13px !important; font-weight: 600 !important; }
+.tab-btn-mode.active { background: linear-gradient(135deg, #18182C, #2C2A44) !important; box-shadow: 0 6px 16px rgba(24,24,44,0.28) !important; }
+
+/* ── Recorder: livelier ────────────────────────────────────────────── */
+.recorder-card {
+  background:
+    radial-gradient(ellipse 60% 70% at 50% 100%, rgba(224,98,26,0.10) 0%, transparent 70%),
+    var(--card) !important;
+  padding: 1.5rem 1.5rem 1.6rem !important;
+}
+.waveform-wrap {
+  border: 1.5px dashed rgba(224,98,26,0.28) !important;
+  background: rgba(224,98,26,0.04) !important;
+}
+.waveform-idle { color: var(--gold) !important; opacity: 0.75; }
+.rec-btn { width: 84px !important; height: 84px !important; min-width: 84px; box-shadow: 0 10px 30px rgba(224,98,26,0.45) !important; }
+.rec-btn .rec-ico { width: 34px; height: 34px; }
+.rec-btn:not(.recording)::before {
+  content: '' !important; position: absolute; inset: -12px !important; border-radius: 50%;
+  border: 2px solid rgba(224,98,26,0.25); background: none !important;
+  animation: aix-ring 2.4s ease-out infinite !important;
+}
+@keyframes aix-ring { 0% { transform: scale(0.92); opacity: 1; } 100% { transform: scale(1.35); opacity: 0; } }
+.rec-caption { font-size: 12.5px !important; font-weight: 500; color: var(--ink2) !important; }
+.rec-timer { font-size: 26px !important; }
+
+/* ── Right-hand side cards ─────────────────────────────────────────── */
+.right-card { border-radius: 18px !important; box-shadow: 0 8px 24px rgba(24,18,12,0.06) !important; }
+.right-card-title { color: var(--gold) !important; }
+
+/* ── Records: stat cards ───────────────────────────────────────────── */
+.stats .stat-card { border-radius: 20px !important; box-shadow: 0 10px 28px rgba(24,18,12,0.07) !important; }
+.stats .stat-card .stat-val { font-weight: 700 !important; }
+.stats .stat-card.c-total .stat-val { color: #E0621A !important; }
+.stats .stat-card.c-open  .stat-val, .stats .stat-card.c-open .stat-val em { color: #2870C0 !important; }
+.stats .stat-card.c-done  .stat-val, .stats .stat-card.c-done .stat-val em { color: #1A9A5A !important; }
+.stats .stat-card.c-high  .stat-val { color: #7C5FA0 !important; }
+
+/* ── Records: table ────────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-wrap thead th { background: linear-gradient(180deg, rgba(224,98,26,0.06), rgba(224,98,26,0.02)) !important; }
+.table-wrap tbody tr { transition: background .15s, box-shadow .15s; position: relative; }
+.table-wrap tbody tr:hover { background: rgba(224,98,26,0.05) !important; box-shadow: inset 4px 0 0 #E0621A; }
+.title-cell { font-weight: 600 !important; font-size: 14.5px !important; }
+.id-badge { background: rgba(224,98,26,0.10) !important; color: #E0621A !important; border-radius: 999px !important; padding: 3px 9px !important; font-weight: 700 !important; }
+.lang-chip { background: #18182C !important; color: #fff !important; border: none !important; border-radius: 999px !important; padding: 3px 9px !important; }
+.dur-chip { background: rgba(40,112,192,0.10) !important; color: #2870C0 !important; border: none !important; border-radius: 999px !important; }
+.pill { display: inline-flex !important; align-items: center; gap: 5px; padding: 2px 9px 2px 2px !important; border-radius: 999px !important; background: var(--paper2) !important; color: var(--ink) !important; border: none !important; }
+.pill.more { padding: 2px 9px !important; color: var(--ink3) !important; }
+.pill .pav { width: 18px; height: 18px; border-radius: 50%; color: #fff; font-size: 9px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.spk-tag { font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: .06em; padding: 2px 7px; border-radius: 999px; background: rgba(224,98,26,0.10); color: #E0621A; }
+
+/* ── Recording consent box (main page) ─────────────────────────────── */
+.consent-row {
+  display: flex; align-items: flex-start; gap: 10px; cursor: pointer;
+  margin: 0 0 14px; padding: 12px 14px; border-radius: 14px;
+  background: rgba(255,255,255,0.75); border: 1px solid rgba(24,18,12,0.10);
+  font-size: 13px; line-height: 1.5; color: var(--ink2);
+  transition: border-color .2s, box-shadow .2s, background .2s;
+}
+.consent-row input { width: 18px; height: 18px; margin-top: 1px; flex-shrink: 0; accent-color: var(--gold); cursor: pointer; }
+.consent-row a { color: var(--gold); white-space: nowrap; }
+.consent-row:has(input:checked) { border-color: rgba(26,154,90,0.35); background: rgba(26,154,90,0.06); }
+.consent-row.need { border-color: #C0392B; box-shadow: 0 0 0 3px rgba(192,57,43,0.15); animation: aix-shake .35s; }
+@keyframes aix-shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+/* ── Dark mode keeps contrast ──────────────────────────────────────── */
+[data-theme="dark"] .consent-row { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.10); }
+[data-theme="dark"] .free-tier-bar { background: linear-gradient(90deg, rgba(76,195,138,0.12), var(--card) 55%) !important; }
+[data-theme="dark"] .free-tier-bar .ft-label { color: #4CC38A !important; }
+[data-theme="dark"] .pill { background: rgba(255,255,255,0.06) !important; }
+[data-theme="dark"] .lang-chip { background: rgba(255,255,255,0.12) !important; }
+
+/* ── Phones ────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .section-hd, .aix-banner { padding: 18px 18px 16px !important; border-radius: 18px !important; }
+  .aix-banner-chips { display: none; }
+}

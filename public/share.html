@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<script src="/js/theme.js"></script>
+<title>Shared MOC · AiX Track</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#18120C;--ink2:#4A4238;--ink3:#8A8174;--ink4:#B8B0A4;
+  --paper:#F0EDE6;--paper2:#E8E4DA;--card:rgba(255,255,255,0.92);
+  --border:rgba(24,18,12,0.09);
+  --navy:#18182C;--navy-h:#2C2A44;
+  --gold:#E0621A;--gold-h:#C8540E;
+  --gold-tint:rgba(224,98,26,0.08);--gold-tint-strong:rgba(224,98,26,0.20);
+  --sage:#1A9A5A;--sage-tint:rgba(26,154,90,0.08);
+  --rust:#C03030;--rust-tint:rgba(192,48,48,0.08);
+  --shadow-1:0 1px 3px rgba(24,18,12,0.05),0 4px 14px rgba(24,18,12,0.05);
+  --shadow-2:0 8px 32px rgba(24,18,12,0.08);
+  --sans:'Roboto',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:'Roboto Mono',ui-monospace,monospace;
+}
+[data-theme="dark"]{
+  --ink:#F2EEE6;--ink2:#C4BCB0;--ink3:#8A8276;--ink4:#4A453E;
+  --paper:#0E0F14;--paper2:#181920;--card:rgba(24,25,33,0.92);
+  --border:rgba(255,255,255,0.08);
+  --navy:#2C2A44;--navy-h:#3A3858;
+  --gold:#F0803A;--gold-h:#F59A5C;
+  --gold-tint:rgba(240,128,58,0.10);--gold-tint-strong:rgba(240,128,58,0.24);
+  --sage:#4CC38A;--sage-tint:rgba(76,195,138,0.10);
+  --rust:#E86A6A;--rust-tint:rgba(232,106,106,0.10);
+  --shadow-1:0 1px 3px rgba(0,0,0,0.3);--shadow-2:0 8px 32px rgba(0,0,0,0.4);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--sans);color:var(--ink);min-height:100vh;line-height:1.55;-webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(ellipse 90% 40% at 50% -6%,rgba(224,98,26,0.30) 0%,rgba(232,128,48,0) 60%),
+    radial-gradient(ellipse 55% 40% at 8% 95%,rgba(176,194,224,0.30) 0%,transparent 68%),
+    var(--paper);
+  background-attachment:fixed;
+}
+[data-theme="dark"] body{
+  background:radial-gradient(ellipse 90% 40% at 50% -6%,rgba(240,128,58,0.16) 0%,transparent 60%),var(--paper);
+  background-attachment:fixed;
+}
+
+/* ── Top bar ── */
+.topbar{position:sticky;top:0;z-index:50;height:60px;padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;
+  background:rgba(240,237,230,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+[data-theme="dark"] .topbar{background:rgba(14,15,20,0.85)}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit}
+.brand img{width:32px;height:32px;border-radius:8px;object-fit:contain}
+.brand-fb{width:32px;height:32px;border-radius:8px;background:var(--gold);color:#fff;display:none;align-items:center;justify-content:center;font-weight:700;font-style:italic}
+.brand-name{font-size:17px;font-weight:700;letter-spacing:-0.01em}
+.brand-name em{font-style:italic;color:var(--gold)}
+.brand-sub{font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:0.12em;text-transform:uppercase}
+.top-actions{display:flex;align-items:center;gap:8px}
+.chip-ro{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:5px 10px;border-radius:999px;background:var(--gold-tint);color:var(--gold);border:1px solid var(--gold-tint-strong)}
+.icon-btn{height:34px;min-width:34px;padding:0 12px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--ink2);cursor:pointer;font-family:var(--sans);font-size:12px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.icon-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ── Layout ── */
+.wrap{max-width:820px;margin:0 auto;padding:1.75rem 1rem 3rem}
+
+/* Hero card */
+.hero{background:linear-gradient(135deg,var(--navy),var(--navy-h));color:#fff;border-radius:24px;padding:1.75rem 1.75rem 1.5rem;position:relative;overflow:hidden;box-shadow:var(--shadow-2);margin-bottom:1rem}
+.hero::before{content:'';position:absolute;top:0;left:12%;right:12%;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.hero::after{content:'';position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(224,98,26,0.35),transparent 70%)}
+.serial{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);background:rgba(224,98,26,0.14);border:1px solid rgba(224,98,26,0.35);padding:4px 10px;border-radius:999px;margin-bottom:12px;position:relative;z-index:1}
+.title{font-size:clamp(22px,4.2vw,32px);font-weight:700;line-height:1.2;letter-spacing:-0.02em;margin-bottom:14px;position:relative;z-index:1}
+.meta{display:flex;flex-wrap:wrap;gap:6px;position:relative;z-index:1}
+.meta span{font-family:var(--mono);font-size:10.5px;color:rgba(255,255,255,0.78);background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);padding:4px 10px;border-radius:999px}
+
+/* Stat strip */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1rem}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px 14px;box-shadow:var(--shadow-1)}
+.stat b{display:block;font-size:22px;font-weight:700;line-height:1.1;color:var(--ink)}
+.stat span{font-family:var(--mono);font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink3)}
+
+/* Section cards */
+.card{background:var(--card);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:20px;padding:1.1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow-1)}
+.card-title{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink3);margin-bottom:12px}
+.card-title::before{content:'';width:3px;height:12px;border-radius:2px;background:var(--gold)}
+.count{margin-left:auto;font-size:9.5px;padding:2px 9px;border-radius:999px;background:var(--gold-tint);color:var(--gold);letter-spacing:0.06em}
+
+.summary{font-size:14.5px;color:var(--ink2);line-height:1.75}
+.att{display:flex;flex-wrap:wrap;gap:8px}
+.att-pill{display:inline-flex;align-items:center;gap:7px;padding:5px 12px 5px 5px;border-radius:999px;background:var(--paper2);border:1px solid var(--border);font-size:13px;font-weight:500}
+.av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;font-weight:700;color:#fff;flex-shrink:0}
+.ag{display:flex;gap:12px;padding:8px 0;border-bottom:1px dashed var(--border);font-size:14px}
+.ag:last-child{border-bottom:none}
+.num{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--gold);min-width:22px;padding-top:2px}
+.disc{padding:12px 14px;border-radius:14px;background:var(--gold-tint);border:1px solid var(--gold-tint-strong);margin-bottom:8px}
+.disc:last-child{margin-bottom:0}
+.disc h4{font-size:15px;font-weight:600;margin-bottom:4px;color:var(--ink)}
+.disc h4::before{content:'§ ';color:var(--gold)}
+.disc p{font-size:13.5px;color:var(--ink2);line-height:1.65;white-space:pre-line}
+.dec{display:flex;gap:10px;padding:10px 12px;border-radius:12px;background:var(--sage-tint);margin-bottom:6px;font-size:14px}
+.dec:last-child{margin-bottom:0}
+.dec i{font-style:normal;color:var(--sage);font-weight:700}
+.act{display:flex;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:14px;margin-bottom:8px;position:relative;background:var(--card)}
+.act:last-child{margin-bottom:0}
+.act::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:0 3px 3px 0;background:var(--ink4)}
+.act.p-high::before{background:var(--rust)}
+.act.p-medium::before{background:var(--gold)}
+.act-task{font-size:14px;font-weight:600;line-height:1.45;margin-bottom:8px}
+.act-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.owner{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 3px;border-radius:999px;background:var(--navy);color:#fff;font-size:11.5px;font-weight:500}
+.owner .av{width:20px;height:20px;font-size:8px}
+.tag{font-family:var(--mono);font-size:10px;font-weight:600;padding:3px 9px;border-radius:999px}
+.tag.due{background:var(--rust-tint);color:var(--rust)}
+.tag.High{background:var(--rust-tint);color:var(--rust)}
+.tag.Medium{background:var(--gold-tint);color:var(--gold)}
+.tag.Low{background:var(--paper2);color:var(--ink3)}
+.next{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:500}
+.next-ico{width:36px;height:36px;border-radius:12px;background:var(--gold-tint);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+
+.note{font-family:var(--mono);font-size:10px;color:var(--ink3);text-align:center;margin:1.25rem 0 0;letter-spacing:0.04em}
+.footer{max-width:820px;margin:0 auto;padding:0 1rem 2rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-family:var(--mono);font-size:10px;color:var(--ink3)}
+.footer a{color:var(--gold);text-decoration:none;font-weight:600}
+
+/* States */
+.state{max-width:440px;margin:5rem auto;padding:2rem;text-align:center}
+.spinner{width:36px;height:36px;border-radius:50%;border:3px solid var(--gold-tint-strong);border-top-color:var(--gold);animation:spin 0.9s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.state h2{font-size:22px;margin-bottom:8px}
+.state p{font-size:13px;color:var(--ink3);line-height:1.6}
+.btn{display:inline-block;margin-top:1.25rem;padding:10px 20px;border-radius:999px;background:var(--navy);color:#fff;text-decoration:none;font-size:13px;font-weight:600}
+
+@media(max-width:640px){
+  .brand-sub{display:none}
+  .hero{padding:1.35rem 1.2rem;border-radius:20px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .card{padding:1rem;border-radius:18px}
+  .icon-btn .lbl{display:none}
+}
+@media print{
+  .topbar,.top-actions,.note{display:none!important}
+  body{background:#fff!important}
+  .card,.stat{box-shadow:none;backdrop-filter:none;break-inside:avoid}
+  .hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+<link rel="stylesheet" href="/css/theme-dark.css">
+<link rel="stylesheet" href="/css/aix-uniform.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="https://track.aiextensive.com">
+    <img src="/aix-logo.png" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <span class="brand-fb">A</span>
+    <span><span class="brand-name">AiX <em>Track</em></span><br><span class="brand-sub">Shared MOC</span></span>
+  </a>
+  <div class="top-actions">
+    <span class="chip-ro">View only</span>
+    <button class="icon-btn" onclick="window.print()" title="Print or save as PDF">⎙ <span class="lbl">Print / PDF</span></button>
+    <button class="icon-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">◐</button>
+  </div>
+</header>
+
+<div id="loading-state" class="state"><div class="spinner"></div><p>Loading shared MOC…</p></div>
+
+<div id="error-state" class="state" style="display:none">
+  <div style="font-size:44px;color:var(--gold);opacity:0.5;margin-bottom:10px">∅</div>
+  <h2>Link not available</h2>
+  <p id="error-msg">This share link may have expired or been revoked by the owner.</p>
+  <a class="btn" href="https://track.aiextensive.com">Visit AiX Track →</a>
+</div>
+
+<main id="main" style="display:none">
+  <div class="wrap">
+    <section class="hero">
+      <div class="serial" id="h-serial">—</div>
+      <h1 class="title" id="h-title">Loading…</h1>
+      <div class="meta" id="h-meta"></div>
+    </section>
+    <div class="stats" id="stats"></div>
+    <div id="content-body"></div>
+    <p class="note">Shared from AiX Track · read-only copy · AI-generated, verify with the conversation organiser</p>
+  </div>
+  <footer class="footer">
+    <span id="footer-ref">AiX Track · Shared record</span>
+    <span>Powered by <a href="https://track.aiextensive.com">AiX Track</a></span>
+  </footer>
+</main>
+
+<script>
+function getToken(){ const p = location.pathname.split('/'); return p[p.length-1] || ''; }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function safeArr(v){ if(!v) return []; if(Array.isArray(v)) return v; try{ const p = JSON.parse(v); return Array.isArray(p) ? p : []; }catch{ return []; } }
+const AV = ['#18182C','#E0621A','#1A9A5A','#C03030','#5C3D5C','#2C2A44','#2D6A4F','#9A5B12'];
+const avColor = n => AV[((n||'').charCodeAt(0) || 0) % AV.length];
+const initials = n => (n||'?').trim().split(/[\s\-]/).filter(Boolean).slice(0,2).map(w => w[0]).join('').toUpperCase() || '?';
+
+async function loadMOC(){
+  const token = getToken();
+  if(!token) return showError('No share token found in the link.');
+  try{
+    const r = await fetch(`/api/share/${encodeURIComponent(token)}`);
+    const d = await r.json().catch(() => ({}));
+    if(!r.ok) throw new Error(d.error || 'This share link may have expired or been revoked by the owner.');
+    render(d.mom);
+  }catch(err){ showError(err.message); }
+}
+
+function showError(msg){
+  document.getElementById('loading-state').style.display = 'none';
+  document.getElementById('error-state').style.display = 'block';
+  document.getElementById('error-msg').textContent = msg;
+}
+
+function card(title, body, count){
+  return `<section class="card"><div class="card-title">${title}${count != null ? `<span class="count">${count}</span>` : ''}</div>${body}</section>`;
+}
+
+function render(m){
+  document.getElementById('loading-state').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+  document.title = `${m.meeting_title || 'MOC'} · AiX Track`;
+  document.getElementById('h-serial').textContent = m.ref_id || `MOC-${m.id}`;
+  document.getElementById('h-title').textContent = m.meeting_title || 'Untitled conversation';
+  document.getElementById('footer-ref').textContent = `${m.ref_id || ''} · Shared via AiX Track`;
+
+  const dur = Number(m.duration_seconds) || 0;
+  const meta = [];
+  if(m.meeting_date) meta.push(esc(m.meeting_date));
+  if(m.meeting_time) meta.push(esc(m.meeting_time));
+  if(dur) meta.push(`${Math.floor(dur/60)}m ${Math.floor(dur%60)}s`);
+  if(m.language) meta.push(esc(String(m.language).toUpperCase()));
+  document.getElementById('h-meta').innerHTML = meta.map(x => `<span>${x}</span>`).join('');
+
+  const att = safeArr(m.attendees), ag = safeArr(m.agenda), dp = safeArr(m.discussion_points);
+  const dec = safeArr(m.decisions), ai = safeArr(m.action_items);
+
+  document.getElementById('stats').innerHTML = [
+    [att.length, 'Attendees'], [dp.length, 'Topics'], [dec.length, 'Decisions'], [ai.length, 'Actions']
+  ].map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
+
+  let html = '';
+  if(m.summary) html += card('Summary', `<div class="summary">${esc(m.summary)}</div>`);
+  if(att.length) html += card('Attendees', `<div class="att">${att.map(a =>
+    `<span class="att-pill"><span class="av" style="background:${avColor(a)}">${esc(initials(a))}</span>${esc(a)}</span>`).join('')}</div>`, att.length);
+  if(ag.length) html += card('Agenda', ag.map((a, i) =>
+    `<div class="ag"><span class="num">${String(i+1).padStart(2,'0')}</span><span>${esc(a)}</span></div>`).join(''));
+  if(dp.length) html += card('Key discussions', dp.map(d =>
+    `<div class="disc"><h4>${esc(d.topic || '')}</h4>${d.details ? `<p>${esc(d.details)}</p>` : ''}</div>`).join(''), dp.length);
+  if(dec.length) html += card('Decisions', dec.map(d => `<div class="dec"><i>✓</i><span>${esc(d)}</span></div>`).join(''), dec.length);
+  if(ai.length) html += card('Action items', ai.map(a => {
+    const owner = (a.owner || 'Not assigned').trim(), pri = ['High','Medium','Low'].includes(a.priority) ? a.priority : '';
+    return `<div class="act ${pri ? 'p-' + pri.toLowerCase() : ''}"><div style="flex:1;min-width:0">
+      <div class="act-task">${esc(a.task || '')}</div>
+      <div class="act-meta">
+        <span class="owner"><span class="av" style="background:${avColor(owner)}">${esc(initials(owner))}</span>${esc(owner)}</span>
+        ${a.due_date && a.due_date !== 'TBD' ? `<span class="tag due">Due ${esc(a.due_date)}</span>` : ''}
+        ${pri ? `<span class="tag ${pri}">${pri}</span>` : ''}
+      </div></div></div>`;
+  }).join(''), ai.length);
+  if(m.next_meeting && String(m.next_meeting).trim()) html += card('Next conversation',
+    `<div class="next"><span class="next-ico">◷</span><span>${esc(m.next_meeting)}</span></div>`);
+  if(!html) html = card('MOC', '<p class="summary">No content available.</p>');
+  document.getElementById('content-body').innerHTML = html;
+}
+
+loadMOC();
+</script>
+</body>
+</html>

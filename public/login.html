@@ -3,694 +3,252 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Sign in · Minute</title>
+<script src="/js/theme.js"></script>
+<title>Sign in · AiX Track</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-
 :root{
-  /* Editorial palette — deep navy authority + muted gold premium */
-  --ink:#0F1524;
-  --ink2:#4A5468;
-  --ink3:#8A93A8;
-  --ink4:#B8BFCC;
-  --paper:#FAF8F3;
-  --paper2:#F4F0E6;
-  --card:#FFFFFF;
-  --border:#E8E4D8;
-  --border-strong:#D4CFC0;
-
-  --navy:#0F1B3D;
-  --navy-h:#1F2D57;
-  --gold:#B8912A;
-  --gold-h:#C89A3D;
-  --gold-tint:rgba(184,145,42,0.10);
-  --gold-tint-strong:rgba(184,145,42,0.22);
-
-  --sage:#4A7C59;
-  --sage-tint:rgba(74,124,89,0.10);
-  --rust:#A0472E;
-  --rust-tint:rgba(160,71,46,0.10);
-
-  --shadow-1:0 1px 2px rgba(15,21,36,0.04),0 2px 6px rgba(15,21,36,0.03);
-  --shadow-2:0 4px 20px rgba(15,21,36,0.06),0 12px 48px rgba(15,21,36,0.06);
-  --shadow-lift:0 20px 60px -20px rgba(15,21,36,0.20),0 8px 24px -12px rgba(15,21,36,0.12);
-
-  --serif:'Instrument Serif',Georgia,serif;
-  --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  --mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+  --ink:#18120C;--ink2:#4A4238;--ink3:#8A8174;--ink4:#B8B0A4;
+  --paper:#F0EDE6;--paper2:#E8E4DA;--card:rgba(255,255,255,0.94);
+  --border:rgba(24,18,12,0.10);--border-strong:rgba(24,18,12,0.18);
+  --navy:#18182C;--navy-h:#2C2A44;
+  --gold:#E0621A;--gold-h:#C8540E;--gold-tint:rgba(224,98,26,0.08);--gold-tint-strong:rgba(224,98,26,0.20);
+  --sage:#1A9A5A;--sage-tint:rgba(26,154,90,0.10);
+  --rust:#C03030;--rust-tint:rgba(192,48,48,0.08);
+  --sans:'Roboto',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --serif:'Roboto',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:'Roboto Mono',ui-monospace,monospace;
 }
-
 [data-theme="dark"]{
-  --ink:#F5F1E6;
-  --ink2:#B8B0A0;
-  --ink3:#6B6455;
-  --ink4:#3D3830;
-  --paper:#0C0D10;
-  --paper2:#141519;
-  --card:#161820;
-  --border:#25272F;
-  --border-strong:#333540;
+  --ink:#F2EEE6;--ink2:#C4BCB0;--ink3:#8A8276;--ink4:#4A453E;
+  --paper:#0E0F14;--paper2:#181920;--card:rgba(24,25,33,0.94);
+  --border:rgba(255,255,255,0.09);--border-strong:rgba(255,255,255,0.16);
+  --gold:#F0803A;--gold-h:#F59A5C;--gold-tint:rgba(240,128,58,0.10);--gold-tint-strong:rgba(240,128,58,0.24);
+  --sage:#4CC38A;--sage-tint:rgba(76,195,138,0.10);--rust:#E86A6A;--rust-tint:rgba(232,106,106,0.10);
+}
+html,body{height:100%}
+body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.5;background:var(--paper)}
 
-  --navy:#4A5B8C;
-  --navy-h:#6274AA;
-  --gold:#D4A94A;
-  --gold-h:#E8BC5A;
-  --gold-tint:rgba(212,169,74,0.10);
-  --gold-tint-strong:rgba(212,169,74,0.20);
+/* ── Layout ── */
+.lg-shell{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(420px,0.85fr);min-height:100vh}
 
-  --sage:#7BA88C;
-  --sage-tint:rgba(123,168,140,0.10);
-  --rust:#D07358;
-  --rust-tint:rgba(208,115,88,0.10);
+/* ── Left: brand story ── */
+.lg-left{position:relative;overflow:hidden;color:#fff;padding:2.25rem 3rem 2rem;display:flex;flex-direction:column;
+  background:radial-gradient(ellipse 70% 55% at 85% 10%,rgba(224,98,26,0.45) 0%,transparent 60%),
+             radial-gradient(ellipse 60% 50% at 0% 100%,rgba(80,90,160,0.35) 0%,transparent 65%),
+             linear-gradient(150deg,#14142A 0%,#1C1B36 55%,#231F3A 100%)}
+.lg-left::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,0.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.035) 1px,transparent 1px);
+  background-size:44px 44px;mask-image:radial-gradient(ellipse 80% 70% at 50% 40%,#000 40%,transparent 100%)}
+.lg-left > *{position:relative;z-index:1}
+.lg-brand{display:flex;align-items:center;gap:12px}
+.lg-brand img{width:42px;height:42px;border-radius:11px;object-fit:contain;background:#fff;padding:3px;box-shadow:0 6px 20px rgba(0,0,0,0.3)}
+.lg-brand-fb{width:42px;height:42px;border-radius:11px;background:var(--gold);display:none;align-items:center;justify-content:center;font-weight:700;font-style:italic;font-size:20px}
+.lg-brand-name{font-size:20px;font-weight:700;letter-spacing:-0.01em}
+.lg-brand-name em{font-style:italic;color:#F5A060}
+.lg-brand-sub{font-family:var(--mono);font-size:9.5px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.55)}
 
-  --shadow-1:0 1px 2px rgba(0,0,0,0.3);
-  --shadow-2:0 4px 20px rgba(0,0,0,0.4);
-  --shadow-lift:0 20px 60px -20px rgba(0,0,0,0.6),0 8px 24px -12px rgba(0,0,0,0.4);
-}
+.lg-hero{margin-top:auto;padding-top:2.5rem;max-width:620px}
+.lg-kicker{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;
+  color:#FFD2B0;background:rgba(224,98,26,0.16);border:1px solid rgba(240,128,58,0.35);padding:6px 12px;border-radius:999px}
+.lg-kicker .dot{width:7px;height:7px;border-radius:50%;background:#F5A060;box-shadow:0 0 0 0 rgba(245,160,96,0.7);animation:lgpulse 2s infinite}
+@keyframes lgpulse{0%{box-shadow:0 0 0 0 rgba(245,160,96,0.6)}70%{box-shadow:0 0 0 9px rgba(245,160,96,0)}100%{box-shadow:0 0 0 0 rgba(245,160,96,0)}}
+.lg-title{font-size:clamp(34px,3.6vw,52px);font-weight:700;line-height:1.08;letter-spacing:-0.025em;margin:18px 0 14px}
+.lg-title em{font-style:italic;background:linear-gradient(90deg,#F08030,#FFC08A);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lg-desc{font-size:16px;line-height:1.65;color:rgba(255,255,255,0.74);max-width:540px}
+.lg-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.lg-chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:rgba(255,255,255,0.88);background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);padding:7px 12px;border-radius:999px}
 
-body{
-  font-family:var(--sans);
-  background:var(--paper);
-  color:var(--ink);
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  padding:1rem;
-  font-feature-settings:'ss01','cv11';
-  transition:background 0.3s,color 0.3s;
-  overflow-x:hidden;
-  position:relative;
-}
+/* product preview */
+.lg-preview{position:relative;margin:2.25rem 0 1.5rem;max-width:560px}
+.lg-moc{background:rgba(255,255,255,0.97);color:#18120C;border-radius:18px;padding:16px 18px;box-shadow:0 30px 70px rgba(0,0,0,0.45);animation:lgfloat 6s ease-in-out infinite}
+@keyframes lgfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.lg-moc-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.lg-moc-ref{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:0.12em;color:#E0621A;background:rgba(224,98,26,0.1);padding:3px 8px;border-radius:999px}
+.lg-moc-tag{font-family:var(--mono);font-size:9.5px;font-weight:700;color:#1A9A5A;background:rgba(26,154,90,0.1);padding:3px 8px;border-radius:999px}
+.lg-moc-title{font-size:15px;font-weight:700;margin-bottom:10px}
+.lg-spk{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px dashed rgba(24,18,12,0.1)}
+.lg-av{width:26px;height:26px;border-radius:50%;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lg-spk b{font-size:12px;display:block}
+.lg-spk span{font-size:12px;color:#4A4238;line-height:1.45}
+.lg-act{display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 10px;border-radius:10px;background:rgba(224,98,26,0.07);font-size:12px}
+.lg-act .own{margin-left:auto;font-family:var(--mono);font-size:10px;font-weight:700;color:#fff;background:#18182C;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.lg-float{position:absolute;z-index:2;right:-12px;top:-30px;background:#E0621A;color:#fff;border-radius:14px;padding:10px 14px;box-shadow:0 14px 34px rgba(224,98,26,0.45);animation:lgfloat 6s ease-in-out infinite reverse}
+.lg-float b{display:block;font-size:20px;line-height:1}
+.lg-float span{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;opacity:0.9}
+.lg-trust{display:flex;flex-wrap:wrap;gap:18px;font-family:var(--mono);font-size:10.5px;letter-spacing:0.06em;color:rgba(255,255,255,0.55);margin-top:auto;padding-top:1rem}
 
-/* Ambient paper texture — subtle */
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  background:
-    radial-gradient(ellipse 1200px 800px at 20% 10%,var(--gold-tint) 0%,transparent 50%),
-    radial-gradient(ellipse 1000px 600px at 80% 90%,rgba(15,27,61,0.04) 0%,transparent 50%);
-  pointer-events:none;
-  z-index:0;
-}
-[data-theme="dark"] body::before{
-  background:
-    radial-gradient(ellipse 1200px 800px at 20% 10%,rgba(212,169,74,0.05) 0%,transparent 50%),
-    radial-gradient(ellipse 1000px 600px at 80% 90%,rgba(74,91,140,0.06) 0%,transparent 50%);
-}
+/* ── Right: sign-in card ── */
+.lg-right{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.5rem;
+  background:radial-gradient(ellipse 80% 45% at 50% 0%,rgba(224,98,26,0.16) 0%,transparent 65%),var(--paper)}
+[data-theme="dark"] .lg-right{background:radial-gradient(ellipse 80% 45% at 50% 0%,rgba(240,128,58,0.12) 0%,transparent 65%),var(--paper)}
+.theme-btn{position:fixed;z-index:20;top:16px;right:16px;width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--ink2);cursor:pointer;font-size:14px}
+.theme-btn:hover{border-color:var(--gold);color:var(--gold)}
+.lg-card{width:100%;max-width:420px;background:var(--card);border:1px solid var(--border);border-radius:24px;padding:30px 28px 24px;
+  box-shadow:0 24px 70px rgba(24,18,12,0.12),0 2px 8px rgba(24,18,12,0.05);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);position:relative}
+.lg-card::before{content:'';position:absolute;top:0;left:18%;right:18%;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.mobile-brand{display:none;align-items:center;gap:10px;margin-bottom:18px}
+.mobile-brand img{width:36px;height:36px;border-radius:9px;object-fit:contain}
+.brand-name{font-size:18px;font-weight:700}
+.brand-name em{font-style:italic;color:var(--gold)}
+.lg-free{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--sage);background:var(--sage-tint);border:1px solid rgba(26,154,90,0.22);padding:5px 11px;border-radius:999px;margin-bottom:14px}
 
-/* ─── Theme toggle ───────────────────────────────────────── */
-.theme-toggle{
-  position:fixed;
-  top:1.25rem;
-  right:1.25rem;
-  z-index:100;
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:999px;
-  padding:7px 12px;
-  font-size:12px;
-  font-family:var(--mono);
-  font-weight:500;
-  color:var(--ink2);
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  gap:6px;
-  transition:all 0.2s;
-  letter-spacing:0.02em;
-  text-transform:uppercase;
-}
-.theme-toggle:hover{border-color:var(--gold);color:var(--gold)}
+.step{display:none}
+.step.active{display:block;animation:lgin .35s ease}
+@keyframes lgin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.step-meta{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.step-num{font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:0.1em}
+.step-bar{flex:1;height:3px;border-radius:999px;background:var(--paper2);overflow:hidden}
+.step-fill{height:100%;background:linear-gradient(90deg,var(--gold),#F5A060);border-radius:999px}
+.step-title{font-size:28px;font-weight:700;letter-spacing:-0.02em;line-height:1.15}
+.step-title em{font-style:italic;color:var(--gold)}
+.step-sub{font-size:14px;color:var(--ink2);margin:6px 0 18px}
 
-/* ─── Card ────────────────────────────────────────────────── */
-.login-frame{
-  width:100%;
-  max-width:440px;
-  position:relative;
-  z-index:1;
-}
-
-/* Wordmark above card */
-.wordmark{
-  text-align:center;
-  margin-bottom:1.75rem;
-}
-.wordmark-label{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  font-family:var(--mono);
-  font-size:10px;
-  font-weight:500;
-  color:var(--ink3);
-  letter-spacing:0.24em;
-  text-transform:uppercase;
-  margin-bottom:12px;
-}
-.wordmark-line{
-  width:24px;
-  height:1px;
-  background:var(--border-strong);
-}
-.wordmark-title{
-  font-family:var(--serif);
-  font-size:44px;
-  font-weight:400;
-  color:var(--ink);
-  line-height:1;
-  letter-spacing:-0.02em;
-  margin-bottom:6px;
-}
-.wordmark-title em{
-  font-style:italic;
-  color:var(--gold);
-  font-weight:400;
-}
-.wordmark-sub{
-  font-size:13px;
-  color:var(--ink2);
-  font-weight:400;
-}
-
-.login-card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:14px;
-  box-shadow:var(--shadow-lift);
-  overflow:hidden;
-  position:relative;
-  transition:background 0.3s,border-color 0.3s;
-}
-/* Gold ribbon at top */
-.login-card::before{
-  content:"";
-  position:absolute;
-  top:0;left:0;right:0;
-  height:2px;
-  background:linear-gradient(90deg,transparent 0%,var(--gold) 20%,var(--gold-h) 50%,var(--gold) 80%,transparent 100%);
-  z-index:1;
-}
-
-.card-body{padding:2rem 2rem 1.75rem}
-
-/* ─── Banners ────────────────────────────────────────────── */
-.banner{
-  border-radius:8px;
-  padding:10px 12px;
-  font-size:13px;
-  display:none;
-  gap:8px;
-  align-items:flex-start;
-  margin-bottom:1.25rem;
-  line-height:1.45;
-  border-left:3px solid;
-}
-.banner.danger{background:var(--rust-tint);color:var(--rust);border-color:var(--rust)}
-.banner.success{background:var(--sage-tint);color:var(--sage);border-color:var(--sage)}
+.banner{display:none;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:12px;font-size:13px;margin-bottom:14px}
 .banner.show{display:flex}
+.banner.danger{background:var(--rust-tint);color:var(--rust);border:1px solid rgba(192,48,48,0.22)}
+.banner.success{background:var(--sage-tint);color:var(--sage);border:1px solid rgba(26,154,90,0.22)}
 
-/* ─── Steps ──────────────────────────────────────────────── */
-.step{display:none;animation:slideIn 0.32s cubic-bezier(0.16,1,0.3,1)}
-.step.active{display:block}
-@keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.policy-row{display:flex;align-items:flex-start;gap:10px;padding:11px 12px;border:1px solid var(--border);border-radius:12px;cursor:pointer;margin-bottom:14px;background:var(--paper);transition:border-color .15s}
+.policy-row:hover{border-color:var(--gold-tint-strong)}
+.policy-row input{width:17px;height:17px;margin-top:1px;accent-color:var(--gold);flex-shrink:0;cursor:pointer}
+.policy-text{font-size:12.5px;color:var(--ink2);line-height:1.5}
+.policy-text a{color:var(--gold);font-weight:600;text-decoration:none}
+.policy-text a:hover{text-decoration:underline}
 
-.step-eyebrow{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin-bottom:14px;
-}
-.step-num{
-  font-family:var(--mono);
-  font-size:11px;
-  font-weight:600;
-  color:var(--gold);
-  letter-spacing:0.06em;
-}
-.step-progress{
-  flex:1;
-  height:2px;
-  background:var(--border);
-  border-radius:2px;
-  overflow:hidden;
-  position:relative;
-}
-.step-progress::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:var(--gold);
-  transform-origin:left;
-  transform:scaleX(0.5);
-  transition:transform 0.5s cubic-bezier(0.16,1,0.3,1);
-}
-.step-progress.step-2::after{transform:scaleX(1)}
+.btn-google{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:13px 16px;border-radius:14px;border:1px solid var(--border-strong);
+  background:#fff;color:#1F1F1F;font-family:var(--sans);font-size:15px;font-weight:600;transition:transform .15s,box-shadow .15s}
+.btn-google:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(24,18,12,0.12)}
+.google-logo{width:20px;height:20px}
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--ink3);font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.field{margin-bottom:12px}
+.field-label{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:6px}
+.field-input{width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--border-strong);background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;transition:border-color .15s,box-shadow .15s}
+.field-input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px var(--gold-tint)}
+.btn-primary{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:13px 16px;border-radius:14px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--gold),var(--gold-h));color:#fff;font-family:var(--sans);font-size:15px;font-weight:600;box-shadow:0 10px 24px rgba(224,98,26,0.32);transition:transform .15s,box-shadow .15s,opacity .15s}
+.btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 14px 30px rgba(224,98,26,0.4)}
+.btn-primary:disabled{opacity:0.45;cursor:not-allowed;box-shadow:none}
+.btn-arrow{font-size:16px}
 
-.step-title{
-  font-family:var(--serif);
-  font-size:26px;
-  font-weight:400;
-  line-height:1.15;
-  letter-spacing:-0.01em;
-  margin-bottom:6px;
-  color:var(--ink);
-}
-.step-sub{
-  font-size:13px;
-  color:var(--ink2);
-  line-height:1.55;
-  margin-bottom:1.5rem;
-}
+.email-tag{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--ink2);background:var(--paper);border:1px solid var(--border);padding:6px 12px;border-radius:999px;margin-bottom:16px;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--sage);flex-shrink:0}
+.otp-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px}
+.otp-digit{width:100%;aspect-ratio:1/1.12;text-align:center;font-family:var(--mono);font-size:22px;font-weight:600;border-radius:12px;border:1px solid var(--border-strong);background:var(--paper);color:var(--ink);transition:border-color .15s,box-shadow .15s}
+.otp-digit:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px var(--gold-tint)}
+.resend-row{text-align:center;font-size:13px;color:var(--ink3);margin-top:14px}
+.resend-btn{border:none;background:none;color:var(--gold);font-weight:600;cursor:pointer;font-family:inherit;font-size:13px}
+.resend-btn:disabled{color:var(--ink3);cursor:default}
+.back-btn{display:block;margin:10px auto 0;border:none;background:none;color:var(--ink2);cursor:pointer;font-family:inherit;font-size:13px}
+.back-btn:hover{color:var(--gold)}
 
-/* ─── Google button ──────────────────────────────────────── */
-.btn-google{
-  width:100%;
-  padding:12px 14px;
-  border:1px solid var(--border-strong);
-  border-radius:8px;
-  background:var(--card);
-  font-size:14px;
-  font-weight:500;
-  color:var(--ink);
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  transition:all 0.18s;
-  text-decoration:none;
-  font-family:inherit;
-}
-.btn-google:hover{
-  border-color:var(--ink);
-  background:var(--paper2);
-}
-.google-logo{width:18px;height:18px;flex-shrink:0}
+.lg-points{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px;padding-top:16px;border-top:1px solid var(--border)}
+.lg-point{text-align:center;font-size:11px;color:var(--ink3);line-height:1.35}
+.lg-point b{display:block;font-size:15px;color:var(--ink)}
+.right-footer{display:flex;justify-content:space-between;gap:12px;width:100%;max-width:420px;margin-top:16px;font-family:var(--mono);font-size:10.5px;color:var(--ink3)}
+.right-footer a{color:var(--ink2);text-decoration:none}
+.right-footer a:hover{color:var(--gold)}
+.right-footer .sep{margin:0 6px}
 
-/* ─── Divider ────────────────────────────────────────────── */
-.divider{
-  display:flex;
-  align-items:center;
-  gap:14px;
-  margin:1.25rem 0;
+@media (max-width: 980px){
+  .lg-shell{grid-template-columns:1fr}
+  .lg-left{padding:1.25rem 1.25rem 1.5rem}
+  .lg-hero{padding-top:1.25rem}
+  .lg-title{font-size:30px;margin:12px 0 8px}
+  .lg-desc{font-size:14px}
+  .lg-preview,.lg-trust{display:none}
+  .lg-right{padding:1.5rem 1rem 2rem;justify-content:flex-start}
 }
-.divider::before,.divider::after{
-  content:"";flex:1;height:1px;background:var(--border);
-}
-.divider span{
-  font-family:var(--mono);
-  font-size:10px;
-  color:var(--ink3);
-  letter-spacing:0.18em;
-  text-transform:uppercase;
-}
-
-/* ─── Fields ─────────────────────────────────────────────── */
-.field{margin-bottom:1rem}
-.field-label{
-  font-family:var(--mono);
-  font-size:10px;
-  font-weight:600;
-  letter-spacing:0.14em;
-  text-transform:uppercase;
-  color:var(--ink3);
-  display:block;
-  margin-bottom:8px;
-}
-.field-input{
-  width:100%;
-  border:1px solid var(--border-strong);
-  border-radius:8px;
-  padding:12px 14px;
-  font-size:14px;
-  font-family:inherit;
-  outline:none;
-  transition:all 0.18s;
-  background:var(--paper);
-  color:var(--ink);
-}
-.field-input::placeholder{color:var(--ink3)}
-.field-input:focus{
-  border-color:var(--gold);
-  background:var(--card);
-  box-shadow:0 0 0 4px var(--gold-tint);
-}
-
-/* ─── Remember me ────────────────────────────────────────── */
-.remember-row{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin-bottom:1.25rem;
-  padding:12px 14px;
-  border:1px dashed var(--border-strong);
-  border-radius:8px;
-  cursor:pointer;
-  user-select:none;
-  transition:border-color 0.15s;
-}
-.remember-row:hover{border-color:var(--gold);border-style:solid}
-.remember-row input[type="checkbox"]{
-  width:16px;height:16px;
-  accent-color:var(--gold);
-  cursor:pointer;
-  flex-shrink:0;
-}
-.remember-text{flex:1}
-.remember-label{
-  font-size:13px;
-  color:var(--ink);
-  font-weight:500;
-  display:block;
-}
-.remember-desc{
-  font-size:11px;
-  color:var(--ink3);
-  margin-top:2px;
-}
-.remember-badge{
-  font-family:var(--mono);
-  font-size:10px;
-  font-weight:600;
-  color:var(--gold);
-  background:var(--gold-tint);
-  padding:3px 8px;
-  border-radius:4px;
-  letter-spacing:0.05em;
-}
-
-/* ─── Primary button ─────────────────────────────────────── */
-.btn-primary{
-  width:100%;
-  padding:13px 16px;
-  font-size:14px;
-  font-weight:600;
-  background:var(--navy);
-  color:#FFFFFF;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  transition:all 0.18s;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  font-family:inherit;
-  letter-spacing:0.01em;
-  position:relative;
-  overflow:hidden;
-}
-.btn-primary::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:linear-gradient(90deg,transparent,var(--gold-tint-strong),transparent);
-  transform:translateX(-100%);
-  transition:transform 0.5s;
-}
-.btn-primary:hover:not(:disabled){background:var(--navy-h)}
-.btn-primary:hover:not(:disabled)::before{transform:translateX(100%)}
-.btn-primary:active:not(:disabled){transform:scale(0.99)}
-.btn-primary:disabled{background:var(--border);color:var(--ink3);cursor:not-allowed}
-
-.btn-arrow{
-  display:inline-flex;
-  align-items:center;
-  transition:transform 0.2s;
-}
-.btn-primary:hover:not(:disabled) .btn-arrow{transform:translateX(3px)}
-
-/* ─── OTP digits ─────────────────────────────────────────── */
-.otp-row{
-  display:flex;
-  gap:8px;
-  justify-content:center;
-  margin-bottom:1.5rem;
-}
-.otp-digit{
-  width:44px;height:56px;
-  border:1px solid var(--border-strong);
-  border-radius:8px;
-  font-family:var(--mono);
-  font-size:22px;
-  font-weight:600;
-  text-align:center;
-  outline:none;
-  transition:all 0.18s;
-  background:var(--paper);
-  color:var(--ink);
-  caret-color:var(--gold);
-}
-.otp-digit:focus{
-  border-color:var(--gold);
-  background:var(--card);
-  box-shadow:0 0 0 4px var(--gold-tint);
-  transform:translateY(-1px);
-}
-.otp-digit.filled{
-  border-color:var(--gold);
-  color:var(--gold);
-  background:var(--gold-tint);
-}
-.otp-digit.error{
-  border-color:var(--rust)!important;
-  color:var(--rust)!important;
-  box-shadow:0 0 0 4px var(--rust-tint)!important;
-  animation:shake 0.4s;
-}
-@keyframes shake{
-  0%,100%{transform:translateX(0)}
-  20%{transform:translateX(-6px)}
-  40%{transform:translateX(6px)}
-  60%{transform:translateX(-4px)}
-  80%{transform:translateX(4px)}
-}
-
-/* ─── Email tag ──────────────────────────────────────────── */
-.email-tag{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  background:var(--gold-tint);
-  border:1px solid var(--gold-tint-strong);
-  border-radius:999px;
-  padding:5px 14px 5px 11px;
-  font-family:var(--mono);
-  font-size:12px;
-  color:var(--gold);
-  margin-bottom:1.25rem;
-  word-break:break-all;
-  font-weight:500;
-}
-.email-tag .live-dot{
-  width:6px;height:6px;
-  background:var(--gold);
-  border-radius:50%;
-  flex-shrink:0;
-  animation:pulse 1.6s ease-in-out infinite;
-}
-@keyframes pulse{
-  0%,100%{opacity:1;transform:scale(1);box-shadow:0 0 0 0 var(--gold-tint-strong)}
-  50%{opacity:0.6;transform:scale(0.8);box-shadow:0 0 0 6px transparent}
-}
-
-/* ─── Resend / back ──────────────────────────────────────── */
-.resend-row{
-  text-align:center;
-  margin-top:1rem;
-  font-size:13px;
-  color:var(--ink3);
-}
-.resend-btn{
-  background:none;border:none;
-  color:var(--gold);
-  font-size:13px;
-  font-family:inherit;
-  cursor:pointer;
-  font-weight:500;
-  text-underline-offset:3px;
-  text-decoration:underline;
-  text-decoration-color:var(--gold-tint-strong);
-}
-.resend-btn:disabled{color:var(--ink3);text-decoration:none;cursor:not-allowed}
-.resend-timer{font-family:var(--mono);font-size:11px;margin-left:2px}
-
-.back-btn{
-  background:none;border:none;
-  font-size:13px;color:var(--ink3);
-  cursor:pointer;
-  display:flex;align-items:center;gap:6px;
-  margin:1rem auto 0;
-  padding:6px 12px;
-  border-radius:6px;
-  transition:all 0.15s;
-  font-family:inherit;
-}
-.back-btn:hover{color:var(--ink);background:var(--paper2)}
-
-/* ─── Feature marquee ────────────────────────────────────── */
-.feature-strip{
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-  margin-top:1.5rem;
-  padding-top:1.25rem;
-  border-top:1px dashed var(--border-strong);
-}
-.feat-chip{
-  display:inline-flex;
-  align-items:center;
-  gap:5px;
-  font-family:var(--mono);
-  font-size:10px;
-  font-weight:500;
-  color:var(--ink2);
-  padding:5px 10px;
-  border:1px solid var(--border);
-  border-radius:4px;
-  background:var(--paper);
-  letter-spacing:0.02em;
-}
-.feat-chip strong{color:var(--gold);font-weight:600}
-
-/* ─── Credit note ────────────────────────────────────────── */
-.credit-note{
-  background:linear-gradient(135deg,var(--gold-tint) 0%,transparent 100%);
-  border:1px solid var(--gold-tint-strong);
-  border-radius:8px;
-  padding:12px 14px;
-  font-size:12px;
-  color:var(--ink);
-  margin-top:1rem;
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-.credit-icon{
-  font-family:var(--serif);
-  font-style:italic;
-  font-size:22px;
-  color:var(--gold);
-  line-height:1;
-}
-.credit-content{flex:1}
-.credit-content strong{color:var(--gold);font-weight:600}
-
-/* ─── Footer ─────────────────────────────────────────────── */
-.card-footer{
-  border-top:1px solid var(--border);
-  padding:14px 2rem;
-  font-family:var(--mono);
-  font-size:10px;
-  color:var(--ink3);
-  text-align:center;
-  background:var(--paper);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  letter-spacing:0.06em;
-  text-transform:uppercase;
-}
-.card-footer a{color:var(--ink3);text-decoration:none;transition:color 0.15s}
-.card-footer a:hover{color:var(--gold)}
-.sep{opacity:0.4}
-
-/* ─── Trust strip below card ─────────────────────────────── */
-.trust-row{
-  margin-top:1.5rem;
-  text-align:center;
-  font-family:var(--mono);
-  font-size:10px;
-  color:var(--ink3);
-  letter-spacing:0.14em;
-  text-transform:uppercase;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-}
-.trust-row .dot{width:3px;height:3px;background:var(--ink3);border-radius:50%;opacity:0.5}
-
-@media(max-width:480px){
-  .wordmark-title{font-size:36px}
-  .card-body{padding:1.5rem}
-  /* OTP: make digits fill available width for easy tap */
-  .otp-row{gap:6px}
-  .otp-digit{
-    flex:1;min-width:0;
-    width:auto;height:52px;
-    font-size:20px;border-radius:8px;
-  }
-  /* Trust strip: wrap gracefully */
-  .trust-row{gap:6px;flex-wrap:wrap}
-  .trust-row .dot{display:none}
-  /* Feature chips: slightly smaller */
-  .feat-chip{font-size:9px;padding:4px 8px}
-  /* Step title smaller */
-  .step-title{font-size:22px}
-  .wordmark-sub{font-size:12px}
-}
-
-@media(max-width:360px){
-  .wordmark-title{font-size:30px}
-  .card-body{padding:1.25rem}
-  .otp-digit{height:46px;font-size:18px}
-  .btn-primary{padding:12px}
+@media (max-width: 480px){
+  .lg-chips{display:none}
+  .lg-card{padding:24px 18px 20px;border-radius:20px}
+  .step-title{font-size:24px}
 }
 </style>
+
+<link rel="stylesheet" href="/css/theme-dark.css">
+<link rel="stylesheet" href="/css/aix-uniform.css">
 </head>
 <body>
 
-<!-- Theme toggle -->
-<button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">
-  <span id="theme-icon">◐</span>
-  <span id="theme-label">DARK</span>
-</button>
+<div class="lg-shell">
 
-<div class="login-frame">
-
-  <!-- Wordmark -->
-  <div class="wordmark">
-    <div class="wordmark-label">
-      <span class="wordmark-line"></span>
-      <span>RMPS &amp; Co · AiExtensive</span>
-      <span class="wordmark-line"></span>
+  <!-- ══ LEFT: brand story ══ -->
+  <section class="lg-left" aria-label="About AiX Track">
+    <div class="lg-brand">
+      <img src="/aix-logo.png" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <span class="lg-brand-fb">A</span>
+      <div><div class="lg-brand-name">AiX <em>Track</em></div><div class="lg-brand-sub">by AiExtensive</div></div>
     </div>
-    <h1 class="wordmark-title">Minute<em>.</em></h1>
-    <p class="wordmark-sub">Meeting recordings, formalised.</p>
-  </div>
 
-  <div class="login-card">
+    <div class="lg-hero">
+      <span class="lg-kicker"><span class="dot"></span>Speaker diarization · who said what</span>
+      <h1 class="lg-title">Every conversation, minuted.<br><em>Every speaker, named.</em></h1>
+      <p class="lg-desc">Record or upload any conversation — in Hindi, English or 20+ Indian languages. AiX Track writes a structured MOC with decisions, action items and owners, and shows exactly who said what.</p>
+      <div class="lg-chips">
+        <span class="lg-chip">🗣 Who said what</span>
+        <span class="lg-chip">✅ Action items by owner</span>
+        <span class="lg-chip">🇮🇳 Indian languages</span>
+        <span class="lg-chip">🔒 Private &amp; India-hosted</span>
+      </div>
+    </div>
 
-    <div class="card-body">
+    <div class="lg-preview" aria-hidden="true">
+      <div class="lg-float"><b>60</b><span>free credits</span></div>
+      <div class="lg-moc">
+        <div class="lg-moc-top"><span class="lg-moc-ref">MOC-2026-0108</span><span class="lg-moc-tag">🗣 3 speakers</span></div>
+        <div class="lg-moc-title">Monthly MIS review — ABC Pvt Ltd</div>
+        <div class="lg-spk"><span class="lg-av" style="background:#E0621A">RM</span><div><b>Rahul Mehta · CFO</b><span>July revenue ₹1.2 Cr against a ₹1.1 Cr budget. Revised budget approved.</span></div></div>
+        <div class="lg-spk"><span class="lg-av" style="background:#2870C0">PS</span><div><b>Priya Shah · Finance</b><span>GST reconciliation has two invoice mismatches to resolve.</span></div></div>
+        <div class="lg-act">✓ Share revised cash-flow forecast with CFO<span class="own">Priya · Fri</span></div>
+      </div>
+    </div>
+
+    <div class="lg-trust"><span>Passwordless sign-in</span><span>Data never sold</span><span>MOC in minutes</span></div>
+  </section>
+
+  <!-- ══ RIGHT: sign in ══ -->
+  <main class="lg-right login-right">
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle theme">◑</button>
+
+    <div class="lg-card login-pane">
+      <div class="mobile-brand">
+        <img src="/aix-logo.png" alt="" onerror="this.style.display='none'">
+        <div class="brand-name">AiX <em>Track</em></div>
+      </div>
+
+      <span class="lg-free">🎁 Start free · 60 credits · no card needed</span>
 
       <!-- Banners -->
-      <div class="banner danger" id="error-banner">
-        <span>⚠</span><span id="error-msg"></span>
-      </div>
-      <div class="banner success" id="success-banner">
-        <span>✓</span><span id="success-msg"></span>
-      </div>
+      <div class="banner danger" id="error-banner" role="alert"><span>⚠</span><span id="error-msg"></span></div>
+      <div class="banner success" id="success-banner" role="status"><span>✓</span><span id="success-msg"></span></div>
 
       <!-- ══ STEP 1 ══ -->
       <div class="step active" id="step-choose">
 
-        <div class="step-eyebrow">
+        <div class="step-meta">
           <span class="step-num">01 / 02</span>
-          <div class="step-progress"></div>
+          <div class="step-bar"><div class="step-fill" style="width:50%"></div></div>
         </div>
 
-        <h2 class="step-title">Sign in to your workspace</h2>
-        <p class="step-sub">Access transcripts and minutes from your past meetings.</p>
+        <h2 class="step-title">Welcome to AiX <em>Track</em></h2>
+        <p class="step-sub">Sign in or create your free account in seconds. No password needed.</p>
 
-        <a href="/auth/google" class="btn-google">
+        <label class="policy-row" id="policy-row">
+          <input type="checkbox" id="policy-agree" onchange="toggleBothBtns()"/>
+          <div class="policy-text">
+            I agree to the
+            <a href="#" onclick="event.preventDefault();event.stopPropagation();openModal('terms')">Terms of Use</a>
+            and
+            <a href="#" onclick="event.preventDefault();event.stopPropagation();openModal('privacy')">Privacy Policy</a>
+          </div>
+        </label>
+
+        <button type="button" class="btn-google" id="google-btn" onclick="googleLogin()" style="opacity:0.45;pointer-events:none;cursor:not-allowed">
           <svg class="google-logo" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -698,56 +256,34 @@ body::before{
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
           Continue with Google
-        </a>
+        </button>
 
-        <div class="divider"><span>Or by email</span></div>
-<!-- 
+        <div class="divider"><span>or use email</span></div>
+
         <div class="field">
-          <label class="field-label">Work email address</label>
+          <label class="field-label">Work email</label>
           <input type="email" class="field-input" id="email-input"
             placeholder="you@company.com" autocomplete="email" autofocus
             onkeydown="if(event.key==='Enter')requestOTP()"/>
-        </div> -->
+        </div>
 
-        <!-- <label class="remember-row">
-          <input type="checkbox" id="remember-me" checked/>
-          <div class="remember-text">
-            <span class="remember-label">Keep me signed in</span>
-            <div class="remember-desc">On this device</div>
-          </div>
-          <span class="remember-badge">30 DAYS</span>
-        </label> -->
-
-        <!-- <button class="btn-primary" onclick="requestOTP()" id="send-otp-btn">
+        <button class="btn-primary" onclick="requestOTP()" id="send-otp-btn" disabled>
           <span>Send login code</span>
           <span class="btn-arrow">→</span>
-        </button> -->
+        </button>
 
-        <!-- <div class="credit-note">
-          <span class="credit-icon">✦</span>
-          <div class="credit-content">
-            First-time users receive <strong>50 credits</strong> — roughly 2 to 3 full meetings.
-          </div>
-        </div> -->
-
-        <div class="feature-strip">
-          <span class="feat-chip">🎙 <strong>Audio</strong></span>
-          <span class="feat-chip">🎬 <strong>Video</strong></span>
-          <span class="feat-chip">🇮🇳 Hindi · English · +8</span>
-          <span class="feat-chip">🔒 India-hosted</span>
-        </div>
       </div>
 
       <!-- ══ STEP 2 ══ -->
       <div class="step" id="step-otp">
 
-        <div class="step-eyebrow">
+        <div class="step-meta">
           <span class="step-num">02 / 02</span>
-          <div class="step-progress step-2"></div>
+          <div class="step-bar"><div class="step-fill" style="width:100%"></div></div>
         </div>
 
-        <h2 class="step-title">Enter your code</h2>
-        <p class="step-sub">Check your inbox and enter the six-digit code sent to your address.</p>
+        <h2 class="step-title">Enter your <em>code</em></h2>
+        <p class="step-sub">Six-digit code sent to your inbox.</p>
 
         <div class="email-tag">
           <span class="live-dot"></span>
@@ -755,19 +291,12 @@ body::before{
         </div>
 
         <div class="otp-row" id="otp-row">
-          <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]"
-            autocomplete="one-time-code"
-            oninput="otpInput(this,0)" onkeydown="otpKey(event,0)" onpaste="handlePaste(event)"/>
-          <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]"
-            oninput="otpInput(this,1)" onkeydown="otpKey(event,1)"/>
-          <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]"
-            oninput="otpInput(this,2)" onkeydown="otpKey(event,2)"/>
-          <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]"
-            oninput="otpInput(this,3)" onkeydown="otpKey(event,3)"/>
-          <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]"
-            oninput="otpInput(this,4)" onkeydown="otpKey(event,4)"/>
-          <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]"
-            oninput="otpInput(this,5)" onkeydown="otpKey(event,5)"/>
+          <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code" oninput="otpInput(this,0)" onkeydown="otpKey(event,0)" onpaste="handlePaste(event)"/>
+          <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(this,1)" onkeydown="otpKey(event,1)"/>
+          <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(this,2)" onkeydown="otpKey(event,2)"/>
+          <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(this,3)" onkeydown="otpKey(event,3)"/>
+          <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(this,4)" onkeydown="otpKey(event,4)"/>
+          <input class="otp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(this,5)" onkeydown="otpKey(event,5)"/>
         </div>
 
         <button class="btn-primary" onclick="verifyOTP()" id="verify-btn">
@@ -783,51 +312,55 @@ body::before{
         </div>
 
         <button class="back-btn" onclick="goBack()">← Change email</button>
+
       </div>
 
+      <div class="lg-points">
+        <div class="lg-point"><b>60</b>free credits</div>
+        <div class="lg-point"><b>2 min</b>to your first MOC</div>
+        <div class="lg-point"><b>20+</b>languages</div>
+      </div>
     </div>
 
-    <div class="card-footer">
-      <span>Passwordless</span>
-      <span class="sep">·</span>
-      <a href="/privacy">Privacy</a>
-      <span class="sep">·</span>
-      <a href="/terms">Terms</a>
+    <div class="right-footer">
+      <span>Passwordless · Secure sign-in</span>
+      <span>
+        <a href="#" onclick="event.preventDefault();openModal('privacy')">Privacy</a>
+        <span class="sep">·</span>
+        <a href="#" onclick="event.preventDefault();openModal('terms')">Terms</a>
+      </span>
     </div>
+  </main>
+</div>
 
+<!-- ══ Legal Modal ══ -->
+<div id="legal-overlay" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(8,10,15,0.7);backdrop-filter:blur(6px);align-items:flex-end;justify-content:center;padding:0" onclick="if(event.target===this)closeModal()">
+  <div id="legal-modal" style="background:var(--card);border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-width:640px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 -20px 60px rgba(0,0,0,0.4);transform:translateY(100%);transition:transform .35s cubic-bezier(0.16,1,0.3,1)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0">
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--gold);letter-spacing:.16em;text-transform:uppercase;margin-bottom:4px">AiX Track · Legal</div>
+        <div id="modal-title" style="font-family:var(--serif);font-size:22px;color:var(--ink)">Terms of Use</div>
+      </div>
+      <button onclick="closeModal()" style="background:var(--paper2);border:1px solid var(--border);border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:16px;color:var(--ink2);display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
+    </div>
+    <div id="modal-body" style="overflow-y:auto;padding:20px;flex:1;font-size:13px;color:var(--ink2);line-height:1.7"></div>
+    <div style="padding:14px 20px;border-top:1px solid var(--border);flex-shrink:0;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:.06em">AiExtensive · 2025</span>
+      <button onclick="closeModal()" style="background:var(--gold);color:#0A0C12;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Close</button>
+    </div>
   </div>
-
-  <div class="trust-row">
-    <span>SOC 2 ready</span>
-    <span class="dot"></span>
-    <span>Encrypted at rest</span>
-    <span class="dot"></span>
-    <span>India data residency</span>
-  </div>
-
 </div>
 
 <script>
 /* ─── Theme ─────────────────────────────────────────────── */
-(function(){applyTheme(localStorage.getItem("mom_theme")||"light",false);})();
-function applyTheme(t,save=true){
-  document.documentElement.setAttribute("data-theme",t);
-  const icon=document.getElementById("theme-icon"),label=document.getElementById("theme-label");
-  if(icon)  icon.textContent=t==="dark"?"◑":"◐";
-  if(label) label.textContent=t==="dark"?"LIGHT":"DARK";
-  if(save) localStorage.setItem("mom_theme",t);
-}
-function toggleTheme(){
-  const c=document.documentElement.getAttribute("data-theme");
-  applyTheme(c==="dark"?"light":"dark");
-}
+/* Theme: handled by /js/theme.js */
 
 /* ─── State ─────────────────────────────────────────────── */
 let currentEmail="",resendInterval=null;
 const digits=()=>document.querySelectorAll(".otp-digit");
 
 const urlParams=new URLSearchParams(window.location.search);
-if(urlParams.get("error")) showError("Sign-in failed. Please try again or use email.");
+if(urlParams.get("error")) showError("Sign-in failed. Please try again or use email OTP.");
 
 /* ─── Banners ───────────────────────────────────────────── */
 function showError(m){
@@ -844,19 +377,41 @@ function clearBanners(){
   document.getElementById("error-banner").classList.remove("show");
   document.getElementById("success-banner").classList.remove("show");
 }
-
 function showStep(id){
   document.querySelectorAll(".step").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
   clearBanners();
 }
 
+/* ─── Policy / button gating ────────────────────────────── */
+function toggleBothBtns(){
+  const agreed=document.getElementById('policy-agree')?.checked;
+  const otpBtn=document.getElementById('send-otp-btn');
+  const gBtn=document.getElementById('google-btn');
+  if(otpBtn) otpBtn.disabled=!agreed;
+  if(gBtn){
+    gBtn.style.opacity=agreed?'1':'0.45';
+    gBtn.style.pointerEvents=agreed?'auto':'none';
+    gBtn.style.cursor=agreed?'pointer':'not-allowed';
+  }
+}
+function toggleSendBtn(){ toggleBothBtns(); }
+
+function googleLogin(){
+  const agreed=document.getElementById('policy-agree')?.checked;
+  if(!agreed){
+    showError('Please agree to the Terms and Privacy Policy first.');
+    document.getElementById('policy-row').style.borderColor='var(--rust)';
+    setTimeout(()=>{ document.getElementById('policy-row').style.borderColor=''; },2000);
+    return;
+  }
+  window.location.href='/auth/google';
+}
+
 /* ─── Resend countdown ──────────────────────────────────── */
 function startResendTimer(sec=60){
   const btn=document.getElementById("resend-btn"),t=document.getElementById("resend-timer");
-  btn.disabled=true;
-  let s=sec;
-  t.textContent=` · ${s}s`;
+  btn.disabled=true;let s=sec;t.textContent=` · ${s}s`;
   resendInterval=setInterval(()=>{
     s--;
     if(s<=0){clearInterval(resendInterval);btn.disabled=false;t.textContent="";}
@@ -871,11 +426,8 @@ async function requestOTP(){
     return showError("Please enter a valid email address.");
   currentEmail=email;
   document.getElementById("otp-email-display").textContent=email;
-
   const btn=document.getElementById("send-otp-btn");
-  btn.disabled=true;
-  btn.innerHTML='<span>Sending…</span>';
-
+  btn.disabled=true;btn.innerHTML='<span>Sending…</span>';
   try{
     const res=await fetch("/auth/otp/request",{
       method:"POST",headers:{"Content-Type":"application/json"},
@@ -883,7 +435,6 @@ async function requestOTP(){
     });
     const data=await res.json();
     if(!res.ok) return showError(data.error||"Failed to send code.");
-
     if(data.dev_otp){
       showSuccess(`Dev mode — code is ${data.dev_otp}`);
       setTimeout(()=>{
@@ -897,7 +448,7 @@ async function requestOTP(){
     clearInterval(resendInterval);
     startResendTimer(60);
     setTimeout(()=>digits()[0].focus(),150);
-  } catch(e){showError("Network error — is the server running?");}
+  }catch(e){showError("Network error — is the server running?");}
   finally{
     btn.disabled=false;
     btn.innerHTML='<span>Send login code</span><span class="btn-arrow">→</span>';
@@ -907,8 +458,7 @@ async function requestOTP(){
 /* ─── OTP handlers ──────────────────────────────────────── */
 function otpInput(el,idx){
   el.value=el.value.replace(/\D/g,"").slice(-1);
-  el.classList.toggle("filled",!!el.value);
-  el.classList.remove("error");
+  el.classList.toggle("filled",!!el.value);el.classList.remove("error");
   if(el.value&&idx<5) digits()[idx+1].focus();
   if(getOTP().length===6) verifyOTP();
 }
@@ -933,22 +483,17 @@ function handlePaste(e){
   (ds[next>=0?next:5]||ds[5]).focus();
   if(p.length===6) setTimeout(verifyOTP,200);
 }
-function getOTP(){return [...digits()].map(d=>d.value).join("");}
+function getOTP(){return[...digits()].map(d=>d.value).join("");}
 
 /* ─── Verify ────────────────────────────────────────────── */
 async function verifyOTP(){
-  const otp=getOTP();
-  if(otp.length<6) return;
+  const otp=getOTP();if(otp.length<6) return;
   const btn=document.getElementById("verify-btn");
-  btn.disabled=true;
-  btn.innerHTML='<span>Verifying…</span>';
-
-  const remember=document.getElementById("remember-me")?.checked??true;
-
+  btn.disabled=true;btn.innerHTML='<span>Verifying…</span>';
   try{
     const res=await fetch("/auth/otp/verify",{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({email:currentEmail,otp,remember})
+      body:JSON.stringify({email:currentEmail,otp,remember:true})
     });
     const data=await res.json();
     if(!res.ok){
@@ -960,29 +505,117 @@ async function verifyOTP(){
     }
     showSuccess("Signed in. Redirecting…");
     setTimeout(()=>window.location.href="/",700);
-  } catch(e){showError("Network error.");}
+  }catch(e){showError("Network error.");}
   finally{
     btn.disabled=false;
     btn.innerHTML='<span>Verify and continue</span><span class="btn-arrow">✓</span>';
   }
 }
 
+/* ─── Resend / back ─────────────────────────────────────── */
 async function resendOTP(){
   clearBanners();
   digits().forEach(d=>{d.value="";d.classList.remove("filled","error");});
-  digits()[0].focus();
-  clearInterval(resendInterval);
-  startResendTimer(60);
+  digits()[0].focus();clearInterval(resendInterval);startResendTimer(60);
   await requestOTP();
 }
 function goBack(){
-  showStep("step-choose");
-  currentEmail="";
-  clearInterval(resendInterval);
+  showStep("step-choose");currentEmail="";clearInterval(resendInterval);
   setTimeout(()=>document.getElementById("email-input").focus(),100);
 }
 
 window.addEventListener("load",()=>document.getElementById("email-input")?.focus());
+
+/* ─── Legal Modal ───────────────────────────────────────── */
+const TERMS_CONTENT=`
+<h3 style="font-family:var(--serif);font-size:18px;color:var(--ink);margin-bottom:12px">Acceptance of Terms</h3>
+<p style="margin-bottom:12px">By using AiX Track, operated by AiExtensive, you agree to these Terms of Use. If you do not agree, please do not use the service.</p>
+<h3 style="font-family:var(--serif);font-size:18px;color:var(--ink);margin:16px 0 8px">Description of Service</h3>
+<p style="margin-bottom:12px">AiX Track transcribes conversation audio/video and generates AI-powered Minutes of Conversation (MOC). Outputs are AI-generated and must be reviewed by a professional before formal use.</p>
+<h3 style="font-family:var(--serif);font-size:18px;color:var(--ink);margin:16px 0 8px">User Accounts</h3>
+<p style="margin-bottom:12px">You are responsible for maintaining confidentiality of your account. Notify us immediately of any unauthorised access at <a href="mailto:notification@aiextensive.com" style="color:var(--gold)">notification@aiextensive.com</a>.</p>
+<h3 style="font-family:var(--serif);font-size:18px;color:var(--ink);margin:16px 0 8px">Credits & Payments</h3>
+<ul style="padding-left:1.2rem;margin-bottom:12px">
+  <li style="margin-bottom:6px">Credits are prepaid and non-refundable once consumed</li>
+  <li style="margin-bottom:6px">New accounts receive a free-tier allowance of up to 60 minutes</li>
+  <li style="margin-bottom:6px">Payments processed securely via Razorpay — we do not store card details</li>
+</ul>
+<h3 style="font-family:var(--serif);font-size:18px;color:var(--ink);margin:16px 0 8px">Acceptable Use</h3>
+<ul style="padding-left:1.2rem;margin-bottom:12px">
+  <li style="margin-bottom:6px">Do not upload recordings without consent of all participants</li>
+  <li style="margin-bottom:6px">Do not use AI outputs as final legal or financial documents without professional review</li>
+  <li style="margin-bottom:6px">Do not attempt to reverse-engineer or overload the platform</li>
+</ul>
+<h3 style="font-family:var(--serif);font-size:18px;color:var(--ink);margin:16px 0 8px">Disclaimer</h3>
+<p style="margin-bottom:12px">The service is provided "as is". We are not liable for errors in AI-generated content or indirect/consequential damages.</p>
+<h3 style="font-family:var(--serif);font-size:18px;color:var(--ink);margin:16px 0 8px">Governing Law</h3>
+<p>These terms are governed by the laws of India. Disputes shall be subject to courts in Ahmedabad, Gujarat, India.</p>
+`;
+const PRIVACY_CONTENT=`
+<h3 style="font-family:var(--serif);font-size:18px;color:var(--ink);margin-bottom:12px">What Data We Collect</h3>
+<ul style="padding-left:1.2rem;margin-bottom:12px">
+  <li style="margin-bottom:6px"><strong style="color:var(--ink)">Account:</strong> Email address and display name</li>
+  <li style="margin-bottom:6px"><strong style="color:var(--ink)">Conversation files:</strong> Audio/video you upload — deleted after transcription</li>
+  <li style="margin-bottom:6px"><strong style="color:var(--ink)">Transcripts & MOCs:</strong> Stored in your history</li>
+  <li style="margin-bottom:6px"><strong style="color:var(--ink)">Usage data:</strong> Credit balance, session count, timestamps</li>
+</ul>
+<h3 style="font-family:var(--serif);font-size:18px;color:var(--ink);margin:16px 0 8px">How We Use Your Data</h3>
+<ul style="padding-left:1.2rem;margin-bottom:12px">
+  <li style="margin-bottom:6px">To authenticate you and manage your account</li>
+  <li style="margin-bottom:6px">To transcribe audio and generate MOC documents</li>
+  <li style="margin-bottom:6px">To process payments and manage your credit balance</li>
+  <li style="margin-bottom:6px">To send OTP codes, MOC delivery emails, and low-credit alerts</li>
+</ul>
+<p style="margin-bottom:12px">We do <strong style="color:var(--ink)">not</strong> use your conversation content to train AI models. We do <strong style="color:var(--ink)">not</strong> sell your data.</p>
+<h3 style="font-family:var(--serif);font-size:18px;color:var(--ink);margin:16px 0 8px">Third-Party Providers</h3>
+<ul style="padding-left:1.2rem;margin-bottom:12px">
+  <li style="margin-bottom:6px"><strong style="color:var(--ink)">Sarvam AI</strong> — transcription</li>
+  <li style="margin-bottom:6px"><strong style="color:var(--ink)">Anthropic (Claude)</strong> — MOC generation</li>
+  <li style="margin-bottom:6px"><strong style="color:var(--ink)">Razorpay</strong> — payment processing</li>
+  <li style="margin-bottom:6px"><strong style="color:var(--ink)">Google</strong> — OAuth login (email and name only)</li>
+</ul>
+<h3 style="font-family:var(--serif);font-size:18px;color:var(--ink);margin:16px 0 8px">Security</h3>
+<ul style="padding-left:1.2rem;margin-bottom:12px">
+  <li style="margin-bottom:6px">All data encrypted in transit via HTTPS</li>
+  <li style="margin-bottom:6px">Authentication via OTP or Google OAuth only — no passwords stored</li>
+  <li style="margin-bottom:6px">Data stored on India-hosted servers</li>
+</ul>
+<h3 style="font-family:var(--serif);font-size:18px;color:var(--ink);margin:16px 0 8px">Your Rights</h3>
+<ul style="padding-left:1.2rem;margin-bottom:12px">
+  <li style="margin-bottom:6px">Access, correct, or delete your data at any time</li>
+  <li style="margin-bottom:6px">Email <a href="mailto:notification@aiextensive.com" style="color:var(--gold)">notification@aiextensive.com</a> — we respond within 30 days</li>
+</ul>
+<p style="font-family:var(--mono);font-size:11px;color:var(--ink3)">Operated by AiExtensive · Ahmedabad, India</p>
+`;
+function openModal(type){
+  // The full, current policies live on their own pages
+  if (type === 'terms' || type === 'privacy') { window.open('/' + type, '_blank', 'noopener'); return; }
+  const overlay=document.getElementById('legal-overlay');
+  const modal=document.getElementById('legal-modal');
+  document.getElementById('modal-title').textContent=type==='terms'?'Terms of Use':'Privacy Policy';
+  document.getElementById('modal-body').innerHTML=type==='terms'?TERMS_CONTENT:PRIVACY_CONTENT;
+  overlay.style.display='flex';
+  requestAnimationFrame(()=>{modal.style.transform='translateY(0)';});
+  document.body.style.overflow='hidden';
+}
+function closeModal(){
+  const overlay=document.getElementById('legal-overlay');
+  const modal=document.getElementById('legal-modal');
+  modal.style.transform='translateY(100%)';
+  setTimeout(()=>{overlay.style.display='none';document.body.style.overflow='';},350);
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+</script>
+<script>
+/* Invite link → welcome banner (the referral itself is applied by the server on sign-up) */
+(function(){
+  if (new URLSearchParams(location.search).get('invited') !== '1') return;
+  var b = document.createElement('div');
+  b.setAttribute('role','status');
+  b.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;max-width:calc(100% - 24px);padding:10px 18px;border-radius:999px;background:#1A9A5A;color:#fff;font:600 13px Roboto,Arial,sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.18);text-align:center';
+  b.textContent = '🎁 You were invited! Sign up now to get your welcome credits plus a referral bonus.';
+  document.body.appendChild(b);
+})();
 </script>
 </body>
 </html>

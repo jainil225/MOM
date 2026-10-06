@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<script src="/js/theme.js"></script>
+<script src="/js/rates.js"></script>
+<title>Profile · AiX Track</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{background:#F0EDE6;scroll-behavior:smooth;overflow-y:scroll;overflow-x:hidden}
+:root{
+  --ink:#18182C;--ink2:#44445E;--ink3:#7878A0;--ink4:#ABABC0;
+  --paper:#F0EDE6;--paper2:#E8E4DA;--card:rgba(255,255,255,0.92);
+  --border:rgba(24,18,12,0.09);--border-strong:rgba(24,18,12,0.18);
+  --navy:#18182C;--navy-h:#2C2A44;
+  --gold:#E0621A;--gold-h:#C8540E;
+  --gold-tint:rgba(224,98,26,0.09);--gold-tint-strong:rgba(224,98,26,0.20);
+  --sage:#1A9A5A;--sage-tint:rgba(26,154,90,0.10);--sage-strong:rgba(26,154,90,0.22);
+  --rust:#C03030;--rust-tint:rgba(192,48,48,0.10);--rust-strong:rgba(192,48,48,0.22);
+  --plum:#7C5FA0;--plum-tint:rgba(124,95,160,0.10);
+  --sky:#2870C0;--sky-tint:rgba(40,112,192,0.10);
+  --shadow-1:0 1px 3px rgba(24,18,12,0.06),0 2px 12px rgba(24,18,12,0.05);
+  --shadow-2:0 4px 28px rgba(24,18,12,0.10),0 16px 48px rgba(24,18,12,0.08);
+  --serif:'Roboto',Georgia,serif;
+  --sans:'Roboto',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'Roboto Mono',ui-monospace,monospace;
+}
+
+body{
+  font-family:var(--sans);
+  background:
+    radial-gradient(ellipse 90% 56% at 50% -4%, #D05810 0%, #E88030 22%, rgba(232,128,48,0) 58%),
+    radial-gradient(ellipse 58% 50% at 8%  90%, rgba(176,194,224,0.44) 0%, transparent 68%),
+    radial-gradient(ellipse 52% 46% at 93% 86%, rgba(186,202,230,0.34) 0%, transparent 65%),
+    #F0EDE6;
+  background-attachment:fixed;
+  color:var(--ink);min-height:100vh;line-height:1.55;
+}
+
+/* ── NAV ── */
+.nav{background:var(--card);border-bottom:1px solid var(--border);height:60px;padding:0 1.75rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;transition:background 0.3s}
+.nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+.nav-mark{
+  width:34px;height:34px;background:linear-gradient(135deg,#E0621A,#F08030);
+  color:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-style:italic;font-size:20px;line-height:1;padding-bottom:2px;
+  flex-shrink:0;box-shadow:0 2px 10px rgba(224,98,26,0.35);
+}
+.nav-title{font-family:var(--serif);font-size:20px;color:var(--ink);letter-spacing:-0.01em}
+.nav-title em{font-style:italic;color:var(--gold)}
+.nav-sub{font-family:var(--mono);font-size:8.5px;color:var(--ink3);letter-spacing:.14em;text-transform:uppercase;margin-top:1px}
+.nav-right{display:flex;align-items:center;gap:8px}
+.btn-nav{padding:7px 12px;font-size:12px;font-weight:500;background:var(--card);color:var(--ink2);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all 0.15s}
+.btn-nav:hover{border-color:var(--gold);color:var(--gold)}
+.credit-pill{
+  font-family:var(--mono);font-size:11px;
+  background:var(--gold-tint);color:var(--gold);
+  border:1px solid var(--gold-tint-strong);border-radius:999px;
+  padding:5px 12px;font-weight:600;letter-spacing:0.04em;
+}
+.btn-signout{padding:7px 12px;font-size:12px;font-weight:600;background:var(--rust-tint);color:var(--rust);border:1px solid var(--rust-strong);border-radius:6px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.btn-signout:hover{background:var(--rust);color:#fff;border-color:var(--rust)}
+
+/* ── LAYOUT ── */
+.app-layout{display:flex;min-height:calc(100vh - 62px)}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:56px;flex-shrink:0;
+  background:rgba(240,237,230,0.76);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-right:1px solid rgba(24,18,12,0.08);
+  display:flex;flex-direction:column;
+  position:sticky;top:60px;height:calc(100vh - 60px);
+  overflow:hidden;transition:width 0.22s cubic-bezier(0.4,0,0.2,1);z-index:50;
+}
+.sidebar:hover{width:200px}
+.sidebar-section{padding:10px 6px 4px}
+.sidebar-nav-btn{
+  display:flex;align-items:center;padding:5px 6px;margin:1px 2px;
+  border-radius:10px;cursor:pointer;transition:background 0.15s,color 0.15s;
+  text-decoration:none;color:var(--ink3);border:none;background:transparent;
+  width:calc(100% - 4px);white-space:nowrap;overflow:hidden;position:relative;
+}
+.sidebar-nav-btn:hover{background:rgba(224,98,26,0.09);color:var(--gold)}
+.sidebar-nav-btn.active{color:var(--gold)}
+.sidebar-nav-btn.active::before{
+  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:3px;height:60%;border-radius:0 3px 3px 0;
+  background:linear-gradient(135deg,#E0621A,#F08030);
+}
+.sidebar-nav-btn .nav-icon{width:44px;height:38px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:inherit;transition:color 0.15s}
+.sidebar-nav-btn .nav-label{font-size:13px;font-weight:500;opacity:0;transition:opacity 0.12s 0.06s;overflow:hidden;white-space:nowrap}
+.sidebar:hover .sidebar-nav-btn .nav-label{opacity:1}
+.sidebar-main{flex:1;min-width:0}
+
+/* ── PAGE ── */
+.page{max-width:100%;margin:0 auto;padding:0 1.5rem 5rem}
+
+/* ── HERO — full bleed orange gradient ── */
+.profile-hero{position:relative;overflow:hidden;padding:3rem 2.5rem 2.5rem;margin-left:-1.5rem;margin-right:-1.5rem;background:linear-gradient(118deg,#E0621A 0%,#F08030 38%,#F5A968 62%,#FAD9B8 82%,#F0EDE6 100%);margin-bottom:2rem}
+.hero-bg{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.hero-bg::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 50% 100% at 100% 50%,rgba(255,255,255,0.28),transparent 68%);
+}
+.hero-bg::after{
+  content:'';position:absolute;top:-40px;left:-40px;width:280px;height:280px;
+  border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.14),transparent 65%);
+}
+.hero-inner{
+  position:relative;z-index:1;
+  display:flex;align-items:center;gap:32px;
+  max-width:1160px;margin:0 auto;
+}
+.hero-avatar{
+  width:96px;height:96px;border-radius:24px;
+  background:#18182C;color:#E0621A;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-style:italic;font-size:46px;flex-shrink:0;
+  border:3px solid rgba(255,255,255,0.22);
+  box-shadow:0 12px 40px rgba(24,18,12,0.28),0 0 0 6px rgba(255,255,255,0.12);
+  transition:box-shadow .3s;
+}
+.hero-avatar:hover{box-shadow:0 18px 52px rgba(24,18,12,0.34),0 0 0 9px rgba(255,255,255,0.20)}
+.hero-info{flex:1;min-width:0}
+.hero-name{font-family:var(--serif);font-size:34px;color:#18182C;letter-spacing:-0.02em;line-height:1.1;margin-bottom:4px}
+.hero-email{font-family:var(--mono);font-size:11px;color:rgba(24,18,12,0.55);letter-spacing:0.05em;margin-bottom:10px}
+.hero-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.1em;padding:4px 11px;border-radius:999px;text-transform:uppercase}
+.badge-free{background:rgba(255,255,255,0.28);color:#18182C;border:1px solid rgba(255,255,255,0.42)}
+.badge-pro{background:rgba(26,154,90,0.22);color:#0d5c33;border:1px solid rgba(26,154,90,0.38)}
+.badge-admin{background:rgba(24,18,12,0.18);color:#fff;border:1px solid rgba(255,255,255,0.28)}
+.hero-so{
+  display:inline-flex;align-items:center;gap:5px;padding:6px 15px;
+  font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+  color:#18182C;background:rgba(255,255,255,0.28);border:1px solid rgba(255,255,255,0.44);
+  border-radius:8px;cursor:pointer;transition:all .15s;backdrop-filter:blur(8px);
+}
+.hero-so:hover{background:rgba(255,255,255,0.48);border-color:rgba(255,255,255,0.68)}
+
+/* Stats card — frosted glass floating on gradient */
+.hero-stats{
+  display:flex;flex-shrink:0;
+  background:rgba(255,255,255,0.90);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,0.60);
+  border-radius:20px;overflow:hidden;
+  box-shadow:0 8px 40px rgba(24,18,12,0.16),0 2px 10px rgba(24,18,12,0.08);
+}
+.hero-stat{padding:20px 28px;text-align:center;border-right:1px solid rgba(24,18,12,0.08)}
+.hero-stat:last-child{border-right:none}
+.hero-stat-val{font-family:var(--serif);font-size:30px;color:#18182C;line-height:1;letter-spacing:-0.025em}
+.hero-stat-val em{font-style:italic;color:#E0621A}
+.hero-stat-lbl{font-family:var(--mono);font-size:9px;color:#7878A0;text-transform:uppercase;letter-spacing:0.14em;margin-top:6px}
+
+/* ── TABS ── */
+.tab-bar{display:flex;border-bottom:1px solid var(--border);margin-bottom:1.75rem;position:sticky;top:60px;background:var(--paper);z-index:50;padding-top:4px}
+.tab{
+  padding:13px 20px;font-size:13px;font-weight:500;color:var(--ink3);
+  border:none;background:transparent;cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;gap:7px;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  transition:color .15s,border-color .15s;white-space:nowrap;
+}
+.tab:hover{color:var(--ink)}
+.tab.active{color:#E0621A;border-bottom-color:#E0621A}
+.tab-icon{font-size:14px}
+.tab-panel{display:none;animation:panelIn .22s ease}
+.tab-panel.active{display:block}
+@keyframes panelIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* ── GRID ── */
+.section-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* ── CARDS ── */
+.card{background:rgba(255,255,255,0.92);border:1px solid rgba(24,18,12,0.09);border-radius:18px;overflow:hidden;box-shadow:var(--shadow-1);transition:border-color .2s,box-shadow .2s,transform .2s}
+.card:hover{box-shadow:var(--shadow-2);border-color:var(--border-strong)}
+.card-head{
+  padding:15px 20px;border-bottom:1px solid rgba(24,18,12,0.08);
+  display:flex;align-items:center;gap:10px;position:relative;
+}
+.card-head::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(224,98,26,0.38),transparent);
+}
+.card-icon{
+  width:32px;height:32px;border-radius:9px;
+  background:var(--gold-tint);display:flex;align-items:center;justify-content:center;
+  font-size:15px;flex-shrink:0;
+}
+.card-title{font-family:var(--serif);font-size:16px;color:var(--ink);flex:1}
+.card-title em{font-style:italic;color:var(--gold)}
+.card-body{padding:20px}
+.card.danger{border-color:rgba(192,48,48,0.18)}
+.card.danger .card-head{background:var(--rust-tint)}
+.card.danger .card-head::before{background:linear-gradient(90deg,transparent,var(--rust) 30%,var(--rust) 70%,transparent)}
+.card.danger .card-icon{background:var(--rust-tint)}
+.card.danger .card-title{color:var(--rust)}
+
+/* ── FORM ── */
+.form-field{margin-bottom:14px}
+.form-label{font-family:var(--mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--ink3);margin-bottom:6px;display:block}
+.form-input{
+  width:100%;border:1px solid var(--border-strong);border-radius:10px;
+  padding:10px 13px;font-size:13px;font-family:inherit;
+  background:var(--paper2);color:var(--ink);outline:none;transition:border-color .18s,box-shadow .18s;
+}
+.form-input:focus{border-color:#E0621A;background:rgba(255,255,255,0.92);box-shadow:0 0 0 4px rgba(224,98,26,0.10)}
+.form-input:disabled{opacity:.45;cursor:not-allowed}
+.form-input::placeholder{color:var(--ink3)}
+.form-hint{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:5px;line-height:1.5}
+
+/* ── CREDIT PANEL ── */
+.credit-hero{
+  display:flex;align-items:center;gap:16px;padding:20px;
+  background:var(--gold-tint);border-radius:14px;margin-bottom:16px;
+  border:1px solid var(--gold-tint-strong);
+}
+.credit-circle{width:72px;height:72px;flex-shrink:0;position:relative}
+.credit-circle svg{width:72px;height:72px;transform:rotate(-90deg)}
+.credit-ring-track{fill:none;stroke:var(--border-strong);stroke-width:5}
+.credit-ring-fill{fill:none;stroke-width:5;stroke-linecap:round;transition:stroke-dasharray 0.8s cubic-bezier(0.16,1,0.3,1)}
+.credit-circle-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:13px;color:var(--gold);font-style:italic}
+.credit-info{flex:1}
+.credit-number{font-family:var(--serif);font-size:40px;color:var(--ink);line-height:1;letter-spacing:-0.02em}
+.credit-number em{font-style:italic;color:var(--gold)}
+.credit-sublabel{font-family:var(--mono);font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.12em;margin-top:3px}
+.credit-status{font-family:var(--mono);font-size:11px;font-weight:600;margin-top:5px}
+.bar-wrap{height:6px;background:var(--paper2);border-radius:4px;overflow:hidden;margin:12px 0 6px}
+.bar-fill{height:100%;border-radius:4px;transition:width .7s cubic-bezier(0.16,1,0.3,1)}
+.bar-fill.green{background:linear-gradient(90deg,var(--sage),var(--sage))}
+.bar-fill.yellow{background:linear-gradient(90deg,var(--gold),var(--gold-h))}
+.bar-fill.red{background:linear-gradient(90deg,var(--rust),#E8875A)}
+.trial-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.trial-label{font-family:var(--mono);font-size:11px;color:var(--gold);font-weight:600;display:flex;align-items:center;gap:5px}
+.trial-remain{font-family:var(--mono);font-size:11px;color:var(--ink2)}
+.trial-track{height:6px;background:var(--gold-tint-strong);border-radius:4px;overflow:hidden;margin-bottom:5px}
+.trial-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-h));border-radius:4px;transition:width .6s}
+.trial-minutes{font-family:var(--mono);font-size:10px;color:var(--ink3);text-align:right}
+
+/* ── STAT CHIPS ── */
+.stat-chips{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
+.stat-chip{
+  background:var(--paper2);border:1px solid rgba(24,18,12,0.08);
+  border-radius:12px;padding:14px;text-align:center;transition:border-color .15s,background .15s;
+}
+.stat-chip:hover{border-color:var(--gold);background:var(--gold-tint);transform:translateY(-2px)}
+.stat-chip-val{font-family:var(--serif);font-size:26px;color:var(--ink);line-height:1;letter-spacing:-0.02em}
+.stat-chip-val em{font-style:italic;color:var(--gold)}
+.stat-chip-lbl{font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase;margin-top:5px}
+
+/* ── BUTTONS ── */
+.btn-primary{
+  width:100%;padding:11px 16px;font-size:14px;font-weight:600;
+  background:#18182C;color:#fff;border:none;border-radius:10px;
+  cursor:pointer;transition:all .18s;
+  display:flex;align-items:center;justify-content:center;gap:7px;font-family:inherit;
+  box-shadow:0 2px 12px rgba(24,18,12,0.20);
+}
+.btn-primary:hover:not(:disabled){background:#2C2A44;transform:translateY(-1px);box-shadow:0 4px 22px rgba(24,18,12,0.28)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-secondary{
+  width:100%;padding:10px 16px;font-size:13px;font-weight:500;
+  background:transparent;color:var(--ink2);border:1px solid var(--border);
+  border-radius:10px;cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;gap:7px;font-family:inherit;
+}
+.btn-secondary:hover{border-color:#E0621A;color:#E0621A;background:var(--gold-tint)}
+.btn-danger{
+  width:100%;padding:11px 16px;font-size:13px;font-weight:600;
+  background:var(--rust-tint);color:var(--rust);border:1px solid var(--rust);
+  border-radius:10px;cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;gap:7px;font-family:inherit;
+}
+.btn-danger:hover{background:var(--rust);color:#fff;transform:translateY(-1px)}
+.btn-spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:bspin .7s linear infinite}
+@keyframes bspin{to{transform:rotate(360deg)}}
+
+/* ── SESSION ── */
+.session-table{width:100%}
+.session-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(24,18,12,0.08)}
+.session-row:last-child{border-bottom:none}
+.session-key{font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:0.06em;text-transform:uppercase}
+.session-val{font-family:var(--mono);font-size:11px;color:var(--ink);font-weight:600;text-align:right}
+.session-val.gold{color:var(--gold)}
+
+/* ── PURCHASE HISTORY ── */
+.purchase-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(24,18,12,0.08)}
+.purchase-row:last-child{border-bottom:none}
+.purchase-plan{font-size:13px;font-weight:600;color:var(--ink)}
+.purchase-date{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:2px}
+.purchase-right{text-align:right}
+.purchase-credits{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--gold)}
+.purchase-amount{font-size:11px;color:var(--ink3);margin-top:1px}
+.purchase-status{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 8px;border-radius:999px;margin-top:3px;display:inline-block;text-transform:uppercase}
+.ps-paid{background:var(--sage-tint);color:var(--sage)}
+.ps-pending{background:var(--gold-tint);color:var(--gold)}
+.divider{height:1px;background:rgba(24,18,12,0.08);margin:16px 0}
+
+/* ── TOAST ── */
+#toast-area{position:fixed;top:72px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;width:320px;pointer-events:none}
+.toast{
+  background:rgba(255,255,255,0.97);border:1px solid rgba(24,18,12,0.10);
+  border-radius:14px;padding:12px 14px;
+  box-shadow:0 8px 32px rgba(24,18,12,0.14);
+  display:flex;align-items:flex-start;gap:9px;pointer-events:all;
+  transform:translateX(110%);opacity:0;
+  transition:transform .38s cubic-bezier(0.34,1.56,0.64,1),opacity .3s;
+  position:relative;overflow:hidden;
+}
+.toast.show{transform:translateX(0);opacity:1}
+.toast.hide{transform:translateX(110%);opacity:0;transition:transform .25s ease-in,opacity .2s}
+.toast::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px}
+.toast.t-success::before{background:var(--sage)}
+.toast.t-error::before{background:var(--rust)}
+.toast.t-info::before{background:var(--gold)}
+.toast-icon{font-size:15px;flex-shrink:0;padding-top:1px}
+.toast-body{flex:1;min-width:0}
+.toast-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:1px}
+.toast-msg{font-size:11px;color:var(--ink2);line-height:1.4}
+.toast-x{font-size:12px;color:var(--ink3);border:none;background:none;cursor:pointer;padding:0;opacity:.5;flex-shrink:0}
+.toast-x:hover{opacity:1}
+
+/* ── CONFIRM ── */
+.confirm-overlay{
+  position:fixed;inset:0;
+  background:rgba(24,18,12,0.46);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  z-index:500;display:none;align-items:center;justify-content:center;padding:1rem;
+}
+.confirm-overlay.open{display:flex}
+.confirm-box{
+  background:rgba(255,255,255,0.96);border-radius:22px;padding:2rem;
+  max-width:400px;width:100%;box-shadow:var(--shadow-2);border:1px solid rgba(24,18,12,0.09);
+}
+.confirm-icon{font-size:36px;margin-bottom:12px}
+.confirm-title{font-family:var(--serif);font-size:22px;color:var(--ink);margin-bottom:8px}
+.confirm-msg{font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:24px}
+.confirm-btns{display:flex;gap:8px}
+.confirm-btns button{flex:1;padding:11px;font-size:13px;font-weight:600;border-radius:10px;cursor:pointer;font-family:inherit;border:none;transition:all .15s}
+.confirm-cancel{background:var(--paper2);color:var(--ink2)}
+.confirm-cancel:hover{background:var(--border-strong)}
+.confirm-ok{background:var(--rust);color:#fff}
+.confirm-ok:hover{background:#A82828}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{display:none}
+
+/* ── MOBILE ── */
+@media(max-width:767px){
+  .sidebar{display:none!important}
+  .sidebar-main{width:100%}
+  .app-layout{display:block}
+  .bottom-nav{
+    display:flex;position:fixed;bottom:0;left:0;right:0;z-index:200;
+    background:rgba(240,237,230,0.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+    border-top:1px solid rgba(24,18,12,0.08);
+    height:68px;align-items:stretch;
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .bottom-nav a{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:3px;text-decoration:none;color:var(--ink3);
+    font-size:9px;font-family:var(--mono);letter-spacing:0.06em;
+    padding:6px 0;transition:color .15s;
+  }
+  .bottom-nav a.active{color:#E0621A}
+  .bottom-nav a svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .page{padding:0 1rem 90px!important}
+  .profile-hero{padding:2rem 1.25rem 1.75rem;margin-left:0;margin-right:0}
+  .tab-bar{top:62px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tab{padding:12px 14px;font-size:12px}
+  .hero-stats{display:flex!important;flex-wrap:wrap}
+  .hero-inner{flex-wrap:wrap}
+  .section-grid{grid-template-columns:1fr!important}
+  #toast-area{width:calc(100% - 32px)}
+  .so-label{display:none}
+  .hero-stat{padding:14px 18px}
+}
+@media(max-width:480px){
+  .hero-avatar{width:72px;height:72px;font-size:34px;border-radius:18px}
+  .hero-name{font-size:26px}
+}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(24,18,12,0.14);border-radius:10px}
+:focus-visible{outline:2px solid #E0621A;outline-offset:2px}
+
+/* ── HEADER + STATS (same as Actions / Usage pages) ── */
+.pf-head{position:relative;padding:2.5rem 0 1.75rem}
+.hero-eyebrow{font-family:var(--mono);font-size:10px;color:var(--gold);letter-spacing:.18em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.hero-eyebrow::before{content:"";width:22px;height:1px;background:var(--gold)}
+.hero-title{font-family:var(--serif);font-size:48px;line-height:1.02;letter-spacing:-.03em;color:var(--ink)}
+.hero-title em{font-style:italic;color:var(--gold)}
+.hero-sub{font-size:15px;color:var(--ink2);margin-top:10px;line-height:1.6;max-width:520px}
+.pf-id{display:flex;align-items:center;gap:16px;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px 20px;margin-bottom:14px;box-shadow:var(--shadow-1)}
+.pf-avatar{width:56px;height:56px;border-radius:16px;background:#18182C;color:#E0621A;display:flex;align-items:center;justify-content:center;font-style:italic;font-weight:700;font-size:26px;flex-shrink:0;box-shadow:0 4px 16px rgba(24,18,12,0.18)}
+.pf-info{flex:1;min-width:0}
+.pf-name{font-size:19px;font-weight:600;color:var(--ink);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pf-email{font-family:var(--mono);font-size:11.5px;color:var(--ink3);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pf-badges{display:flex;gap:6px;flex-shrink:0}
+.pf-badges .badge-free{background:var(--gold-tint);color:var(--gold);border:1px solid var(--gold-tint-strong)}
+.pf-badges .badge-pro{background:var(--sage-tint);color:var(--sage);border:1px solid var(--sage-strong)}
+.pf-badges .badge-admin{background:#18182C;color:#fff;border:1px solid #18182C}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:2rem}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px 24px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s,box-shadow .2s}
+.stat-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--accent,var(--border)) 30%,var(--accent,var(--border)) 70%,transparent)}
+.stat-card::after{content:"";position:absolute;bottom:-24px;right:-24px;width:100px;height:100px;border-radius:50%;background:var(--accent-bg,transparent);pointer-events:none}
+.stat-card:hover{border-color:var(--accent,var(--gold));transform:translateY(-3px);box-shadow:var(--shadow-2)}
+.stat-card.c-total,.stat-card.c-open{--accent:var(--gold);--accent-bg:var(--gold-tint)}
+.stat-card.c-done{--accent:var(--sage);--accent-bg:var(--sage-tint)}
+.stat-card.c-week{--accent:var(--sky);--accent-bg:var(--sky-tint)}
+.stat-label{font-family:var(--mono);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.16em;color:var(--ink3);margin-bottom:14px}
+.stat-val{font-family:var(--serif);font-size:44px;font-weight:400;color:var(--ink);line-height:1;letter-spacing:-.03em}
+.stat-val em{font-style:italic;color:var(--gold)}
+.stat-sub{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:8px;letter-spacing:.04em}
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:767px){
+  .pf-head{padding:1.5rem 0 1.25rem}
+  .hero-title{font-size:32px}
+  .stat-val{font-size:34px}
+  .stat-card{padding:18px}
+  .pf-id{flex-wrap:wrap}
+  .nav{padding:0 1rem}
+  .nav-sub,.nav-gen{display:none!important}
+  .nav-right{gap:6px}
+  .credit-pill{font-size:10px;padding:4px 9px;white-space:nowrap}
+}
+</style>
+<link rel="stylesheet" href="/css/theme-dark.css">
+<style>
+/* Credits are shown only on the main page, Credits page and Usage page */
+#nav-credits,.tab[onclick*="'credits'"],#tab-credits,#purchase-card{display:none!important}
+#tab-account .section-grid{grid-template-columns:1fr!important;max-width:680px}
+</style>
+<link rel="stylesheet" href="/css/aix-uniform.css">
+</head>
+<body>
+<div id="toast-area"></div>
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirm-icon">⚠️</div>
+    <div class="confirm-title" id="confirm-title">Are you sure?</div>
+    <div class="confirm-msg" id="confirm-msg">This action cannot be undone.</div>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="closeConfirm()">Cancel</button>
+      <button class="confirm-ok" id="confirm-ok-btn" onclick="closeConfirm();if(_confirmCb)_confirmCb();">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<nav class="nav">
+  <a href="/" class="nav-brand">
+    <img src="/aix-logo.png" alt="AiX" style="width:34px;height:34px;border-radius:10px;object-fit:contain" onerror="this.style.display='none';document.getElementById('nav-fb').style.display='flex'">
+    <div id="nav-fb" class="nav-mark" style="display:none">A</div>
+    <div>
+      <div class="nav-title">AiX <em>Track</em></div>
+      <div class="nav-sub">Profile · AiExtensive</div>
+    </div>
+  </a>
+  <div class="nav-right">
+    <span class="credit-pill" id="nav-credits">— cr</span>
+    <button class="btn-nav" onclick="toggleTheme()" id="theme-btn">◑</button>
+    <a href="/" class="btn-nav nav-gen">← Generator</a>
+    <button class="btn-signout" onclick="signOut()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      <span class="so-label">Sign out</span>
+    </button>
+  </div>
+</nav>
+
+<div class="app-layout">
+<aside class="sidebar">
+  <div class="sidebar-section" style="padding-top:12px">
+    <a href="/" class="sidebar-nav-btn" title="New MOC"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span><span class="nav-label">New MOC</span></a>
+    <a href="/history" class="sidebar-nav-btn" title="Records"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span><span class="nav-label">Records</span></a>
+    <a href="/actions" class="sidebar-nav-btn" title="Action Items"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span class="nav-label">Action Items</span></a>
+    <a href="/pricing" class="sidebar-nav-btn" title="Credits"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><span class="nav-label">Credits</span></a>
+    <a href="/logging" class="sidebar-nav-btn" title="Usage"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="nav-label">Usage</span></a>
+    <a href="/profile.html" class="sidebar-nav-btn active" title="Profile"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="nav-label">Profile</span></a>
+  </div>
+</aside>
+<div class="sidebar-main">
+<div class="page">
+
+  <!-- HEADER — same pattern as Actions / Usage pages -->
+  <div class="pf-head">
+    <div class="hero-eyebrow">Account &amp; settings</div>
+    <div class="hero-title">Your <em>Profile</em></div>
+    <div class="hero-sub">Manage your details and security in one place.</div>
+  </div>
+
+  <div class="pf-id">
+    <div class="pf-avatar" id="user-avatar">M</div>
+    <div class="pf-info">
+      <div class="pf-name" id="user-name-display">Loading…</div>
+      <div class="pf-email" id="user-email-display">—</div>
+    </div>
+    <div class="pf-badges" id="user-badge-wrap"></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card c-total"><div class="stat-label">MOCs</div><div class="stat-val" id="stat-moms">—</div><div class="stat-sub">all time</div></div>
+    <div class="stat-card c-open"><div class="stat-label">Minutes</div><div class="stat-val"><em id="stat-mins">—</em></div><div class="stat-sub">recorded &amp; processed</div></div>
+    <div class="stat-card c-done"><div class="stat-label">Action items</div><div class="stat-val" id="stat-actions">—</div><div class="stat-sub">across all MOCs</div></div>
+    <div class="stat-card c-week"><div class="stat-label">This week</div><div class="stat-val" id="stat-week">—</div><div class="stat-sub">MOCs in last 7 days</div></div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('account',this)"><span class="tab-icon">👤</span> Account</button>
+    <button class="tab" onclick="switchTab('credits',this)"><span class="tab-icon">⬡</span> Credits</button>
+    <button class="tab" onclick="switchTab('security',this)"><span class="tab-icon">🔒</span> Security</button>
+  </div>
+
+  <!-- TAB ACCOUNT -->
+  <div class="tab-panel active" id="tab-account">
+    <div class="section-grid">
+      <div class="card">
+        <div class="card-head"><div class="card-icon">👤</div><div class="card-title"><em>Identity</em></div></div>
+        <div class="card-body">
+          <div class="form-field"><label class="form-label">Display Name</label><input class="form-input" type="text" id="edit-name" placeholder="Your name…"></div>
+          <div class="form-field"><label class="form-label">Email Address</label><input class="form-input" type="email" id="edit-email" disabled><div class="form-hint">Email is tied to your login and cannot be changed.</div></div>
+          <button class="btn-primary" id="save-profile-btn" onclick="saveProfile()"><span>Save Changes</span></button>
+        </div>
+      </div>
+      <div class="card" id="purchase-card">
+        <div class="card-head"><div class="card-icon">💳</div><div class="card-title">Purchase <em>History</em></div></div>
+        <div class="card-body" id="purchaseHistoryBody"><div style="text-align:center;padding:2rem 0;color:var(--ink3);font-family:var(--mono);font-size:12px;letter-spacing:0.06em">Loading…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB CREDITS -->
+  <div class="tab-panel" id="tab-credits">
+    <div class="section-grid">
+      <div class="card">
+        <div class="card-head"><div class="card-icon">⬡</div><div class="card-title">Credits &amp; <em>Balance</em></div></div>
+        <div class="card-body">
+          <div class="credit-hero">
+            <div class="credit-circle">
+              <svg viewBox="0 0 72 72"><circle class="credit-ring-track" cx="36" cy="36" r="30"/><circle class="credit-ring-fill" id="credit-ring" cx="36" cy="36" r="30" stroke="var(--gold)" stroke-dasharray="0 188"/></svg>
+              <div class="credit-circle-label">cr</div>
+            </div>
+            <div class="credit-info">
+              <div class="credit-number" id="credit-big">—</div>
+              <div class="credit-sublabel">Credits Available</div>
+              <div class="credit-status" id="credit-tier-info">—</div>
+            </div>
+          </div>
+          <div class="bar-wrap"><div class="bar-fill" id="credit-bar" style="width:0%"></div></div>
+          <div class="divider"></div>
+          <div style="margin-bottom:16px">
+            <div class="trial-row"><span class="trial-label">⏱ Free Trial</span><span class="trial-remain" id="trial-remain">60 min lifetime</span></div>
+            <div class="trial-track"><div class="trial-fill" id="trial-fill" style="width:0%"></div></div>
+            <div class="trial-minutes" id="trial-minutes">Loading…</div>
+          </div>
+          <a href="/pricing" class="btn-primary" style="text-decoration:none"><span>⬡ Buy More Credits</span></a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-icon">📊</div><div class="card-title">Usage <em>Stats</em></div></div>
+        <div class="card-body">
+          <div class="stat-chips">
+            <div class="stat-chip"><div class="stat-chip-val" id="stat-moms2">—</div><div class="stat-chip-lbl">Total MOCs</div></div>
+            <div class="stat-chip"><div class="stat-chip-val" id="stat-actions2">—</div><div class="stat-chip-lbl">Action Items</div></div>
+            <div class="stat-chip"><div class="stat-chip-val"><em id="stat-mins2">—</em></div><div class="stat-chip-lbl">Audio Minutes</div></div>
+            <div class="stat-chip"><div class="stat-chip-val" id="stat-week2">—</div><div class="stat-chip-lbl">This Week</div></div>
+          </div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--ink3);text-align:center;padding:8px 0;letter-spacing:0.06em"><span data-rate="standard">1</span> cr/min · <span data-rate="diarization">2</span> cr/min with diarization (who said what)</div>
+          <div class="divider"></div>
+          <a href="/pricing" class="btn-secondary" style="text-decoration:none">View all credit packs →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB SECURITY -->
+  <div class="tab-panel" id="tab-security">
+    <div class="section-grid">
+      <div class="card">
+        <div class="card-head"><div class="card-icon">🔒</div><div class="card-title">Session &amp; <em>Security</em></div></div>
+        <div class="card-body">
+          <div class="session-table">
+            <div class="session-row"><span class="session-key">Logged in as</span><span class="session-val" id="session-email">—</span></div>
+            <div class="session-row"><span class="session-key">Account role</span><span class="session-val gold" id="session-role">—</span></div>
+            <div class="session-row"><span class="session-key">Member since</span><span class="session-val" id="session-since">—</span></div>
+            <div class="session-row"><span class="session-key">Last login</span><span class="session-val" id="session-last">—</span></div>
+            <div class="session-row"><span class="session-key">Auth method</span><span class="session-val">Passwordless OTP / Google OAuth</span></div>
+          </div>
+          <div class="divider"></div>
+          <button class="btn-danger" onclick="signOut()" style="margin-top:4px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Sign Out of AiX Track</span>
+          </button>
+        </div>
+      </div>
+      <div class="card danger">
+        <div class="card-head"><div class="card-icon">⚠️</div><div class="card-title">Danger Zone</div></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:20px">Permanently deletes your account, all MOC records, transcripts, action items and usage data. <strong style="color:var(--rust)">This cannot be undone.</strong></p>
+          <button class="btn-danger" onclick="confirmDeleteAccount()">🗑 Delete My Account Permanently</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div></div></div>
+
+<nav class="bottom-nav">
+  <a href="/"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>New MOC</a>
+  <a href="/history"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Records</a>
+  <a href="/actions"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Actions</a>
+  <a href="/logging"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Usage</a>
+  <a href="/profile.html" class="active"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</a>
+</nav>
+
+<script>
+/* Theme: handled by /js/theme.js */
+function switchTab(id,btn){document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.getElementById('tab-'+id).classList.add('active');btn.classList.add('active');}
+let _tid=0;
+function showToast(title,msg,type='info',dur=4000){const area=document.getElementById('toast-area');const id=++_tid;const icons={success:'✓',error:'✕',info:'ℹ'};const tc='t-'+(type==='warning'?'info':type);const el=document.createElement('div');el.className='toast '+tc;el.id='toast-'+id;el.innerHTML=`<div class="toast-icon">${icons[type]||'ℹ'}</div><div class="toast-body"><div class="toast-title">${esc(title)}</div>${msg?`<div class="toast-msg">${esc(msg)}</div>`:''}</div><button class="toast-x" onclick="killToast(${id})">✕</button>`;area.appendChild(el);requestAnimationFrame(()=>el.classList.add('show'));el._t=setTimeout(()=>killToast(id),dur);}
+function killToast(id){const el=document.getElementById('toast-'+id);if(!el)return;clearTimeout(el._t);el.classList.add('hide');setTimeout(()=>el.remove(),300);}
+let _confirmCb=null;
+function showConfirm(icon,title,msg,okLabel,cb){document.getElementById('confirm-icon').textContent=icon;document.getElementById('confirm-title').textContent=title;document.getElementById('confirm-msg').textContent=msg;document.getElementById('confirm-ok-btn').textContent=okLabel;_confirmCb=cb;document.getElementById('confirm-overlay').classList.add('open');}
+function closeConfirm(){document.getElementById('confirm-overlay').classList.remove('open');_confirmCb=null;}
+document.getElementById('confirm-overlay').addEventListener('click',function(e){if(e.target===e.currentTarget)closeConfirm();});
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+let _userData={},_settings={},_history=[];
+async function init(){
+  try{
+    const me=await fetch('/auth/me',{credentials:'same-origin'});
+    if(!me.ok){window.location.href='/login.html';return;}
+    const[meD,settD,histD,credD]=await Promise.all([
+      fetch('/api/user/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():{}),
+      fetch('/api/user/settings',{credentials:'same-origin'}).then(r=>r.ok?r.json():{}),
+      fetch('/api/history',{credentials:'same-origin'}).then(r=>r.ok?r.json():{sessions:[]}),
+      fetch('/api/credits/balance',{credentials:'same-origin'}).then(r=>r.ok?r.json():{credits:0}),
+    ]);
+    _userData=meD||{};_settings=settD||{};_history=(histD.sessions)||[];
+    renderIdentity(_userData);
+    const balVal=credD.credits??(_userData.credits??0);
+    renderCredits(balVal,_settings);
+    if(balVal<100){fetch('/api/credits/low-credit-alert',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'}}).catch(()=>{});}
+    renderStats(_history);
+    renderSession(_userData);
+    const nc=document.getElementById('nav-credits');
+    if(nc)nc.textContent=balVal.toLocaleString('en-IN')+' CREDITS';
+  }catch(e){showToast('Load failed',e.message,'error');}
+}
+function renderIdentity(u){
+  const name=u.name||u.email?.split('@')[0]||'User';
+  const email=u.email||'—';const role=u.role||'user';
+  document.getElementById('user-avatar').textContent=(name[0]||'M').toUpperCase();
+  document.getElementById('user-name-display').textContent=name;
+  document.getElementById('user-email-display').textContent=email;
+  const _en=document.getElementById('edit-name');if(_en)_en.value=name;
+  const _ee=document.getElementById('edit-email');if(_ee)_ee.value=email;
+  const cls=role==='admin'||role==='developer'?'badge-admin':u.plan==='pro'?'badge-pro':'badge-free';
+  const label=role==='admin'?'Admin':role==='developer'?'Developer':u.plan==='pro'?'Pro':'Free';
+  document.getElementById('user-badge-wrap').innerHTML=`<span class="badge ${cls}">${label}</span>`;
+}
+function renderCredits(bal,s){
+  const n=Number(bal)||0;
+  const bigEl=document.getElementById('credit-big');
+  bigEl.innerHTML=n.toLocaleString('en-IN')+'<em>cr</em>';
+  bigEl.style.color=n<100?'var(--rust)':n<500?'var(--gold)':'var(--sage)';
+  const pct=Math.min(100,(n/2000)*100);
+  const barEl=document.getElementById('credit-bar');barEl.style.width=pct+'%';barEl.className='bar-fill '+(n<100?'red':n<500?'yellow':'green');
+  const tierEl=document.getElementById('credit-tier-info');tierEl.textContent=n<100?'⚠ Low — top up to continue':n<500?'Moderate balance':'Healthy balance ✓';tierEl.style.color=n<100?'var(--rust)':n<500?'var(--gold)':'var(--sage)';
+  const C=2*Math.PI*30;const ring=document.getElementById('credit-ring');
+  if(ring)setTimeout(()=>{ring.setAttribute('stroke-dasharray',`${(pct/100*C).toFixed(1)} ${C.toFixed(1)}`);},150);
+  const usedSec=parseFloat(s.free_minutes_used||0);const usedMin=usedSec/60;const limitMin=60;const remMin=Math.max(0,limitMin-usedMin);const trialPct=Math.min(100,(usedMin/limitMin)*100);
+  document.getElementById('trial-fill').style.width=trialPct+'%';
+  document.getElementById('trial-remain').textContent=remMin.toFixed(1)+' min left';
+  document.getElementById('trial-minutes').textContent=usedMin.toFixed(1)+' min used of 60 min lifetime';
+}
+function renderStats(sessions){
+  const now=new Date();
+  const week=sessions.filter(s=>(now-new Date(s.created_at))<7*24*60*60*1000).length;
+  const totalMin=Math.round(sessions.reduce((a,s)=>a+(Number(s.duration_seconds)||0),0)/60);
+  const totalActs=sessions.reduce((a,s)=>{try{const ai=typeof s.action_items==='string'?JSON.parse(s.action_items||'[]'):s.action_items||[];return a+ai.length;}catch{return a;}},0);
+  document.getElementById('stat-moms').textContent=sessions.length;
+  document.getElementById('stat-week').textContent=week;
+  document.getElementById('stat-mins').innerHTML=totalMin+'<em>m</em>';
+  document.getElementById('stat-actions').textContent=totalActs;
+  ['stat-moms2','stat-week2'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.textContent=[sessions.length,week][i];});
+  const m2=document.getElementById('stat-mins2');if(m2)m2.innerHTML=totalMin+'<em>m</em>';
+  const a2=document.getElementById('stat-actions2');if(a2)a2.textContent=totalActs;
+}
+function renderSession(u){
+  document.getElementById('session-email').textContent=u.email||'—';
+  document.getElementById('session-role').textContent=(u.role||'user').charAt(0).toUpperCase()+(u.role||'user').slice(1);
+  document.getElementById('session-since').textContent=u.created_at?new Date(u.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'—';
+  document.getElementById('session-last').textContent=u.last_login?new Date(u.last_login).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+}
+async function saveProfile(){
+  const btn=document.getElementById('save-profile-btn');
+  const name=document.getElementById('edit-name')?.value.trim()||'';
+  if(!name){showToast('Name required','Please enter your name.','error');return;}
+  btn.disabled=true;btn.innerHTML='<span class="btn-spin"></span> Saving…';
+  try{
+    const r=await fetch('/api/user/profile',{method:'PATCH',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+    if(!r.ok){const d=await r.json();throw new Error(d.error||'Save failed');}
+    document.getElementById('user-name-display').textContent=name;
+    document.getElementById('user-avatar').textContent=name[0].toUpperCase();
+    showToast('Profile updated','Your name has been saved.','success');
+  }catch(e){showToast('Save failed',e.message,'error');}
+  finally{btn.disabled=false;btn.innerHTML='<span>Save Changes</span>';}
+}
+function confirmDeleteAccount(){showConfirm('⚠️','Delete account?','All your records, transcripts, action items and data will be permanently deleted. This cannot be undone.','Delete permanently',doDeleteAccount);}
+async function doDeleteAccount(){
+  try{
+    const r=await fetch('/api/user/account',{method:'DELETE',credentials:'same-origin'});
+    if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.error||'Delete failed');}
+    showToast('Account deleted','Redirecting…','success',2000);
+    setTimeout(()=>window.location.href='/login.html',2000);
+  }catch(e){showToast('Delete failed',e.message,'error');}
+}
+async function loadPurchaseHistory(){
+  const body=document.getElementById('purchaseHistoryBody');if(!body)return;
+  try{
+    const r=await fetch('/api/credits/my-orders',{credentials:'same-origin'});
+    if(!r.ok)throw new Error('Could not load orders');
+    const d=await r.json();const orders=d.orders||[];
+    if(!orders.length){body.innerHTML=`<div style="text-align:center;padding:2rem 0;color:var(--ink3);font-size:13px">No purchases yet.<br><a href="/pricing" style="color:var(--gold);font-weight:600;text-decoration:none;margin-top:8px;display:inline-block">Buy your first credit pack →</a></div>`;return;}
+    const planLabel={starter:'Starter',growth:'Growth',pro:'Pro',enterprise:'Enterprise'};
+    body.innerHTML=orders.map(o=>{
+      const amt=parseFloat(o.amount_inr||0);const date=o.paid_at||o.created_at;
+      const dateStr=date?new Date(date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'—';
+      return `<div class="purchase-row"><div><div class="purchase-plan">${planLabel[o.plan]||o.plan||'—'}</div><div class="purchase-date">${dateStr}</div></div><div class="purchase-right"><div class="purchase-credits">+${(o.credits||0).toLocaleString('en-IN')} cr</div><div class="purchase-amount">₹${amt.toFixed(0)}</div><span class="purchase-status ${o.status==='paid'?'ps-paid':'ps-pending'}">${o.status}</span></div></div>`;
+    }).join('')+`<a href="/pricing" class="btn-primary" style="text-decoration:none;margin-top:16px"><span>+ Buy More Credits</span></a>`;
+  }catch(e){body.innerHTML=`<div style="color:var(--rust);font-size:12px;padding:1rem 0">Could not load purchase history.</div>`;}
+}
+init();loadPurchaseHistory();
+/* ── Sign out — server accepts POST only ── */
+async function signOut(){
+  try { await fetch('/auth/logout', { method: 'POST', credentials: 'same-origin' }); }
+  catch (_) { /* even if the request fails, leave the page */ }
+  window.location.href = '/login.html';
+}
+</script>
+</body>
+</html>
