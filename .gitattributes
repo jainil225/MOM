@@ -1,2 +1,9 @@
 # Shell scripts run on the Linux server; Windows line endings break them
 *.sh text eol=lf
+
+# Binary documents: never convert line endings
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.png binary
+*.jpg binary
