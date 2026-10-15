@@ -181,6 +181,7 @@ tr:hover .title-cell{color:var(--navy)}
 [data-theme="dark"] tr:hover .title-cell{color:var(--gold)}
 .meta-line{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:3px;letter-spacing:0.02em;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .file-avail-pill{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:0.1em;padding:2px 6px;border-radius:3px;background:var(--gold-tint);color:var(--gold);border:1px solid var(--gold-tint-strong);flex-shrink:0}
+.project-chip{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:0.08em;padding:2px 7px;border-radius:3px;background:var(--navy);color:#fff;flex-shrink:0;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .date-cell{font-family:var(--sans);font-size:13px;color:var(--ink)}
 .date-meta{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:2px}
 .lang-chip{
@@ -257,12 +258,12 @@ tr:hover .action-cell{opacity:1}
 .modal{
   background:var(--card);
   border-radius:20px;
-  width:100%;max-width:1000px;
+  width:100%;max-width:min(1400px,96vw);
   box-shadow:0 32px 80px rgba(0,0,0,0.4),0 0 0 1px rgba(255,255,255,0.05);
   margin:0 auto;transition:background 0.3s;
   animation:modalIn 0.32s cubic-bezier(0.16,1,0.3,1);
   display:flex;flex-direction:column;
-  height:90vh;max-height:90vh;
+  height:94vh;max-height:94vh;
   overflow:hidden;
 }
 @keyframes modalIn{from{opacity:0;transform:translateY(24px) scale(0.98)}to{opacity:1;transform:none}}
@@ -430,7 +431,7 @@ tr:hover .action-cell{opacity:1}
   margin-bottom:4px;color:var(--ink);line-height:1.3;
 }
 .disc-topic::before{content:"§ ";color:var(--gold);font-style:italic}
-.disc-details{font-size:13.5px;color:var(--ink2);line-height:1.65}
+.disc-details{font-size:13.5px;color:var(--ink2);line-height:1.65;white-space:pre-line}
 .decision-item{
   background:var(--sage-tint);border-left:3px solid var(--sage);
   border-radius:0 8px 8px 0;padding:10px 14px;font-size:13.5px;
@@ -1529,6 +1530,7 @@ tbody tr:hover{background:var(--gold-tint);}
     <span id="free-mins-pill" style="display:none;font-family:var(--mono);font-size:10px;background:var(--gold-tint);color:var(--gold);border:1px solid var(--gold-tint-strong);border-radius:999px;padding:4px 10px;font-weight:600">⏱ — min left</span>
     <button class="btn-nav theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle dark/light">◐</button>
     <a href="/" class="btn-nav">← Generator</a>
+    <a href="/projects" class="btn-nav">🗂 Projects</a>
     <a href="/actions" class="btn-nav" style="background:var(--navy);color:var(--gold);border-color:var(--navy);font-weight:600">✦ Action Items</a>
     <span id="nav-user-badge" style="font-family:var(--mono);font-size:11px;color:var(--ink2);padding:0 4px"></span>
     <!-- <button class="btn-nav" onclick="logout()">Sign out</button> -->
@@ -1563,6 +1565,10 @@ tbody tr:hover{background:var(--gold-tint);}
     <a href="/history" class="sidebar-nav-btn active" title="Records">
       <span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span>
       <span class="nav-label">Records</span>
+    </a>
+    <a href="/projects" class="sidebar-nav-btn" title="Projects">
+      <span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+      <span class="nav-label">Projects</span>
     </a>
     <a href="/actions" class="sidebar-nav-btn" title="Action Items">
       <span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
@@ -1673,6 +1679,9 @@ tbody tr:hover{background:var(--gold-tint);}
           <option value="Learning">Learning</option>
           <option value="Decision">Decision</option>
         </select>
+        <select class="filter-input" id="filter-project" onchange="applyFilters()" title="Project">
+          <option value="">All projects</option>
+        </select>
         <span class="record-count" id="record-count"></span>
         <button class="btn-nav" onclick="loadHistory()">↺</button>
       </div>
@@ -1760,6 +1769,8 @@ tbody tr:hover{background:var(--gold-tint);}
         <span id="modal-credits-chip" style="display:none;font-family:var(--mono);font-size:10px;font-weight:700;background:var(--gold-tint);color:var(--gold);border:1px solid var(--gold);padding:3px 10px;border-radius:6px;white-space:nowrap">⬡ — cr</span>
         <div class="modal-action-btns">
           <button class="btn-nav" id="modal-edit-btn" onclick="openEditModal()" title="Edit this MOC">✏️ Edit</button>
+          <button class="btn-nav" id="modal-regen-btn" onclick="openRegenDialog('moc')" title="Rebuild this MOC from the saved transcript with the latest prompt pipeline">🔄 Regenerate MOC</button>
+          <button class="btn-nav" id="modal-rediarize-btn" onclick="openRegenDialog('speakers')" title="Re-read the recording to identify who said what, then rebuild the MOC" style="display:none">🗣 Regenerate with Speakers</button>
           <button class="btn-nav" id="modal-share-btn" onclick="shareLink()" title="Copy shareable read-only link">🔗 Share</button>
           <button class="btn-nav" id="modal-followup-btn" onclick="openFollowupDraft()" title="AI-draft follow-up email for attendees">✉️ Follow-up</button>
           <button class="btn-nav" onclick="downloadDOCX()" title="Download as Word document">📝 Word</button>
@@ -1959,6 +1970,7 @@ async function loadHistory(){
     if(r.status===401){window.location.href="/login.html";return;}
     const d=await r.json();
     allRows=d.sessions||[];
+    loadProjectFilter();
     updateStats(allRows);
     applyFilters();
     buildAap();
@@ -2183,6 +2195,7 @@ function applyFilters(){
   const to=document.getElementById("filter-to").value;
   const lang=document.getElementById("filter-lang").value;
   const tagF=(document.getElementById("filter-tag")?.value||"").toLowerCase();
+  const projF=document.getElementById("filter-project")?.value||"";
   let rows=[...allRows];
   if(q) rows=rows.filter(r=>{
     const att=parse(r.attendees);
@@ -2198,16 +2211,113 @@ function applyFilters(){
   if(to)   rows=rows.filter(r=>new Date(r.created_at)<=new Date(to+"T23:59:59"));
   if(lang) rows=rows.filter(r=>r.language===lang);
   if(tagF) rows=rows.filter(r=>(r.tags||"").toLowerCase().includes(tagF));
+  // "none" lists the conversations that have not been filed into a project yet
+  if(projF==="none")  rows=rows.filter(r=>!r.project_id);
+  else if(projF)      rows=rows.filter(r=>String(r.project_id)===projF);
   filteredRows=sortRows(rows);
   currentPage=1;
   renderTable();
 }
+/* ═══════════════════════════════════════════════════════
+   PROJECTS — group related conversations
+   A project is a folder for recurring work: a daily stand-up, one client, one
+   engagement. Filing a conversation here is what makes it findable later.
+═══════════════════════════════════════════════════════ */
+let allProjects=[];
+
+/* Letterhead for the advisory format — firm name, service line, preparer and
+   disclaimer, set once on the profile. Loaded once per page. */
+let LH={};
+(async function loadLetterhead(){
+  try{ LH = await fetch('/api/user/settings',{credentials:'same-origin'}).then(r=>r.json()) || {}; }
+  catch(e){ LH={}; }
+})();
+
+/* True when this MOC was generated with the advisory format */
+function isAdvisory(m){ return (m && m.moc_template) === 'advisory'; }
+function advBits(m){
+  return { exec:parse(m.executive_summary), trk:parse(m.pending_tracker), agd:parse(m.next_agenda) };
+}
+
+let projectParamUsed=false;
+
+async function loadProjectFilter(){
+  const sel=document.getElementById("filter-project");
+  if(!sel) return;
+
+  // The Projects page links here as /history?project=12 (or ?project=none).
+  // Honour it once, on the first load, then let the dropdown take over.
+  let keep=sel.value;
+  if(!projectParamUsed){
+    const fromUrl=new URLSearchParams(location.search).get("project");
+    if(fromUrl) keep=fromUrl;
+    projectParamUsed=true;
+  }
+
+  try{
+    const d=await fetch("/api/projects",{credentials:"same-origin"}).then(r=>r.json());
+    allProjects=d.projects||[];
+    const opts=['<option value="">All projects</option>'];
+    allProjects.forEach(p=>opts.push(`<option value="${p.id}">${esc(p.name)} (${p.session_count})</option>`));
+    if(d.unfiled_count) opts.push(`<option value="none">Not in a project (${d.unfiled_count})</option>`);
+    sel.innerHTML=opts.join("");
+    sel.value=keep;
+    if(sel.value!==keep) sel.value="";
+    // The list arrives after the first applyFilters() call, so re-filter now
+    if(sel.value) applyFilters();
+  }catch(e){ /* filtering by project is optional — the rest of the page still works */ }
+}
+
+async function moveToProject(id,ev){
+  if(ev) ev.stopPropagation();
+  const row=allRows.find(r=>r.id===id);
+  if(!allProjects.length) await loadProjectFilter();
+
+  const lines=['Move this conversation to which project?',''];
+  lines.push('0 — not in any project');
+  allProjects.forEach((p,i)=>lines.push(`${i+1} — ${p.name}`));
+  lines.push('','Type a number, or type a new project name to create it.');
+  if(row && row.project_name) lines.push(`Currently in: ${row.project_name}`);
+
+  const answer=prompt(lines.join(String.fromCharCode(10)), '');
+  if(answer===null) return;
+  const choice=answer.trim();
+  if(!choice) return;
+
+  let projectId;
+  if(/^\d+$/.test(choice)){
+    const n=parseInt(choice,10);
+    if(n===0) projectId=null;
+    else if(allProjects[n-1]) projectId=allProjects[n-1].id;
+    else { showToast('That number is not on the list.','error'); return; }
+  }else{
+    // Anything that is not a number is treated as a new project name
+    try{
+      const r=await fetch('/api/projects',{method:'POST',credentials:'same-origin',
+        headers:{'Content-Type':'application/json'},body:JSON.stringify({name:choice})});
+      const d=await r.json();
+      if(!r.ok) throw new Error(d.error||'Could not create the project.');
+      projectId=d.project.id;
+    }catch(e){ showToast(e.message,'error'); return; }
+  }
+
+  try{
+    const r=await fetch(`/api/history/${id}/project`,{method:'PATCH',credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:projectId})});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'Could not move it.');
+    showToast(projectId?'Moved to the project.':'Taken out of its project.','success');
+    loadHistory();
+  }catch(e){ showToast(e.message,'error'); }
+}
+
 function clearFilters(){
   document.getElementById("search").value="";
   document.getElementById("filter-from").value="";
   document.getElementById("filter-to").value="";
   document.getElementById("filter-lang").value="";
   const _tfe=document.getElementById("filter-tag");if(_tfe)_tfe.value="";
+  const _pfe=document.getElementById("filter-project");if(_pfe)_pfe.value="";
   applyFilters();
 }
 
@@ -2269,7 +2379,8 @@ function renderTable(){
       +(att.length>2?`<span class="pill more">+${att.length-2}</span>`:"");
     const year=new Date(row.created_at).getFullYear();
     const refId=`${year}-${String(row.id).padStart(4,"0")}`;
-    const hasFile = !!(row.file_path && row.file_path.length > 0);
+    const hasFile = !!((row.file_path && row.file_path.length > 0) || row.drive_file_id);
+    const onDrive  = !!row.drive_file_id;
     const isVidRow = hasFile && /\.(mp4|mov|avi|webm|mkv|3gp|m4v)$/i.test(row.file_name||'');
     const fileLabel = hasFile ? (isVidRow ? '▶ VIDEO' : '▶ AUDIO') : '';
     const isDraft = isDraftSession(row);
@@ -2280,6 +2391,8 @@ function renderTable(){
         <div class="meta-line">
           ${row.with_diarization ? '<span class="spk-tag">🗣 SPEAKERS</span>' : ''}
           ${hasFile ? `<span class="file-avail-pill">${fileLabel}</span>` : ''}
+          ${onDrive ? '<span class="file-avail-pill" title="Stored in your Google Drive">☁ DRIVE</span>' : ''}
+          ${row.project_name ? `<span class="project-chip" title="Project">${esc(row.project_name)}</span>` : ''}
           <span>${esc(row.file_name||"")}</span>
         </div>
       </td>
@@ -2305,6 +2418,7 @@ function renderTable(){
       <td onclick="event.stopPropagation()">
         <div class="action-cell">
           <button class="icon-btn" title="View" onclick="openModal(${row.id})">👁</button>
+          <button class="icon-btn" title="Move to project" onclick="moveToProject(${row.id},event)">🗂</button>
           <button class="icon-btn del" title="Delete" onclick="deleteMOC(${row.id},event)">🗑</button>
         </div>
       </td>
@@ -2417,7 +2531,7 @@ async function openModal(id){
     const fileSize = document.getElementById('modal-file-size');
     if(m.file_name){
       const isVid     = /\.(mp4|mov|avi|webm|mkv|3gp|m4v)$/i.test(m.file_name);
-      const hasPath   = !!(m.file_path && m.file_path.length > 0);
+      const hasPath   = !!((m.file_path && m.file_path.length > 0) || m.drive_file_id);
       // Pill: show type + play indicator if file is available
       filePill.textContent = (hasPath ? '▶ ' : '') + (isVid ? 'VIDEO' : 'AUDIO');
       filePill.className   = 'modal-file-pill ' + (isVid ? 'video' : 'audio');
@@ -2431,6 +2545,10 @@ async function openModal(id){
     }
 
     buildMediaPlayer(m);
+
+    // "Regenerate with Speakers" only makes sense while the recording has no speaker labels yet
+    const _rdBtn = document.getElementById('modal-rediarize-btn');
+    if(_rdBtn) _rdBtn.style.display = (!m.with_diarization && (m.file_path || m.drive_file_id)) ? '' : 'none';
 
     // ── Draft banner — shown only for draft sessions ─────────────────────
     const _isDraft = isDraftSession(m);
@@ -2446,12 +2564,33 @@ async function openModal(id){
       }
     }
 
+    // Advisory-template sections — empty for standard MOCs, so nothing changes there
+    const xsum = parse(m.executive_summary), ptrk = parse(m.pending_tracker), nagd = parse(m.next_agenda);
+    const execHTML = xsum.length
+      ? xsum.map(p=>`<p style="margin:0 0 10px;font-size:13.5px;line-height:1.7;color:var(--ink2)">${esc(p)}</p>`).join("")
+      : "";
+    const trkHTML = ptrk.length
+      ? `<div class="table-wrap" style="box-shadow:none"><table><thead><tr>
+           <th class="no-sort">Area</th><th class="no-sort">Requirement</th>
+           <th class="no-sort">Responsible</th><th class="no-sort">Status</th></tr></thead><tbody>` +
+        ptrk.map(r=>`<tr style="cursor:default"><td><span class="lang-chip">${esc(r.area||"")}</span></td>
+           <td>${esc(r.requirement||"")}</td><td>${esc(r.responsible||"")}</td>
+           <td><span class="file-avail-pill">${esc(r.status||"")}</span></td></tr>`).join("") +
+        `</tbody></table></div>`
+      : "";
+    const agdHTML = nagd.length
+      ? nagd.map((a,i)=>`<div class="mom-item"><span class="mom-item-dot" style="font-family:var(--mono);font-size:11px;min-width:24px">${String(i+1).padStart(2,"0")}</span>${esc(a)}</div>`).join("")
+      : "";
+
     document.getElementById("modal-body").innerHTML=`
+      ${execHTML?sec("Executive Summary", execHTML):""}
       ${sec("Attendees", att.length?att.map(a=>`<div class="mom-item"><span class="mom-item-dot">•</span>${esc(a)}</div>`).join(""):none())}
       ${sec("Agenda", ag.length?ag.map((a,i)=>`<div class="mom-item"><span class="mom-item-dot" style="font-family:var(--mono);font-size:11px;min-width:24px">${String(i+1).padStart(2,"0")}</span>${esc(a)}</div>`).join(""):none())}
       ${sec("Key Discussions", dp.length?dp.map(d=>`<div class="disc-item"><div class="disc-topic">${esc(d.topic||"")}</div><div class="disc-details">${esc(d.details||"")}</div></div>`).join(""):none())}
       ${sec("Decisions Taken", dec.length?dec.map(d=>`<div class="decision-item"><span style="color:var(--sage);font-weight:700">✓</span><span>${esc(d)}</span></div>`).join(""):none())}
       ${sec("Action Items", ai.length ? renderModalActions(ai, m.id, parse(m.action_items_done), parseDone(m.action_items_emails)) : none())}
+      ${trkHTML?sec("Information &amp; Pending Tracker", trkHTML):""}
+      ${agdHTML?sec("Proposed Agenda for Next Meeting", agdHTML):""}
       ${m.next_meeting&&m.next_meeting.trim()?sec("Next Conversation",`<div class="next-meeting-box"><span style="font-size:22px;color:var(--gold);font-family:var(--serif);font-style:italic;line-height:1">◷</span><div><div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-bottom:3px">Next</div><div style="font-family:var(--serif);font-size:16px;color:var(--ink)">${esc(m.next_meeting)}</div></div></div>`):""}
       ${m.summary?sec("Summary",`<div class="summary-modal">${esc(m.summary)}</div>`):""}
     `;
@@ -2475,9 +2614,9 @@ function buildMediaPlayer(m){
   audio.style.display='none'; audio.src='';
   video.style.display='none'; video.src='';
 
-  // file_path is non-empty only when the file was actually saved on disk
-  // (set at upload time — no server round-trip needed to know if it exists)
-  if(!m.file_name || !m.file_path) return;
+  // The recording is either on our disk (file_path) or in the customer's own
+  // Google Drive (drive_file_id). Both play through the same endpoint.
+  if(!m.file_name || !(m.file_path || m.drive_file_id)) return;
 
   const fileUrl = `/api/history/${m.id}/file`;
   const isVid   = /\.(mp4|mov|avi|webm|mkv|3gp|m4v)$/i.test(m.file_name);
@@ -2769,11 +2908,20 @@ function modalDownloadTXT(){
   o+=`Conversation  : ${m.meeting_title}\nDate     : ${m.meeting_date||"—"} ${m.meeting_time||""}\n\n`;
   const att=parse(m.attendees),ag=parse(m.agenda),dp=parse(m.discussion_points),
         dec=parse(m.decisions),ai=parse(m.action_items);
+  const ADVt=isAdvisory(m), ABt=advBits(m);
+  if(ADVt){
+    if(m.client_name) o+=`Client   : ${m.client_name}\n`;
+    if(m.subject)     o+=`Subject  : ${m.subject}\n`;
+    o+=`\n`;
+    if(ABt.exec.length) o+=`EXECUTIVE SUMMARY\n${"─".repeat(50)}\n${ABt.exec.map(x=>`  ${x}`).join("\n\n")}\n\n`;
+  }
   if(att.length) o+=`ATTENDEES\n${"─".repeat(50)}\n${att.map(a=>`  • ${a}`).join("\n")}\n\n`;
   if(ag.length)  o+=`AGENDA\n${"─".repeat(50)}\n${ag.map((a,i)=>`  ${String(i+1).padStart(2,"0")}. ${a}`).join("\n")}\n\n`;
   if(dp.length) {o+=`KEY DISCUSSIONS\n${"─".repeat(50)}\n`;dp.forEach(d=>{o+=`\n  § ${d.topic}\n    ${d.details}\n`;});o+="\n";}
   if(dec.length) o+=`DECISIONS\n${"─".repeat(50)}\n${dec.map(d=>`  ✓ ${d}`).join("\n")}\n\n`;
   if(ai.length) {o+=`ACTION ITEMS\n${"─".repeat(50)}\n`;ai.forEach((a,i)=>{o+=`  ${String(i+1).padStart(2,"0")}. ${a.task}\n      Owner: ${a.owner} · Due: ${a.due_date}\n`;});o+="\n";}
+  if(ABt.trk.length){o+=`INFORMATION AND PENDING TRACKER\n${"─".repeat(50)}\n`;ABt.trk.forEach(r=>{o+=`  [${r.area||"—"}] ${r.requirement||""}\n      ${r.responsible||"—"} · ${r.status||"—"}\n`;});o+="\n";}
+  if(ABt.agd.length) o+=`PROPOSED AGENDA FOR NEXT MEETING\n${"─".repeat(50)}\n${ABt.agd.map((a,i)=>`  ${String(i+1).padStart(2,"0")}. ${a}`).join("\n")}\n\n`;
   if(m.next_meeting) o+=`NEXT CONVERSATION\n${"─".repeat(50)}\n  ${m.next_meeting}\n\n`;
   if(m.summary)      o+=`SUMMARY\n${"─".repeat(50)}\n  ${m.summary}\n\n`;
   if(m.transcript)   o+=`\n─── RAW TRANSCRIPT ───\n${m.transcript}`;
@@ -2789,9 +2937,13 @@ function modalShareWhatsApp(){
   let t=`*📋 MINUTES OF CONVERSATION*\n*${m.meeting_title||"Conversation"}*\n`;
   if(m.meeting_date) t+=`📅 ${m.meeting_date}${m.meeting_time?" · "+m.meeting_time:""}\n`;
   t+="\n";
+  const ABw=advBits(m);
+  if(ABw.exec.length){t+=`*📝 Executive Summary*\n`;ABw.exec.forEach(x=>{t+=`${x}\n\n`;});}
   if(att.length){t+=`*👥 Attendees*\n`;att.forEach(a=>{t+=`• ${a}\n`;});t+="\n";}
   if(dec.length){t+=`*✅ Decisions*\n`;dec.forEach(d=>{t+=`✓ ${d}\n`;});t+="\n";}
   if(ai.length){t+=`*⚡ Action Items*\n`;ai.forEach((a,i)=>{t+=`${i+1}. ${a.task}\n   👤 ${a.owner} · 📅 ${a.due_date}\n`;});t+="\n";}
+  if(ABw.trk.length){t+=`*📌 Pending*\n`;ABw.trk.forEach(r=>{t+=`• ${r.requirement||""} — ${r.responsible||"—"} (${r.status||"—"})\n`;});t+="\n";}
+  if(ABw.agd.length){t+=`*🗓 Next Agenda*\n`;ABw.agd.forEach((a,i)=>{t+=`${i+1}. ${a}\n`;});t+="\n";}
   if(m.next_meeting) t+=`*📆 Next:* ${m.next_meeting}\n\n`;
   if(m.summary) t+=`_${m.summary}_\n`;
   window.open(`https://wa.me/?text=${encodeURIComponent(t)}`,"_blank");
@@ -2804,9 +2956,12 @@ async function modalCopySummary(){
   const refId=`MOC-${year}-${String(m.id).padStart(4,'0')}`;
   let t=`${m.meeting_title||'Conversation'} · ${refId}\n`;
   if(m.meeting_date) t+=`Date: ${m.meeting_date}\n`;
-  if(m.summary) t+=`\nSummary: ${m.summary}\n`;
+  const ABc=advBits(m);
+  if(ABc.exec.length) t+=`\nExecutive Summary:\n${ABc.exec.join("\n\n")}\n`;
+  else if(m.summary) t+=`\nSummary: ${m.summary}\n`;
   if(dec.length){ t+=`\nDecisions:\n`; dec.forEach((d,i)=>t+=`${i+1}. ${d}\n`); }
-  if(ai.length){ t+=`\nAction Items:\n`; ai.forEach((a,i)=>t+=`${i+1}. ${a.task} [${a.owner||'—'}] by ${a.due_date||'TBD'}\n`); }
+  if(ai.length){ t+=`\nAction Items:\n`; ai.forEach((a,i)=>t+=`${i+1}. ${a.task} [${a.owner||'—'}] by ${a.timeline||a.due_date||'TBD'}\n`); }
+  if(ABc.agd.length){ t+=`\nNext Agenda:\n`; ABc.agd.forEach((a,i)=>t+=`${i+1}. ${a}\n`); }
   try {
     await navigator.clipboard.writeText(t);
     const btn=document.getElementById('modal-copy-btn');
@@ -2818,6 +2973,7 @@ function modalPrint(){
   const m=currentModalData; if(!m) return;
   const att=parse(m.attendees),ag=parse(m.agenda),dp=parse(m.discussion_points),
         dec=parse(m.decisions),ai=parse(m.action_items);
+  const ADV=isAdvisory(m), AB=advBits(m);
   const year=new Date(m.created_at).getFullYear();
   const refId=`MOC-${year}-${String(m.id).padStart(4,"0")}`;
   let h=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(m.meeting_title||"MOC")}</title>
@@ -2836,19 +2992,53 @@ function modalPrint(){
     .disc-topic{font-family:'Roboto',serif;font-size:16px;font-weight:400;margin-bottom:4px}
     .disc-topic::before{content:"§ ";color:#E0621A;font-style:italic}
     footer{margin-top:32px;padding-top:12px;border-top:1px solid rgba(24,18,12,0.10);font-family:'Roboto Mono',monospace;font-size:10px;color:#7878A0;letter-spacing:.04em;display:flex;justify-content:space-between}
+    .firm{font-size:17px;font-weight:700;color:#18182C;margin-bottom:2px}
+    .firm-line{font-size:12px;color:#E0621A;margin-bottom:10px}
+    table.meta-tbl,table.grid{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:12px}
+    table.meta-tbl th,table.meta-tbl td,table.grid th,table.grid td{border:1px solid #D8D2C4;padding:7px 9px;text-align:left;vertical-align:top}
+    table.meta-tbl th{width:22%;background:#F4F0E6;font-weight:600;color:#18182C}
+    table.grid th{background:#F4F0E6;font-family:'Roboto Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#44445E}
+    p.xsum{margin:0 0 9px;line-height:1.7}
+    ol.conc{padding-left:22px;margin:0}ol.conc li{margin-bottom:6px;line-height:1.6}
+    p.disc-note{font-size:11px;font-style:italic;color:#7878A0;line-height:1.6}
+    @media print{tr{page-break-inside:avoid}h2{page-break-after:avoid}}
   </style></head><body>
   <div class="header">
-    <div class="eyebrow">Minutes of Conversation · ${refId}</div>
+    ${ADV&&LH.firm_name?`<div class="firm">${esc(LH.firm_name)}</div>`:''}
+    ${ADV&&LH.firm_service_line?`<div class="firm-line">${esc(LH.firm_service_line)}</div>`:''}
+    <div class="eyebrow">${ADV?'Minutes of Meeting':'Minutes of Conversation'} · ${refId}</div>
     <h1>${esc(m.meeting_title||"Conversation")}</h1>
     <div class="meta">${[m.meeting_date,m.meeting_time].filter(Boolean).join(" · ")}</div>
   </div>`;
-  if(att.length) h+=`<h2>Attendees</h2><ul>${att.map(a=>`<li>${esc(a)}</li>`).join("")}</ul>`;
-  if(ag.length)  h+=`<h2>Agenda</h2><ul>${ag.map((a,i)=>`<li>${String(i+1).padStart(2,"0")}. ${esc(a)}</li>`).join("")}</ul>`;
-  if(dp.length)  h+=`<h2>Key Discussions</h2>${dp.map(d=>`<div class="disc"><div class="disc-topic">${esc(d.topic)}</div><div>${esc(d.details)}</div></div>`).join("")}`;
-  if(dec.length) h+=`<h2>Decisions</h2>${dec.map(d=>`<div class="decision">✓ ${esc(d)}</div>`).join("")}`;
-  if(ai.length)  h+=`<h2>Action Items</h2>${ai.map((a,i)=>`<div class="action"><strong>${String(i+1).padStart(2,"0")}. ${esc(a.task)}</strong><br><small style="color:#44445E;font-family:'Roboto Mono',monospace;font-size:10px">OWNER: ${esc(a.owner)} · DUE: ${esc(a.due_date)}</small></div>`).join("")}`;
-  if(m.next_meeting) h+=`<h2>Next Conversation</h2><p>${esc(m.next_meeting)}</p>`;
-  if(m.summary) h+=`<h2>Summary</h2><p style="line-height:1.7">${esc(m.summary)}</p>`;
+  if(ADV){
+    h+=`<table class="meta-tbl">
+      <tr><th>Client</th><td>${esc(m.client_name||'Not recorded')}</td></tr>
+      <tr><th>Subject</th><td>${esc(m.subject||m.meeting_title||'Not recorded')}</td></tr>
+      <tr><th>Meeting Date</th><td>${esc([m.meeting_date,m.meeting_time].filter(Boolean).join(' · ')||'Not recorded')}</td></tr>
+      <tr><th>Present</th><td>${att.length?att.map(esc).join('<br>'):'Not recorded'}</td></tr>
+      <tr><th>Prepared By / On</th><td>${esc([LH.prepared_by||LH.firm_name||'',m.meeting_date||''].filter(Boolean).join('  |  ')||'Not recorded')}</td></tr>
+    </table>`;
+    if(AB.exec.length) h+=`<h2>Executive Summary</h2>${AB.exec.map(x=>`<p class="xsum">${esc(x)}</p>`).join("")}`;
+    else if(m.summary) h+=`<h2>Executive Summary</h2><p class="xsum">${esc(m.summary)}</p>`;
+  }
+  if(!ADV && att.length) h+=`<h2>Attendees</h2><ul>${att.map(a=>`<li>${esc(a)}</li>`).join("")}</ul>`;
+  if(!ADV && ag.length)  h+=`<h2>Agenda</h2><ul>${ag.map((a,i)=>`<li>${String(i+1).padStart(2,"0")}. ${esc(a)}</li>`).join("")}</ul>`;
+  if(ADV){
+    if(ai.length) h+=`<h2>1. Action Plan</h2><table class="grid"><thead><tr><th>Sr.</th><th>Action / Deliverable</th><th>Responsibility</th><th>Timeline / Status</th></tr></thead><tbody>`+
+      ai.map((a,i)=>`<tr><td>${i+1}</td><td>${esc(a.task||'')}</td><td>${esc(a.owner||'Not assigned')}</td><td>${esc((a.timeline||(a.due_date&&a.due_date!=='TBD'?a.due_date:'Not agreed'))+(a.status?' · '+a.status:''))}</td></tr>`).join("")+`</tbody></table>`;
+    if(AB.trk.length) h+=`<h2>2. Information and Pending Tracker</h2><table class="grid"><thead><tr><th>Area</th><th>Requirement / Deliverable</th><th>Responsible</th><th>Status</th></tr></thead><tbody>`+
+      AB.trk.map(r=>`<tr><td>${esc(r.area||'')}</td><td>${esc(r.requirement||'')}</td><td>${esc(r.responsible||'')}</td><td>${esc(r.status||'')}</td></tr>`).join("")+`</tbody></table>`;
+    if(dp.length) h+=`<h2>3. Points Discussed</h2>${dp.map(d=>`<div class="disc"><div class="disc-topic">${esc(d.topic)}</div><div style="white-space:pre-line">${esc(d.details)}</div></div>`).join("")}`;
+    if(dec.length) h+=`<h2>4. Agreed Directions / Working Conclusions</h2><ol class="conc">${dec.map(d=>`<li>${esc(d)}</li>`).join("")}</ol>`;
+    if(AB.agd.length) h+=`<h2>5. Proposed Agenda for Next Meeting</h2><ol class="conc">${AB.agd.map(a=>`<li>${esc(a)}</li>`).join("")}</ol>`;
+    else if(m.next_meeting) h+=`<h2>5. Next Meeting</h2><p>${esc(m.next_meeting)}</p>`;
+    h+=`<h2>Disclaimer</h2><p class="disc-note">${esc(LH.moc_disclaimer||LH.default_disclaimer||'This MOC is a draft for management review.')}</p>`;
+  }
+  if(!ADV && dp.length)  h+=`<h2>Key Discussions</h2>${dp.map(d=>`<div class="disc"><div class="disc-topic">${esc(d.topic)}</div><div style="white-space:pre-line">${esc(d.details)}</div></div>`).join("")}`;
+  if(!ADV && dec.length) h+=`<h2>Decisions</h2>${dec.map(d=>`<div class="decision">✓ ${esc(d)}</div>`).join("")}`;
+  if(!ADV && ai.length)  h+=`<h2>Action Items</h2>${ai.map((a,i)=>`<div class="action"><strong>${String(i+1).padStart(2,"0")}. ${esc(a.task)}</strong><br><small style="color:#44445E;font-family:'Roboto Mono',monospace;font-size:10px">OWNER: ${esc(a.owner)} · DUE: ${esc(a.due_date)}</small></div>`).join("")}`;
+  if(!ADV && m.next_meeting) h+=`<h2>Next Conversation</h2><p>${esc(m.next_meeting)}</p>`;
+  if(!ADV && m.summary) h+=`<h2>Summary</h2><p style="line-height:1.7">${esc(m.summary)}</p>`;
   h+=`<footer><span>AiX Track · ${refId}</span><span>${new Date().toLocaleDateString("en-IN")}</span></footer></body></html>`;
   const blob2=new Blob([h],{type:'text/html;charset=utf-8'});
   const burl=URL.createObjectURL(blob2);
@@ -3547,7 +3737,8 @@ async function saveAndRegenerate(){
     statusEl.textContent = '③ AI regenerating full MOC…';
     const regenRes = await fetch(`/api/history/${momId}/regenerate`, {
       method: 'POST', credentials: 'same-origin',
-      headers: {'Content-Type':'application/json'}
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ edited_mom: { meeting_title: title, meeting_date: meetingDate, meeting_time: meetingTime, summary, next_meeting: nextMeeting, attendees, agenda, decisions, action_items } })
     });
 
     if(!regenRes.ok){
@@ -3871,6 +4062,80 @@ async function draftRegen(){
     }
     btn.disabled  = false;
     btn.innerHTML = '✨ Generate MOC now';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  REGENERATE MOC / REGENERATE WITH SPEAKERS
+// ════════════════════════════════════════════════════════════════════════════
+function openRegenDialog(mode){
+  const m = currentModalData;
+  if(!m) return;
+  const speakers = mode === 'speakers';
+  closeRegenDialog();
+  const d = document.createElement('div');
+  d.id = 'regen-dlg';
+  d.style.cssText = 'position:fixed;inset:0;z-index:1000;background:rgba(8,14,30,0.6);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px';
+  const mins = Math.ceil((Number(m.duration_seconds)||0)/60);
+  const extra = mins * Math.max(0,(window.AIX_RATES?.diarization_per_min||2)-(window.AIX_RATES?.standard_per_min||1));
+  d.innerHTML = `
+    <div style="width:100%;max-width:480px;background:var(--card);color:var(--ink);border:1px solid var(--border-strong);border-radius:16px;box-shadow:0 18px 48px rgba(0,0,0,0.35);padding:22px;font-family:var(--sans)">
+      <div style="font-family:var(--serif);font-size:20px;margin-bottom:6px">${speakers ? '🗣 Regenerate with Speakers' : '🔄 Regenerate MOC'}</div>
+      <div style="font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:12px">
+        ${speakers
+          ? `The recording is read again to identify who said what, then the MOC is rebuilt with each point attributed to the right person.${extra ? ` This adds <b>${extra} credits</b> (speaker rate for ${mins} min, minus what was already charged).` : ''}`
+          : 'The MOC is rebuilt from the saved transcript using your tone, master prompt and project details. No credits are charged.'}
+      </div>
+      <div class="edit-label" style="margin-bottom:6px">MOC format</div>
+      <select id="regen-dlg-template" class="edit-input" style="margin-bottom:12px">
+        <option value="standard"${(m.moc_template||'standard')==='standard'?' selected':''}>Standard — meeting record</option>
+        <option value="advisory"${m.moc_template==='advisory'?' selected':''}>Client Advisory / Virtual CFO — executive summary, action plan with status, pending tracker, next agenda</option>
+      </select>
+      <div class="edit-label" style="margin-bottom:6px">Notes for this run (optional)</div>
+      <textarea id="regen-dlg-notes" class="edit-textarea" style="min-height:90px" placeholder="e.g. Rahul is the CA, keep amounts in ₹, add GST deadlines to action items"></textarea>
+      <div id="regen-dlg-status" style="display:none;font-family:var(--mono);font-size:11px;color:var(--gold);margin-top:10px"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+        <button class="btn-cancel" id="regen-dlg-cancel" onclick="closeRegenDialog()">Cancel</button>
+        <button class="btn-save" id="regen-dlg-go" onclick="runRegen('${mode}')">${speakers ? 'Identify speakers &amp; regenerate' : 'Regenerate'}</button>
+      </div>
+    </div>`;
+  d.addEventListener('click', e => { if(e.target === d && !d.dataset.busy) closeRegenDialog(); });
+  document.body.appendChild(d);
+}
+function closeRegenDialog(){ document.getElementById('regen-dlg')?.remove(); }
+
+async function runRegen(mode){
+  const m = currentModalData;
+  const d = document.getElementById('regen-dlg');
+  if(!m || !d) return;
+  const speakers = mode === 'speakers';
+  const go = document.getElementById('regen-dlg-go'), cancel = document.getElementById('regen-dlg-cancel');
+  const status = document.getElementById('regen-dlg-status');
+  const notes = document.getElementById('regen-dlg-notes').value.trim();
+  const template = document.getElementById('regen-dlg-template')?.value || 'standard';
+  d.dataset.busy = '1'; go.disabled = cancel.disabled = true;
+  go.innerHTML = '<span class="save-spin"></span> Working…';
+  status.style.display = 'block'; status.style.color = 'var(--gold)';
+  status.textContent = speakers
+    ? '① Reading the recording for speakers — this can take a few minutes for long meetings…'
+    : '① Building the meeting prompt and writing the MOC — about 30–60 seconds…';
+  try{
+    const res = await fetch(`/api/history/${m.id}/${speakers ? 'rediarize' : 'regenerate'}`, {
+      method:'POST', credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ additional_notes: notes, moc_template: template })
+    });
+    const raw = await res.text();
+    let data; try{ data = JSON.parse(raw); }catch{ throw new Error('Server returned an invalid response — please try again.'); }
+    if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    closeRegenDialog();
+    showToast(speakers ? `🗣 Done — ${data.speaker_count} speaker(s) identified, MOC regenerated.` : '✨ MOC regenerated.', 'success');
+    await loadHistory();
+    openModal(m.id);
+  }catch(err){
+    delete d.dataset.busy; go.disabled = cancel.disabled = false;
+    go.innerHTML = speakers ? 'Identify speakers &amp; regenerate' : 'Regenerate';
+    status.style.color = 'var(--rust)'; status.textContent = '✕ ' + err.message;
   }
 }
 
@@ -4220,6 +4485,7 @@ async function downloadDOCX(){
 <nav class="bottom-nav">
   <a href="/"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>New MOC</a>
   <a href="/history" class="active"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Records</a>
+  <a href="/projects"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Projects</a>
   <a href="/actions"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Actions</a>
   <a href="/logging"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Usage</a>
   <a href="/profile.html"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</a>

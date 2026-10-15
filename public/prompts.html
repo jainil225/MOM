@@ -86,6 +86,25 @@ tr:hover td{background:var(--paper2)}
 .modal-body h3:first-child{margin-top:0}
 pre{white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:11.5px;line-height:1.55;background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:12px;max-height:420px;overflow:auto}
 @media(max-width:900px){.grid{grid-template-columns:1fr}textarea{min-height:320px}}
+.pipe{display:flex;flex-direction:column;align-items:center;gap:0;padding:24px 18px}
+.prow{display:flex;align-items:stretch;justify-content:center;gap:6px;width:100%;max-width:880px}
+.pnode{border:1.5px solid var(--border-strong);border-radius:12px;padding:12px 16px;background:var(--paper);text-align:center;display:flex;flex-direction:column;gap:3px;justify-content:center}
+.prow .pnode{flex:1}
+.pnode.wide{width:100%;max-width:560px}
+.pnode b{font-size:15px;font-weight:600}
+.pnode small{font-size:12px;color:var(--ink2);line-height:1.45}
+.pn-step{font-family:var(--mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold)}
+.pnode.main{border-color:var(--navy);background:var(--card)}
+.pnode.gen{border-color:var(--gold);background:var(--gold-tint);width:100%;max-width:640px}
+.pnode.store{border-style:dashed;background:var(--card)}
+.pnode.out{border-color:var(--sage);background:var(--sage-tint);width:100%;max-width:560px}
+.pnode.in{width:100%;max-width:560px}
+.pchips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:6px 0}
+.pchips span{font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:999px;background:var(--card);border:1px solid var(--gold);color:var(--ink)}
+.parrow{color:var(--gold);font-size:22px;line-height:1;padding:6px 0;text-align:center}
+.parrow.side{align-self:center;padding:0 2px}
+.parrow .plus{font-family:var(--mono);font-size:11px;color:var(--ink2);margin-left:8px}
+@media(max-width:760px){.prow{flex-direction:column}.parrow.side{transform:rotate(90deg);padding:4px 0}}
 </style>
 <link rel="stylesheet" href="/css/aix-uniform.css">
 </head>
@@ -106,7 +125,43 @@ pre{white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size
   <div class="eyebrow">— Admin · Internal</div>
   <h1>MOC <em>prompts</em></h1>
   <p class="sub">The master prompt sets the rules for every MOC. For each conversation, the prompt composer writes a meeting-specific brief from the master prompt and transcript; the MOC model then receives master prompt + brief + transcript. Every final prompt is logged below.</p>
-  <div class="flow"><span>Transcript + master prompt</span><b>→</b><span>ChatGPT-4o writes conversation prompt</span><b>→</b><span>Final prompt + transcript</span><b>→</b><span>Claude Sonnet 5.5</span><b>→</b><span>MOC</span></div>
+  <div class="section-title">— How a conversation becomes a MOC</div>
+  <div class="pipe card">
+    <div class="pnode in"><div class="pn-step">Step 1</div><b>Live recording / uploaded recording</b><small>Browser mic, phone, meeting audio or video</small></div>
+    <div class="parrow">↓</div>
+    <div class="prow">
+      <div class="pnode store"><div class="pn-step">Store</div><b>Speaker store</b><small>Who said what, with timestamps</small></div>
+      <div class="parrow side">⇄</div>
+      <div class="pnode main"><div class="pn-step">Step 2</div><b>Sarvam</b><small>Speech to text in Indian languages · optional speaker identification</small></div>
+      <div class="parrow side">⇄</div>
+      <div class="pnode store"><div class="pn-step">Store</div><b>Transcript store</b><small>Full transcript kept with the conversation</small></div>
+    </div>
+    <div class="parrow">↓</div>
+    <div class="pnode gen"><div class="pn-step">Step 3 · Prompt generator</div><b>ChatGPT</b>
+      <div class="pchips"><span>Tone</span><span>+ Master prompt</span><span>+ Project details</span><span>+ Other options &amp; user notes</span></div>
+      <small>Writes a prompt made for this one conversation</small></div>
+    <div class="parrow">↓</div>
+    <div class="pnode store wide"><div class="pn-step">Store</div><b>Customised prompt store</b><small>Every generated prompt is saved and can be opened in the Prompt log below — proof of what was sent</small></div>
+    <div class="parrow">↓ <span class="plus">Transcript + customised prompt</span></div>
+    <div class="pnode main wide"><div class="pn-step">Step 4 · MOC writer</div><b>Claude</b><small>Reads the transcript with the customised prompt and writes the MOC</small></div>
+    <div class="parrow">↓</div>
+    <div class="pnode out"><div class="pn-step">Step 5</div><b>MOC display &amp; store</b><small>Shown in History · Regenerate MOC · Regenerate with Speakers · Word / PDF / Email / Share</small></div>
+  </div>
+  <p class="meta" style="margin:-1rem 0 1.75rem">Regenerating from History runs the same steps 3 → 5 again on the stored transcript. Open any row in the Prompt log below to see the exact prompt for that conversation.</p>
+
+  <div class="section-title">— Live recording: what happens while the meeting is on</div>
+  <div class="pipe card">
+    <div class="pnode in"><div class="pn-step">While recording</div><b>Browser microphone</b><small>The meeting is recorded in the browser. Nothing is lost if the internet drops for a moment.</small></div>
+    <div class="parrow">↓</div>
+    <div class="prow">
+      <div class="pnode store"><div class="pn-step">Backup 1</div><b>Server copy</b><small>Audio is sent to our server in small pieces every few seconds</small></div>
+      <div class="pnode store"><div class="pn-step">Backup 2</div><b>Device copy</b><small>If the tab is closed or refreshed, the audio is kept on the device and recovered on return</small></div>
+    </div>
+    <div class="parrow">↓ <span class="plus">Stop recording</span></div>
+    <div class="pnode main wide"><div class="pn-step">After stop</div><b>The same pipeline as an uploaded file</b><small>Sarvam transcript → ChatGPT customised prompt → Claude writes the MOC (see the diagram above)</small></div>
+    <div class="parrow">↓</div>
+    <div class="pnode out"><div class="pn-step">Result</div><b>MOC in History</b><small>Recording, transcript, speakers (if chosen), customised prompt and MOC are all saved together</small></div>
+  </div>
 
   <div class="section-title">— Master prompt</div>
   <div class="grid">

@@ -100,6 +100,10 @@ body{
 .disc h4{font-size:15px;font-weight:600;margin-bottom:4px;color:var(--ink)}
 .disc h4::before{content:'§ ';color:var(--gold)}
 .disc p{font-size:13.5px;color:var(--ink2);line-height:1.65;white-space:pre-line}
+table.meta-grid{width:100%;border-collapse:collapse;font-size:13px}
+table.meta-grid th,table.meta-grid td{border:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top;color:var(--ink2)}
+table.meta-grid th{background:var(--paper2);width:22%;font-weight:600;color:var(--ink);font-size:12px}
+table.meta-grid.trk th{width:auto;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
 .dec{display:flex;gap:10px;padding:10px 12px;border-radius:12px;background:var(--sage-tint);margin-bottom:6px;font-size:14px}
 .dec:last-child{margin-bottom:0}
 .dec i{font-style:normal;color:var(--sage);font-weight:700}
@@ -236,6 +240,11 @@ function render(m){
   document.getElementById('h-meta').innerHTML = meta.map(x => `<span>${x}</span>`).join('');
 
   const att = safeArr(m.attendees), ag = safeArr(m.agenda), dp = safeArr(m.discussion_points);
+  // Advisory template — extra sections, empty for a standard MOC
+  const ADV  = m.moc_template === 'advisory';
+  const xsum = safeArr(m.executive_summary),
+        trk  = safeArr(m.pending_tracker),
+        agd  = safeArr(m.next_agenda);
   const dec = safeArr(m.decisions), ai = safeArr(m.action_items);
 
   document.getElementById('stats').innerHTML = [
@@ -243,24 +252,40 @@ function render(m){
   ].map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
 
   let html = '';
-  if(m.summary) html += card('Summary', `<div class="summary">${esc(m.summary)}</div>`);
-  if(att.length) html += card('Attendees', `<div class="att">${att.map(a =>
+  if(ADV){
+    html += card('Meeting details', `<table class="meta-grid">
+      <tr><th>Client</th><td>${esc(m.client_name || 'Not recorded')}</td></tr>
+      <tr><th>Subject</th><td>${esc(m.subject || m.meeting_title || 'Not recorded')}</td></tr>
+      <tr><th>Present</th><td>${att.length ? att.map(esc).join('<br>') : 'Not recorded'}</td></tr>
+    </table>`);
+  }
+  if(ADV && xsum.length) html += card('Executive summary',
+    xsum.map(x => `<p class="summary" style="margin:0 0 10px">${esc(x)}</p>`).join(''));
+  else if(m.summary) html += card('Summary', `<div class="summary">${esc(m.summary)}</div>`);
+  if(!ADV && att.length) html += card('Attendees', `<div class="att">${att.map(a =>
     `<span class="att-pill"><span class="av" style="background:${avColor(a)}">${esc(initials(a))}</span>${esc(a)}</span>`).join('')}</div>`, att.length);
-  if(ag.length) html += card('Agenda', ag.map((a, i) =>
+  if(!ADV && ag.length) html += card('Agenda', ag.map((a, i) =>
     `<div class="ag"><span class="num">${String(i+1).padStart(2,'0')}</span><span>${esc(a)}</span></div>`).join(''));
-  if(dp.length) html += card('Key discussions', dp.map(d =>
+  if(dp.length) html += card(ADV ? '3. Points discussed' : 'Key discussions', dp.map(d =>
     `<div class="disc"><h4>${esc(d.topic || '')}</h4>${d.details ? `<p>${esc(d.details)}</p>` : ''}</div>`).join(''), dp.length);
-  if(dec.length) html += card('Decisions', dec.map(d => `<div class="dec"><i>✓</i><span>${esc(d)}</span></div>`).join(''), dec.length);
-  if(ai.length) html += card('Action items', ai.map(a => {
+  if(dec.length) html += card(ADV ? '4. Agreed directions / working conclusions' : 'Decisions', dec.map(d => `<div class="dec"><i>✓</i><span>${esc(d)}</span></div>`).join(''), dec.length);
+  if(ai.length) html += card(ADV ? '1. Action plan' : 'Action items', ai.map(a => {
     const owner = (a.owner || 'Not assigned').trim(), pri = ['High','Medium','Low'].includes(a.priority) ? a.priority : '';
     return `<div class="act ${pri ? 'p-' + pri.toLowerCase() : ''}"><div style="flex:1;min-width:0">
       <div class="act-task">${esc(a.task || '')}</div>
       <div class="act-meta">
         <span class="owner"><span class="av" style="background:${avColor(owner)}">${esc(initials(owner))}</span>${esc(owner)}</span>
-        ${a.due_date && a.due_date !== 'TBD' ? `<span class="tag due">Due ${esc(a.due_date)}</span>` : ''}
+        ${ADV ? (a.timeline ? `<span class="tag due">${esc(a.timeline)}</span>` : (a.due_date && a.due_date !== 'TBD' ? `<span class="tag due">Due ${esc(a.due_date)}</span>` : ''))
+              : (a.due_date && a.due_date !== 'TBD' ? `<span class="tag due">Due ${esc(a.due_date)}</span>` : '')}
         ${pri ? `<span class="tag ${pri}">${pri}</span>` : ''}
       </div></div></div>`;
   }).join(''), ai.length);
+  if(ADV && trk.length) html += card('2. Information and pending tracker',
+    `<table class="meta-grid trk"><thead><tr><th>Area</th><th>Requirement</th><th>Responsible</th><th>Status</th></tr></thead><tbody>` +
+    trk.map(r => `<tr><td>${esc(r.area||'')}</td><td>${esc(r.requirement||'')}</td><td>${esc(r.responsible||'')}</td><td>${esc(r.status||'')}</td></tr>`).join('') +
+    `</tbody></table>`, trk.length);
+  if(ADV && agd.length) html += card('5. Proposed agenda for next meeting', agd.map((a, i) =>
+    `<div class="ag"><span class="num">${String(i+1).padStart(2,'0')}</span><span>${esc(a)}</span></div>`).join(''), agd.length);
   if(m.next_meeting && String(m.next_meeting).trim()) html += card('Next conversation',
     `<div class="next"><span class="next-ico">◷</span><span>${esc(m.next_meeting)}</span></div>`);
   if(!html) html = card('MOC', '<p class="summary">No content available.</p>');

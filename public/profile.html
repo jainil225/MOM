@@ -475,6 +475,7 @@ body{
   <div class="sidebar-section" style="padding-top:12px">
     <a href="/" class="sidebar-nav-btn" title="New MOC"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span><span class="nav-label">New MOC</span></a>
     <a href="/history" class="sidebar-nav-btn" title="Records"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span><span class="nav-label">Records</span></a>
+    <a href="/projects" class="sidebar-nav-btn" title="Projects"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="nav-label">Projects</span></a>
     <a href="/actions" class="sidebar-nav-btn" title="Action Items"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span class="nav-label">Action Items</span></a>
     <a href="/pricing" class="sidebar-nav-btn" title="Credits"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><span class="nav-label">Credits</span></a>
     <a href="/logging" class="sidebar-nav-btn" title="Usage"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="nav-label">Usage</span></a>
@@ -523,6 +524,32 @@ body{
           <div class="form-field"><label class="form-label">Display Name</label><input class="form-input" type="text" id="edit-name" placeholder="Your name…"></div>
           <div class="form-field"><label class="form-label">Email Address</label><input class="form-input" type="email" id="edit-email" disabled><div class="form-hint">Email is tied to your login and cannot be changed.</div></div>
           <button class="btn-primary" id="save-profile-btn" onclick="saveProfile()"><span>Save Changes</span></button>
+        </div>
+      </div>
+
+      <div class="card" id="letterhead-card">
+        <div class="card-head"><div class="card-icon">📄</div><div class="card-title">MOC <em>Letterhead</em></div></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:18px">
+            Used by the <strong>Client Advisory / Virtual CFO</strong> format — the firm name, service line and
+            disclaimer printed on the Word document your client receives. Leave blank to omit.
+          </p>
+          <div class="form-field"><label class="form-label">Firm Name</label>
+            <input class="form-input" type="text" id="lh-firm" maxlength="160" placeholder="e.g. RMPS &amp; Co"></div>
+          <div class="form-field"><label class="form-label">Service Line</label>
+            <input class="form-input" type="text" id="lh-line" maxlength="160" placeholder="e.g. Virtual CFO Services"></div>
+          <div class="form-field"><label class="form-label">Prepared By</label>
+            <input class="form-input" type="text" id="lh-prep" maxlength="160" placeholder="e.g. RMPS &amp; Co - Virtual CFO Team"></div>
+          <div class="form-field"><label class="form-label">Default MOC Format</label>
+            <select class="form-input" id="lh-template">
+              <option value="standard">Standard minutes</option>
+              <option value="advisory">Client Advisory / Virtual CFO</option>
+            </select>
+            <div class="form-hint">Pre-selected on the generator. You can still change it per meeting.</div></div>
+          <div class="form-field"><label class="form-label">Disclaimer</label>
+            <textarea class="form-input" id="lh-disc" rows="4" maxlength="2000" style="resize:vertical"></textarea>
+            <div class="form-hint">Printed at the end of the document. Leave blank to use the standard wording.</div></div>
+          <button class="btn-primary" id="save-lh-btn" onclick="saveLetterhead()"><span>Save Letterhead</span></button>
         </div>
       </div>
       <div class="card" id="purchase-card">
@@ -596,6 +623,22 @@ body{
           </button>
         </div>
       </div>
+      <div class="card" id="drive-card">
+        <div class="card-head"><div class="card-icon">☁️</div><div class="card-title">Recording <em>Storage</em></div></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:18px">
+            Connect your Google Drive and your audio and video recordings are kept in your own Drive instead of on our servers.
+            The MOC, transcript and action items stay in AiX Track exactly as before — only the large media file moves.
+            Access is limited to the folder this app creates; it cannot read anything else in your Drive.
+          </p>
+          <div class="session-table" id="drive-status-table">
+            <div class="session-row"><span class="session-key">Status</span><span class="session-val" id="drive-state">Checking…</span></div>
+          </div>
+          <div class="divider"></div>
+          <div id="drive-actions" style="display:flex;gap:10px;flex-wrap:wrap"></div>
+        </div>
+      </div>
+
       <div class="card danger">
         <div class="card-head"><div class="card-icon">⚠️</div><div class="card-title">Danger Zone</div></div>
         <div class="card-body">
@@ -611,6 +654,7 @@ body{
 <nav class="bottom-nav">
   <a href="/"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>New MOC</a>
   <a href="/history"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Records</a>
+  <a href="/projects"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Projects</a>
   <a href="/actions"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Actions</a>
   <a href="/logging"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Usage</a>
   <a href="/profile.html" class="active"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</a>
@@ -647,7 +691,103 @@ async function init(){
     renderSession(_userData);
     const nc=document.getElementById('nav-credits');
     if(nc)nc.textContent=balVal.toLocaleString('en-IN')+' CREDITS';
+    loadDriveStatus();
+    loadLetterhead();
+    reportDriveReturn();
   }catch(e){showToast('Load failed',e.message,'error');}
+}
+
+/* ── Google Drive storage ───────────────────────────────────────────────── */
+function fmtMB(bytes){const mb=(Number(bytes)||0)/1024/1024;return mb>=1024?(mb/1024).toFixed(2)+' GB':mb.toFixed(1)+' MB';}
+
+async function loadDriveStatus(){
+  const table=document.getElementById('drive-status-table');
+  const acts=document.getElementById('drive-actions');
+  if(!table)return;
+  try{
+    const d=await fetch('/api/drive/status',{credentials:'same-origin'}).then(r=>r.json());
+
+    if(!d.configured){
+      table.innerHTML=`<div class="session-row"><span class="session-key">Status</span><span class="session-val">Not available yet</span></div>`;
+      acts.innerHTML=`<span style="font-size:12px;color:var(--ink3)">Drive storage has not been set up on this server.</span>`;
+      return;
+    }
+
+    const rows=[];
+    rows.push(`<div class="session-row"><span class="session-key">Status</span><span class="session-val ${d.connected?'gold':''}">${d.connected?'Connected':'Not connected'}</span></div>`);
+    if(d.connected){
+      rows.push(`<div class="session-row"><span class="session-key">Drive account</span><span class="session-val">${esc(d.drive_email||'—')}</span></div>`);
+      rows.push(`<div class="session-row"><span class="session-key">Folder</span><span class="session-val">${esc(d.folder_name)}</span></div>`);
+      rows.push(`<div class="session-row"><span class="session-key">New recordings</span><span class="session-val">${d.enabled?'Saved to your Drive':'Kept on our servers'}</span></div>`);
+    }
+    rows.push(`<div class="session-row"><span class="session-key">In your Drive</span><span class="session-val">${d.on_drive} recording${d.on_drive===1?'':'s'}${d.bytes_on_drive>0?' · '+fmtMB(d.bytes_on_drive)+' off our servers':''}</span></div>`);
+    rows.push(`<div class="session-row"><span class="session-key">Still on our servers</span><span class="session-val">${d.on_our_disk} recording${d.on_our_disk===1?'':'s'}</span></div>`);
+    if(d.last_error) rows.push(`<div class="session-row"><span class="session-key">Last issue</span><span class="session-val" style="color:var(--rust)">${esc(d.last_error)}</span></div>`);
+    table.innerHTML=rows.join('');
+
+    if(!d.connected){
+      acts.innerHTML=`<a class="btn-primary" href="/auth/drive" style="text-decoration:none"><span>Connect Google Drive</span></a>`;
+    }else{
+      acts.innerHTML=
+        (d.on_our_disk>0?`<button class="btn-secondary" onclick="driveSync(this)">Move ${d.on_our_disk} waiting recording${d.on_our_disk===1?'':'s'} to Drive</button>`:'')+
+        `<button class="btn-secondary" onclick="driveToggle(${d.enabled?'false':'true'},this)">${d.enabled?'Pause saving to Drive':'Resume saving to Drive'}</button>`+
+        `<button class="btn-danger" onclick="driveDisconnect()">Disconnect</button>`;
+    }
+  }catch(e){
+    table.innerHTML=`<div class="session-row"><span class="session-key">Status</span><span class="session-val">Could not be checked</span></div>`;
+  }
+}
+
+/* Message shown after coming back from Google's consent screen */
+function reportDriveReturn(){
+  const p=new URLSearchParams(location.search).get('drive');
+  if(!p)return;
+  const msgs={
+    connected:        ['success','Google Drive connected','New recordings will be saved to your Drive from now on.'],
+    denied:           ['info',   'Not connected','You cancelled on the Google screen. Nothing has changed.'],
+    failed:           ['error',  'Could not connect','Google did not complete the connection. Please try again.'],
+    state_mismatch:   ['error',  'Could not connect','The connection could not be verified. Please start again from this page.'],
+    not_configured:   ['info',   'Not available yet','Drive storage has not been set up on this server.'],
+    no_refresh_token: ['error',  'Could not connect','AiX Track already has an unused permission on your Google account. Remove it under Google Account → Security → Third-party access, then connect again.'],
+  };
+  const m=msgs[p];
+  if(m)showToast(m[1],m[2],m[0],8000);
+  history.replaceState({},'',location.pathname);
+}
+
+async function driveSync(btn){
+  btn.disabled=true;btn.textContent='Moving…';
+  try{
+    const r=await fetch('/api/drive/sync',{method:'POST',credentials:'same-origin'}).then(r=>r.json());
+    if(r.error)throw new Error(r.error);
+    showToast('Moving to your Drive',`${r.queued} recording${r.queued===1?'':'s'} queued. This runs in the background — refresh in a minute to see the result.`,'success',6000);
+  }catch(e){showToast('Could not start',e.message,'error');}
+  setTimeout(loadDriveStatus,2500);
+}
+
+async function driveToggle(on,btn){
+  btn.disabled=true;
+  try{
+    await fetch('/api/drive/enabled',{method:'POST',credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:on})});
+    showToast(on?'Saving to Drive resumed':'Saving to Drive paused',
+      on?'New recordings will go to your Drive.':'New recordings will stay on our servers. Anything already in your Drive stays there.','success');
+  }catch(e){showToast('Could not change this',e.message,'error');}
+  loadDriveStatus();
+}
+
+function driveDisconnect(){
+  showConfirm('☁️','Disconnect Google Drive?',
+    'Recordings already in your Drive stay in your Drive — this only removes our access to them. They will no longer play inside AiX Track until you reconnect.',
+    'Disconnect',async()=>{
+      closeConfirm();
+      try{
+        const r=await fetch('/api/drive/disconnect',{method:'POST',credentials:'same-origin'}).then(r=>r.json());
+        if(r.error)throw new Error(r.error);
+        showToast('Disconnected',r.note||'Our access has been removed.','success',6000);
+      }catch(e){showToast('Could not disconnect',e.message,'error');}
+      loadDriveStatus();
+    });
 }
 function renderIdentity(u){
   const name=u.name||u.email?.split('@')[0]||'User';
@@ -695,6 +835,38 @@ function renderSession(u){
   document.getElementById('session-since').textContent=u.created_at?new Date(u.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'—';
   document.getElementById('session-last').textContent=u.last_login?new Date(u.last_login).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
 }
+/* ── MOC letterhead (advisory format) ── */
+async function loadLetterhead(){
+  try{
+    const d=await fetch('/api/user/settings',{credentials:'same-origin'}).then(r=>r.json());
+    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+    set('lh-firm',d.firm_name); set('lh-line',d.firm_service_line);
+    set('lh-prep',d.prepared_by); set('lh-disc',d.moc_disclaimer);
+    const t=document.getElementById('lh-template');
+    if(t) t.value=d.default_moc_template||'standard';
+    const disc=document.getElementById('lh-disc');
+    if(disc && !d.moc_disclaimer) disc.placeholder=d.default_disclaimer||'';
+  }catch(e){ /* the rest of the profile still loads */ }
+}
+
+async function saveLetterhead(){
+  const btn=document.getElementById('save-lh-btn');
+  const val=id=>(document.getElementById(id)?.value||'').trim();
+  btn.disabled=true;btn.innerHTML='<span class="btn-spin"></span> Saving…';
+  try{
+    const r=await fetch('/api/user/settings',{method:'POST',credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        firm_name:val('lh-firm'), firm_service_line:val('lh-line'),
+        prepared_by:val('lh-prep'), moc_disclaimer:val('lh-disc'),
+        default_moc_template:document.getElementById('lh-template')?.value||'standard'
+      })});
+    if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.error||'Save failed');}
+    showToast('Letterhead saved','Advisory MOCs will use these details.','success');
+  }catch(e){showToast('Save failed',e.message,'error');}
+  finally{btn.disabled=false;btn.innerHTML='<span>Save Letterhead</span>';}
+}
+
 async function saveProfile(){
   const btn=document.getElementById('save-profile-btn');
   const name=document.getElementById('edit-name')?.value.trim()||'';

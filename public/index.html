@@ -658,6 +658,12 @@ input.native::placeholder{color:var(--ink4)}
         </span>
         <span class="nav-label">Records</span>
       </a>
+      <a href="/projects" class="sidebar-nav-btn" title="Projects">
+        <span class="nav-icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        </span>
+        <span class="nav-label">Projects</span>
+      </a>
       <a href="/actions" class="sidebar-nav-btn" title="Action Items">
         <span class="nav-icon">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -745,12 +751,13 @@ input.native::placeholder{color:var(--ink4)}
         <div class="ft-mins" id="free-tier-used"></div>
       </div>
 
-      <!-- Recording consent — required before recording or generating -->
-      <label class="consent-row" id="consent-row">
-        <input type="checkbox" id="consent-check" onchange="consentChanged()">
-        <span>Everyone in this conversation knows it is being recorded and will be processed by AiX Track to prepare the minutes.
+      <!-- Recording consent — a notice, not a gate. The tick box was being missed
+           after upload and blocked the Generate button, so consent is now given by
+           the act of recording or generating, and is still logged server-side. -->
+      <div class="consent-row consent-note" id="consent-row">
+        <span>By recording or generating minutes you confirm that everyone in the conversation knows it is being recorded and will be processed by AiX Track.
           <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a></span>
-      </label>
+      </div>
 
       <!-- Input Mode Tabs -->
       <div class="input-tabs">
@@ -999,6 +1006,28 @@ input.native::placeholder{color:var(--ink4)}
       <div class="banner info" id="multilingual-hint" style="display:none;margin-top:-4px">
         <span>🌐</span>
         <span><strong>Multilingual mode</strong> — AI will auto-detect the language of each audio segment. The MOC will be generated in English.</span>
+      </div>
+
+      <!-- Project + MOC format -->
+      <div class="settings-row">
+        <div class="setting-box">
+          <div class="setting-label">Project <span style="color:var(--ink4);font-weight:400;letter-spacing:0">(optional)</span></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select class="native" id="project-select" style="flex:1">
+              <option value="">— No project —</option>
+            </select>
+            <button type="button" class="btn-sm" id="new-project-btn" onclick="createProjectInline()"
+                    style="white-space:nowrap">+ New</button>
+          </div>
+        </div>
+        <div class="setting-box">
+          <div class="setting-label">MOC Format</div>
+          <select class="native" id="template-select" onchange="onTemplateChange()">
+            <option value="standard">Standard minutes</option>
+            <option value="advisory">Client Advisory / Virtual CFO</option>
+          </select>
+          <div id="template-hint" style="font-family:var(--mono);font-size:10px;color:var(--ink4);margin-top:6px;line-height:1.5"></div>
+        </div>
       </div>
 
       <!-- Tags -->
@@ -1736,22 +1765,12 @@ const recServer = {
 /* ══ GENERATE BUTTONS — standard (1 cr/min) or with diarization (2 cr/min) ══ */
 let useDiarization = false;
 /* ══ RECORDING CONSENT ══ */
-function consentOk() {
-  const c = document.getElementById('consent-check');
-  if (!c || c.checked) return true;
-  const row = document.getElementById('consent-row');
-  row.classList.add('need');
-  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  showError('Please tick the consent box first: everyone in the conversation should know it is being recorded.');
-  return false;
-}
-function consentChanged() {
-  const c = document.getElementById('consent-check');
-  if (c && c.checked) {
-    document.getElementById('consent-row').classList.remove('need');
-    document.getElementById('error-box').style.display = 'none';
-  }
-}
+/* Consent is no longer a tick box standing between the user and the Generate
+   button — it is given by choosing to record or generate, stated in the notice
+   above those buttons. The confirmation still reaches the server on every
+   upload and is still written to the consent log, so the record is unchanged. */
+function consentOk() { return true; }
+function consentChanged() { /* kept so any older handler call is harmless */ }
 const maxAudioSec = () => (window.AIX_RATES.max_audio_hours || 10) * 3600;
 
 async function generateMOC(withDiarization) {
@@ -2127,6 +2146,7 @@ async function startRecording(){
       mimeType: mt, duration_seconds: recordedSeconds,
       language: (document.getElementById('language-select') ? document.getElementById('language-select').value : 'auto'),
       category: (document.getElementById('category-select') ? document.getElementById('category-select').value : ''),
+      project_id: (document.getElementById('project-select') ? document.getElementById('project-select').value : ''),
       tags: (typeof currentTags !== 'undefined' ? currentTags.join(',') : ''),
       recordedAt: new Date().toISOString(), isPeriodicSave: true
     }).catch(function(){});
@@ -2412,6 +2432,8 @@ async function handleProcess(){
   try{
     const language = document.getElementById("language-select").value;
     const category = document.getElementById("category-select").value;
+    const projectId = (document.getElementById("project-select") || {}).value || "";
+    const mocTemplate = (document.getElementById("template-select") || {}).value || "standard";
     const tags = currentTags.join(",");
     const CHUNK_SIZE = 5 * 1024 * 1024;
     let data;
@@ -2496,7 +2518,7 @@ async function handleProcess(){
         res = await fetch('/api/upload/complete', {
           method: 'POST', credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uploadId, originalName: currentFile.name, totalChunks, language, category, tags, additional_context: contextText, session_prompt: sessionPrompt, enable_diarization: useDiarization, consent_confirmed: true })
+          body: JSON.stringify({ uploadId, originalName: currentFile.name, totalChunks, language, category, tags, project_id: projectId, moc_template: mocTemplate, additional_context: contextText, session_prompt: sessionPrompt, enable_diarization: useDiarization, consent_confirmed: true })
         });
       } finally { clearInterval(_progressTicker); }
       setProgress('Wrapping up…', 95);
@@ -2522,6 +2544,8 @@ async function handleProcess(){
       const fd = new FormData();
       fd.append('file', currentFile, currentFile.name);
       fd.append('language', language); fd.append('category', category); fd.append('tags', tags);
+      if (projectId) fd.append('project_id', projectId);
+      fd.append('moc_template', mocTemplate);
       if (contextText) fd.append('additional_context', contextText);
       if (ctxFile) fd.append('context_file', ctxFile, ctxFile.name);
       if (sessionPrompt) fd.append('session_prompt', sessionPrompt);
@@ -2744,10 +2768,14 @@ function showInsufficientCreditsError(needed, have, shortfall, customMsg) {
 function downloadMOMPDF() {
   if (!currentMOM) return;
   const m = currentMOM; const arr = v => Array.isArray(v) ? v : [];
+  // Advisory template — these are empty for a standard MOC
+  const ADV  = (document.getElementById('template-select')||{}).value === 'advisory'
+               || arr(m.executive_summary).length > 0 || arr(m.pending_tracker).length > 0;
+  const xsum = arr(m.executive_summary), trk = arr(m.pending_tracker), agd = arr(m.next_agenda);
   const year = new Date().getFullYear();
   const refId = currentSessionId ? `MOC-${year}-${String(currentSessionId).padStart(4,'0')}` : 'MOC';
-  const actionRows = arr(m.action_items).map((a,i) => `<tr style="background:${i%2===0?'#FAF8F3':'#fff'}"><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8">${esc(a.task)}</td><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8;white-space:nowrap">${esc(a.owner||'—')}</td><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8;white-space:nowrap;color:#A0472E">${esc(a.due_date||'TBD')}</td><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8;white-space:nowrap">${esc(a.priority||'—')}</td></tr>`).join('');
-  const discussionRows = arr(m.discussion_points).map(d => `<div style="margin-bottom:14px"><div style="font-weight:600;font-size:13px;color:#0F1524;margin-bottom:4px">${esc(d.topic||d)}</div>${d.details ? `<div style="font-size:12px;color:#4A5468;line-height:1.6">${esc(d.details)}</div>` : ''}</div>`).join('');
+  const actionRows = arr(m.action_items).map((a,i) => `<tr style="background:${i%2===0?'#FAF8F3':'#fff'}"><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8">${esc(a.task)}</td><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8;white-space:nowrap">${esc(a.owner||'—')}</td><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8;white-space:nowrap;color:#A0472E">${esc(ADV ? (a.timeline || (a.due_date && a.due_date!=='TBD' ? a.due_date : 'Not agreed')) : (a.due_date||'TBD'))}</td><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8;white-space:nowrap">${esc(a.priority||'—')}</td></tr>`).join('');
+  const discussionRows = arr(m.discussion_points).map(d => `<div style="margin-bottom:14px"><div style="font-weight:600;font-size:13px;color:#0F1524;margin-bottom:4px">${esc(d.topic||d)}</div>${d.details ? `<div style="font-size:12px;color:#4A5468;line-height:1.6;white-space:pre-line">${esc(d.details)}</div>` : ''}</div>`).join('');
   const printWin = window.open('', '_blank');
   printWin.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(m.meeting_title||'MOC')} · ${refId}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#fff;color:#0F1524;font-size:13px;line-height:1.6}.header{background:#0F1B3D;color:#fff;padding:28px 32px}.header-ref{font-family:monospace;font-size:10px;letter-spacing:.14em;color:#B8912A;font-weight:700;margin-bottom:6px}.header-title{font-size:22px;font-weight:400;margin-bottom:6px}.header-meta{font-size:11px;color:rgba(255,255,255,.6);font-family:monospace}.gold-bar{height:2px;background:linear-gradient(90deg,transparent,#B8912A,transparent);margin-bottom:28px}.section{margin:0 32px 24px}.section-label{font-family:monospace;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#B8912A;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #E8E4D8}.chip{display:inline-block;background:#F4F0E6;border:1px solid #E8E4D8;border-radius:4px;padding:3px 10px;font-size:11px;margin:2px}table{width:100%;border-collapse:collapse}th{background:#F4F0E6;padding:8px 10px;font-family:monospace;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8A93A8;text-align:left;border:1px solid #E8E4D8}.footer{margin:32px;padding-top:16px;border-top:1px solid #E8E4D8;font-family:monospace;font-size:10px;color:#8A93A8;display:flex;justify-content:space-between}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style>
 <style>
@@ -3334,7 +3362,7 @@ function downloadMOMPDF() {
 ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.25); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(245,158,11,0.4); }
 </style>
-</head><body><div class="header"><div class="header-ref">${refId} · MINUTES OF CONVERSATION</div><div class="header-title">${esc(m.meeting_title||'Conversation')}</div><div class="header-meta">${m.meeting_date||''}${m.meeting_time?' · '+m.meeting_time:''}${m.location?' · '+esc(m.location):''}</div></div><div class="gold-bar"></div>${m.summary?`<div class="section"><div class="section-label">Executive Summary</div><div style="background:#F8F6F0;border-left:3px solid #B8912A;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.7">${esc(m.summary)}</div></div>`:''}${arr(m.attendees).length?`<div class="section"><div class="section-label">Attendees (${arr(m.attendees).length})</div><div>${arr(m.attendees).map(a=>`<span class="chip">${esc(a)}</span>`).join('')}</div></div>`:''}${arr(m.agenda).length?`<div class="section"><div class="section-label">Agenda</div>${arr(m.agenda).map((a,i)=>`<div style="padding:4px 0;font-size:12px"><span style="font-family:monospace;color:#B8912A;margin-right:8px">${String(i+1).padStart(2,'0')}.</span>${esc(a)}</div>`).join('')}</div>`:''}${discussionRows?`<div class="section"><div class="section-label">Discussion Points</div>${discussionRows}</div>`:''}${arr(m.decisions).length?`<div class="section"><div class="section-label">Decisions</div>${arr(m.decisions).map(d=>`<div style="display:flex;gap:8px;padding:5px 0;font-size:12px"><span style="color:#4A7C59;flex-shrink:0">✓</span><span>${esc(d)}</span></div>`).join('')}</div>`:''}${arr(m.action_items).length?`<div class="section"><div class="section-label">Action Items</div><table><thead><tr><th>Task</th><th>Owner</th><th>Due Date</th><th>Priority</th></tr></thead><tbody>${actionRows}</tbody></table></div>`:''}${m.next_meeting?`<div class="section"><div class="section-label">Next Conversation</div><div style="font-size:12px">${esc(m.next_meeting)}</div></div>`:''}<div class="footer"><span>AiX Track · AI-generated · Verify with organiser</span><span>${refId}</span></div></body></html>`);
+</head><body><div class="header"><div class="header-ref">${refId} · ${ADV ? 'MINUTES OF MEETING' : 'MINUTES OF CONVERSATION'}</div><div class="header-title">${esc(m.meeting_title||'Conversation')}</div><div class="header-meta">${m.meeting_date||''}${m.meeting_time?' · '+m.meeting_time:''}${m.location?' · '+esc(m.location):''}</div></div><div class="gold-bar"></div>${ADV&&(m.client_name||m.subject)?`<div class="section"><table><tbody>${[['Client',m.client_name],['Subject',m.subject||m.meeting_title],['Present',arr(m.attendees).join(', ')]].map(([k,v])=>`<tr><th style="width:22%">${k}</th><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8">${esc(v||'Not recorded')}</td></tr>`).join('')}</tbody></table></div>`:''}${xsum.length?`<div class="section"><div class="section-label">Executive Summary</div>${xsum.map(x=>`<p style="font-size:13px;line-height:1.75;margin:0 0 9px">${esc(x)}</p>`).join('')}</div>`:(m.summary?`<div class="section"><div class="section-label">Executive Summary</div><div style="background:#F8F6F0;border-left:3px solid #B8912A;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.7">${esc(m.summary)}</div></div>`:'')}${arr(m.attendees).length?`<div class="section"><div class="section-label">Attendees (${arr(m.attendees).length})</div><div>${arr(m.attendees).map(a=>`<span class="chip">${esc(a)}</span>`).join('')}</div></div>`:''}${arr(m.agenda).length?`<div class="section"><div class="section-label">Agenda</div>${arr(m.agenda).map((a,i)=>`<div style="padding:4px 0;font-size:12px"><span style="font-family:monospace;color:#B8912A;margin-right:8px">${String(i+1).padStart(2,'0')}.</span>${esc(a)}</div>`).join('')}</div>`:''}${discussionRows?`<div class="section"><div class="section-label">${ADV?'3. Points Discussed':'Discussion Points'}</div>${discussionRows}</div>`:''}${arr(m.decisions).length?`<div class="section"><div class="section-label">${ADV?'4. Agreed Directions / Working Conclusions':'Decisions'}</div>${arr(m.decisions).map(d=>`<div style="display:flex;gap:8px;padding:5px 0;font-size:12px"><span style="color:#4A7C59;flex-shrink:0">✓</span><span>${esc(d)}</span></div>`).join('')}</div>`:''}${arr(m.action_items).length?`<div class="section"><div class="section-label">${ADV?'1. Action Plan':'Action Items'}</div><table><thead><tr><th>Task</th><th>${ADV?'Responsibility':'Owner'}</th><th>${ADV?'Timeline / Status':'Due Date'}</th><th>Priority</th></tr></thead><tbody>${actionRows}</tbody></table></div>`:''}${trk.length?`<div class="section"><div class="section-label">2. Information and Pending Tracker</div><table><thead><tr><th>Area</th><th>Requirement / Deliverable</th><th>Responsible</th><th>Status</th></tr></thead><tbody>${trk.map(r=>`<tr><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8">${esc(r.area||'')}</td><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8">${esc(r.requirement||'')}</td><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8">${esc(r.responsible||'')}</td><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8">${esc(r.status||'')}</td></tr>`).join('')}</tbody></table></div>`:''}${agd.length?`<div class="section"><div class="section-label">5. Proposed Agenda for Next Meeting</div>${agd.map((a,i)=>`<div style="padding:4px 0;font-size:12px"><span style="font-family:monospace;color:#B8912A;margin-right:8px">${String(i+1).padStart(2,'0')}.</span>${esc(a)}</div>`).join('')}</div>`:''}${m.next_meeting?`<div class="section"><div class="section-label">Next Conversation</div><div style="font-size:12px">${esc(m.next_meeting)}</div></div>`:''}<div class="footer"><span>AiX Track · AI-generated · Verify with organiser</span><span>${refId}</span></div></body></html>`);
   printWin.document.close();
   setTimeout(() => { printWin.focus(); printWin.print(); }, 600);
 }
@@ -3462,6 +3490,7 @@ function resetTool(){
   document.getElementById("lang-detected-chip").style.display = "none";
   document.getElementById("language-select").value = "auto";
   document.getElementById("category-select").value = "";
+  var _ps = document.getElementById("project-select"); if (_ps) _ps.value = "";
   renderTags(); setStep(1); setPhase("phase-upload");
 
   // Reset tracker
@@ -3798,7 +3827,98 @@ var _phaseObs = new MutationObserver(function(muts) {
 document.addEventListener('DOMContentLoaded', function() {
   var pd = document.getElementById('phase-done');
   if (pd) _phaseObs.observe(pd, {attributes:true, attributeFilter:['class']});
+  loadProjects();
+  loadTemplateChoice();
 });
+
+/* ─── MOC format ────────────────────────────────────────────────────────────
+   Standard is the flat meeting record. Advisory produces client minutes: a
+   themed executive summary, an action plan with plain-language timelines, a
+   pending tracker, themed discussion, working conclusions and a next agenda.
+   The last choice is remembered, and the profile default is used on a fresh
+   browser.                                                                   */
+var TEMPLATE_MEMORY_KEY = 'aix_last_template';
+var TEMPLATE_HINTS = {
+  standard: 'Attendees, agenda, discussion, decisions and action items.',
+  advisory: 'Adds executive summary, pending tracker and next agenda. Uses your letterhead from Profile.'
+};
+
+function onTemplateChange() {
+  var sel = document.getElementById('template-select');
+  if (!sel) return;
+  var hint = document.getElementById('template-hint');
+  if (hint) hint.textContent = TEMPLATE_HINTS[sel.value] || '';
+  try { localStorage.setItem(TEMPLATE_MEMORY_KEY, sel.value); } catch (e) {}
+}
+
+async function loadTemplateChoice() {
+  var sel = document.getElementById('template-select');
+  if (!sel) return;
+  var remembered = null;
+  try { remembered = localStorage.getItem(TEMPLATE_MEMORY_KEY); } catch (e) {}
+  if (remembered) sel.value = remembered;
+  else {
+    try {
+      var d = await fetch('/api/user/settings', { credentials: 'same-origin' }).then(function (r) { return r.json(); });
+      if (d && d.default_moc_template) sel.value = d.default_moc_template;
+    } catch (e) { /* the standard format still works */ }
+  }
+  onTemplateChange();
+}
+
+/* ─── Projects ──────────────────────────────────────────────────────────────
+   A project keeps recurring conversations together — a daily stand-up, one
+   client, one engagement. Picking one here files the MOC as soon as it is made.
+   The last project used is remembered, because the common case is the same
+   project several days running.                                              */
+var PROJECT_MEMORY_KEY = 'aix_last_project';
+
+async function loadProjects(keepValue) {
+  var sel = document.getElementById('project-select');
+  if (!sel) return;
+  var wanted = keepValue || sel.value || localStorage.getItem(PROJECT_MEMORY_KEY) || '';
+  try {
+    var d = await fetch('/api/projects', { credentials: 'same-origin' }).then(function(r){ return r.json(); });
+    var opts = ['<option value="">— No project —</option>'];
+    (d.projects || []).forEach(function(p){
+      var count = p.session_count ? ' (' + p.session_count + ')' : '';
+      opts.push('<option value="' + p.id + '">' + esc(p.name) + count + '</option>');
+    });
+    sel.innerHTML = opts.join('');
+    // The remembered project may have been deleted since
+    sel.value = wanted;
+    if (sel.value !== wanted) sel.value = '';
+  } catch (e) { /* the upload still works without the list */ }
+
+  sel.onchange = function(){
+    try { localStorage.setItem(PROJECT_MEMORY_KEY, sel.value); } catch (e) {}
+  };
+}
+
+async function createProjectInline() {
+  var name = prompt('Name this project\n\nFor example: Daily Morning Meeting, ABC Ltd — Audit, Board');
+  if (name === null) return;
+  name = name.trim();
+  if (!name) return;
+
+  var btn = document.getElementById('new-project-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    var r = await fetch('/api/projects', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name })
+    });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Could not create the project.');
+    await loadProjects(String(d.project.id));
+    try { localStorage.setItem(PROJECT_MEMORY_KEY, String(d.project.id)); } catch (e) {}
+    showToast('Project created', '"' + d.project.name + '" — this conversation will be filed there.', 'success', 4000);
+  } catch (e) {
+    showToast('Could not create the project', e.message, 'error', 5000);
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '+ New'; }
+}
 
 /* ─── PATCH resetTool to reset MP panel ─── */
 var _origResetTool = resetTool;
@@ -3927,6 +4047,7 @@ window.addEventListener('beforeunload', function(e) {
           mimeType: mt, duration_seconds: recordedSeconds,
           language: (document.getElementById('language-select') ? document.getElementById('language-select').value : 'auto'),
           category: (document.getElementById('category-select') ? document.getElementById('category-select').value : ''),
+          project_id: (document.getElementById('project-select') ? document.getElementById('project-select').value : ''),
           tags: (typeof currentTags !== 'undefined' ? currentTags.join(',') : ''),
           recordedAt: new Date().toISOString(), fromBeforeUnload: true
         }).catch(function(){});
@@ -4027,6 +4148,7 @@ window.addEventListener('pagehide', function(e) {
     var meta = {
       language:         (document.getElementById('language-select') ? document.getElementById('language-select').value : 'auto'),
       category:         (document.getElementById('category-select') ? document.getElementById('category-select').value : ''),
+      project_id:       (document.getElementById('project-select') ? document.getElementById('project-select').value : ''),
       tags:             currentTags.join(','),
       duration_seconds: recordedSeconds,
       mimeType:         blobType,
@@ -4129,6 +4251,8 @@ function recoverSavedRecording() {
       document.getElementById('language-select').value = meta.language;
     if (meta.category && document.getElementById('category-select'))
       document.getElementById('category-select').value = meta.category;
+    if (meta.project_id && document.getElementById('project-select'))
+      document.getElementById('project-select').value = meta.project_id;
 
     // Hide banner
     if (banner) banner.classList.remove('visible');
@@ -4185,12 +4309,20 @@ document.addEventListener('keydown', function(e) {
 <nav class="bottom-nav">
   <a href="/" class="active"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>New MOC</a>
   <a href="/history"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Records</a>
+  <a href="/projects"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Projects</a>
   <a href="/actions"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Actions</a>
   <a href="/logging"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Usage</a>
   <a href="/profile.html"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</a>
 </nav>
 <!-- ══ FINAL UI POLISH — loaded last so it wins over earlier layered rules ══ -->
 <style>
+/* Consent is now a quiet notice, not a control — no checkbox to miss, and it
+   must not read as something still waiting to be actioned. */
+.consent-note{align-items:center;background:transparent!important;border-style:dashed!important;
+  border-color:var(--border)!important;font-size:12px;line-height:1.55;color:var(--ink3);cursor:default}
+.consent-note span{color:var(--ink3)}
+[data-theme="dark"] .consent-note{background:transparent!important}
+
 /* Balance-left line under the timer (shown in the last 10 minutes of balance) */
 .rec-limit-row.show{display:flex!important;justify-content:center;margin:-4px 0 10px}
 .rec-limit-row .rec-remaining{font-family:var(--mono);font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--gold-tint);color:var(--gold)}

@@ -1,0 +1,309 @@
+<title>AiX Track Flows</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column, tab switch between User flow and Technical flow, numbered stages only where order is real */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --fg:#17202b; --muted:#566273; --line:#dde2e9;
+  --accent:#1f5fbf; --accent-soft:#e6eefa; --ok:#1d7a4f; --warn:#a15c00;
+  --display:"Fraunces",Georgia,serif; --body:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#11161d;--surface:#18202a;--fg:#e4e9f0;--muted:#9aa6b6;--line:#2a3442;--accent:#7fb0ff;--accent-soft:#1d2b40;--ok:#5fcf98;--warn:#f0b35a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#11161d;--surface:#18202a;--fg:#e4e9f0;--muted:#9aa6b6;--line:#2a3442;--accent:#7fb0ff;--accent-soft:#1d2b40;--ok:#5fcf98;--warn:#f0b35a;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:15px/1.6 var(--body)}
+.wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:32px 64px}
+h1,h2{font-family:var(--display);font-weight:600;text-wrap:balance;line-height:1.2}
+h1{font-size:2.1rem;margin:0 0 6px}
+h2{font-size:1.45rem;margin:40px 0 8px}
+h3{font-size:1rem;margin:24px 0 6px}
+p,li{max-width:68ch}
+.lede{color:var(--muted);margin:0 0 20px}
+code{font-family:var(--mono);font-size:.86em;background:var(--accent-soft);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:20px 0 8px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding-block:8px;z-index:2}
+.tabs a{text-decoration:none;font:600 14px var(--body);color:var(--muted);background:none;border:1px solid transparent;border-radius:6px;padding:8px 14px;cursor:pointer}
+.tabs a:hover{color:var(--accent);background:var(--accent-soft);border-color:var(--line)}
+.tabs a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;overflow-x:auto;margin:12px 0}
+.diagram pre{margin:0;background:none}
+table{border-collapse:collapse;width:100%;font-size:14px}
+.tbl{overflow-x:auto;margin:12px 0}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums}
+ol.steps{padding-left:22px}
+ol.steps li{margin:6px 0}
+.note{border-left:3px solid var(--warn);padding:8px 14px;background:var(--surface);color:var(--fg);margin:16px 0}
+.pill{display:inline-block;font:500 12px var(--mono);padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">AiX Track · MOC Generator</div>
+  <h1>AiX Track Flows</h1>
+  <p class="lede">How a meeting recording becomes Minutes of Conversation (MOC). The <b>User flow</b> describes the journey a customer and an admin take through the screens. The <b>Technical flow</b> describes what the server does at each step, based on <code>server.js</code> and <code>drive.js</code> as of 15 Oct 2026.</p>
+
+  <nav class="tabs"><a href="#user">User flow</a><a href="#tech">Technical flow</a></nav>
+
+  <!-- ═════════════ USER FLOW ═════════════ -->
+  <section id="user"><div class="eyebrow">Part A</div><h1 style="font-size:1.7rem;margin-top:24px">User flow</h1>
+    <h2>1. Customer journey at a glance</h2>
+    <div class="diagram"><pre class="mermaid">
+flowchart TD
+  A([Open AiX Track]) --> B{Signed in?}
+  B -- No --> L[Login page<br/>Google or email code]
+  L --> F{New user?}
+  F -- Yes --> FT[60 free minutes added]
+  F -- No --> H
+  FT --> H
+  B -- Yes --> H[Home screen]
+  H --> C{Capture method}
+  C -- Upload file --> U[Choose audio or video file]
+  C -- Record live --> R[Allow microphone and start recording]
+  U --> O[Set options<br/>language, speaker labels,<br/>project, category, tags,<br/>extra instructions]
+  R --> O
+  O --> K[Give consent to process]
+  K --> P{Enough free minutes<br/>or credits?}
+  P -- No --> BUY[Pricing page<br/>buy a credit pack] --> P
+  P -- Yes --> W[Progress screen<br/>upload, transcribe, write MOC]
+  W --> M[MOC draft shown]
+  M --> RV[Review and edit]
+  RV --> S{Next step}
+  S --> S1[Share read-only link]
+  S --> S2[Email the MOC]
+  S --> S3[Export Word file]
+  S --> S4[Email action items to owners]
+  S --> S5[Assign to a project]
+  S --> S6[Regenerate or re-run speaker labels]
+  M --> HI[Saved in History]
+    </pre></div>
+
+    <h2>2. Step-by-step for a customer</h2>
+    <ol class="steps">
+      <li><b>Sign in.</b> Use Google sign-in, or enter an email to receive a 6-digit code. A new account gets 60 free minutes. Sessions last 30 days. A referral link (<code>/r/&lt;code&gt;</code>) records who invited the user.</li>
+      <li><b>Capture the meeting.</b> Upload an audio or video file (large files go up in parts, so long meetings work), or record live in the browser. A live recording is saved in pieces, so a dropped connection does not lose the whole meeting.</li>
+      <li><b>Set options.</b> Language (or auto-detect), speaker labels (who said what), project, category, tags, and optional instructions for this meeting only.</li>
+      <li><b>Give consent.</b> The user confirms they may process the recording. Nothing is processed without it.</li>
+      <li><b>Check balance.</b> The screen shows the minutes available. Free minutes are used first, then credits. Speaker labels use credits at twice the standard rate. If the balance is short, the user is sent to buy credits before anything is charged.</li>
+      <li><b>Wait for processing.</b> The progress screen moves through upload, audio preparation, transcription and MOC writing.</li>
+      <li><b>Review the MOC.</b> The MOC shows the summary, discussion points, decisions, action items with owners and due dates, and the next meeting. It is a draft. The user checks and edits it before sharing.</li>
+      <li><b>Act on it.</b> Share a read-only link, email the MOC, export to Word, email each action item to its owner, mark actions done, or regenerate the MOC.</li>
+      <li><b>Come back later.</b> History lists every MOC with search and tags. Actions lists open action items across all meetings. Projects groups meetings by client or engagement.</li>
+    </ol>
+
+    <h2>3. Screens and what users do there</h2>
+    <div class="tbl"><table>
+      <tr><th>Screen</th><th>Who</th><th>Purpose</th></tr>
+      <tr><td>Login</td><td>Everyone</td><td>Google sign-in or email code</td></tr>
+      <tr><td>Home</td><td>Customer</td><td>Upload or record, set options, view the new MOC</td></tr>
+      <tr><td>History</td><td>Customer</td><td>Search, edit, tag, share, export and delete past MOCs</td></tr>
+      <tr><td>Actions</td><td>Customer</td><td>Track action items across meetings, mark done, email owners</td></tr>
+      <tr><td>Projects</td><td>Customer</td><td>Create projects and group meetings under them</td></tr>
+      <tr><td>Profile</td><td>Customer</td><td>Name, default instructions, Google Drive storage, referral link, delete account</td></tr>
+      <tr><td>Pricing / Credits</td><td>Customer</td><td>Buy credit packs, see balance and order history</td></tr>
+      <tr><td>Shared MOC</td><td>Anyone with link</td><td>Read-only MOC, no login needed</td></tr>
+      <tr><td>Admin pages</td><td>Admin</td><td>Users and credits, usage and cost, master prompt versions, provider balances, logs</td></tr>
+    </table></div>
+
+    <h2>4. Optional: keep recordings in Google Drive</h2>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+  A[Profile page] --> B[Connect Google Drive]
+  B --> C[Google consent screen]
+  C -- Allowed --> D[AiX Track folder created<br/>in the user's Drive]
+  C -- Denied --> E[Recordings stay with AiX Track]
+  D --> F[New and pending recordings<br/>moved to Drive after the MOC is saved]
+  F --> G[Playback and re-run<br/>read the file from Drive]
+  D --> H[Disconnect any time]
+    </pre></div>
+    <p>Connecting Drive is a separate consent from signing in. It only changes where the recording file is kept. The MOC text stays in AiX Track.</p>
+
+    <h2>5. Admin journey</h2>
+    <div class="diagram"><pre class="mermaid">
+flowchart TD
+  A[Admin signs in] --> B[Users page]
+  B --> B1[Change role]
+  B --> B2[Add or adjust credits]
+  A --> C[Usage and cost pages]
+  C --> C1[Cost per user and per session]
+  C --> C2[Provider balances and top-ups]
+  C --> C3[Send usage email]
+  A --> D[Prompts page]
+  D --> D1[Save a new master prompt version]
+  D --> D2[Activate a version]
+  D --> D3[Read the prompt log for any MOC]
+  A --> E[Orders, storage and logs]
+    </pre></div>
+  </section>
+
+  <!-- ═════════════ TECHNICAL FLOW ═════════════ -->
+  <section id="tech"><div class="eyebrow" style="margin-top:56px">Part B</div><h1 style="font-size:1.7rem">Technical flow</h1>
+    <h2>1. System architecture</h2>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+  subgraph Browser
+    UI[Static pages in public/<br/>index, history, actions,<br/>projects, profile, admin]
+  end
+  subgraph VPS[Linux VPS]
+    NG[Nginx · HTTPS<br/>2 GB uploads, long timeouts] --> APP[Node.js · Express 5<br/>server.js under pm2]
+    APP --> FF[FFmpeg<br/>bundled via npm]
+    APP --> DISK[(uploads/<br/>chunks, media, WAV)]
+  end
+  UI <--> NG
+  APP <--> PG[(PostgreSQL · Neon)]
+  APP --> STT[Sarvam AI<br/>speech-to-text, diarization]
+  APP --> LLM1[Anthropic Claude<br/>primary MOC writer]
+  APP --> LLM2[OpenAI GPT-4o<br/>meeting brief or fallback]
+  APP --> GD[Google Drive API<br/>optional file storage]
+  APP --> RZ[Razorpay<br/>orders and webhook]
+  APP --> SMTP[SMTP via Nodemailer<br/>OTP, MOC, actions, alerts]
+  APP --> GO[Google OAuth<br/>sign-in]
+    </pre></div>
+    <p class="note">Provider names appear only in this technical document and on admin pages. Customer screens say "Primary AI", "Secondary AI" or "AI engine".</p>
+
+    <h2>2. Upload to MOC: request sequence</h2>
+    <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant B as Browser
+  participant S as server.js
+  participant DB as PostgreSQL
+  participant F as FFmpeg
+  participant ST as Speech-to-text
+  participant AI as MOC AI
+  B->>S: POST /api/upload/chunk (10 MB parts, .owner file per upload)
+  B->>S: POST /api/upload/complete
+  S->>S: Check owner matches session, record consent
+  S->>S: Join parts into one file, save copy in uploads/media
+  S->>F: Extract audio, 16 kHz mono WAV, trim silence
+  F-->>S: WAV + duration (refuse above MAX_AUDIO_HOURS)
+  S->>DB: Credit preflight (free minutes, then credits)
+  alt Not enough
+    S-->>B: 402-style error, ask to buy credits
+  else OK
+    S->>ST: Transcribe (diarized job, batch job, or 29 s chunks x3)
+    ST-->>S: Transcript + language (+ speaker segments)
+    S->>DB: Read recent meetings and open actions for context
+    S->>AI: Master prompt + user instructions + transcript
+    AI-->>S: MOC as JSON
+    S->>DB: INSERT mom_sessions, moc_prompt_log
+    S->>DB: Deduct credits, write credits_log, api_usage_log
+    S-->>B: MOC JSON
+    S-)S: Offload file to Google Drive if connected
+  end
+    </pre></div>
+    <p>Live recordings follow the same pipeline after <code>/api/recordings/start</code>, ordered <code>/api/recordings/:id/chunk</code> calls and <code>/api/recordings/:id/status</code>. The single-request route <code>/api/transcribe</code> does the same work for small files and also accepts an optional context image.</p>
+
+    <h2>3. Transcription decision</h2>
+    <div class="diagram"><pre class="mermaid">
+flowchart TD
+  A[16 kHz mono WAV] --> B{Speaker labels on?}
+  B -- Yes --> C[Sarvam batch job<br/>with_diarization = true<br/>key: SARVAM_DIARIZATION_KEY]
+  C -- Success --> OUT
+  C -- Failure --> D[Log warning, alert if 402<br/>bill at standard rate]
+  B -- No --> E{BATCH_TRANSCRIPTION = on<br/>and length ≥ MIN_SEC?}
+  D --> E
+  E -- Yes --> G[Sarvam batch job<br/>diarization off]
+  G -- Success --> OUT
+  G -- Failure --> H
+  E -- No --> H[Split into 29 s chunks<br/>3 calls in parallel<br/>retry on 429, up to 4 tries]
+  H --> I[Join text in order<br/>majority language across chunks]
+  I --> OUT[Transcript + detected language<br/>+ diarized segments if any]
+    </pre></div>
+
+    <h2>4. MOC writing (AI step)</h2>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+  T[Transcript<br/>+ language hint<br/>+ diarization note<br/>+ earlier meetings context<br/>+ user and session instructions] --> Q{Keys configured}
+  Q -- Claude + OpenAI --> A1[GPT-4o writes a<br/>short meeting brief] --> A2[Claude writes MOC<br/>master prompt + brief]
+  Q -- Claude only, or brief failed --> A3[Claude writes MOC]
+  Q -- OpenAI only --> A4[GPT-4o writes MOC]
+  A2 --> O[Parse JSON<br/>save mom_sessions<br/>log full prompt to moc_prompt_log]
+  A3 --> O
+  A4 --> O
+    </pre></div>
+    <ul>
+      <li>Master prompt versions live in <code>master_prompts</code>; one is active. Default text is <code>prompts/master-moc-prompt.md</code>.</li>
+      <li>User and session instructions are added to the master prompt. They do not replace it.</li>
+      <li>The prompt tells the model to treat meeting content as data, not to invent owners, dates or decisions, and to mask secrets.</li>
+      <li>If the AI step fails after transcription, the transcript is saved as a draft so the paid transcription is not lost.</li>
+    </ul>
+
+    <h2>5. Credits and payments</h2>
+    <div class="diagram"><pre class="mermaid">
+flowchart TD
+  A[Audio minutes after silence trim] --> B{Role admin or developer?}
+  B -- Yes --> Z[No charge]
+  B -- No --> C[Use free minutes first<br/>diarization uses them 2x]
+  C --> D{Minutes left to charge?}
+  D -- No --> Z2[Free]
+  D -- Yes --> E[Credits = minutes rounded up<br/>x CREDITS_PER_MIN_STANDARD 1<br/>or CREDITS_PER_MIN_DIARIZATION 2]
+  E --> F{Balance enough?}
+  F -- No --> X[Stop before any paid API call]
+  F -- Yes --> G[Process, then deduct<br/>credits_log + mom_sessions.credits_deducted]
+  P1[Buy pack] --> P2[POST /api/credits/create-order<br/>Razorpay order]
+  P2 --> P3[Customer pays in Razorpay checkout]
+  P3 --> P4[POST /api/credits/verify-payment<br/>or /api/razorpay/webhook]
+  P4 --> P5[Event id stored once<br/>razorpay_webhook_events]
+  P5 --> P6[Credits added + credits_log]
+    </pre></div>
+
+    <h2>6. Recording file lifecycle</h2>
+    <div class="diagram"><pre class="mermaid">
+stateDiagram-v2
+  [*] --> Chunks: upload parts in uploads/chunks/id
+  Chunks --> Assembled: /api/upload/complete
+  Assembled --> LocalMedia: copy kept in uploads/media
+  Assembled --> WAV: FFmpeg working files
+  WAV --> [*]: deleted in finally block
+  LocalMedia --> Drive: offloadToDrive() if user connected
+  Drive --> Drive: playback and re-diarize stream from Drive
+  LocalMedia --> Deleted: user deletes MOC
+  Drive --> Deleted: drive.deleteFile()
+  Deleted --> [*]
+    </pre></div>
+    <p>After a successful Drive upload, <code>mom_sessions</code> stores <code>drive_file_id</code>, sets <code>storage_provider = 'drive'</code>, clears <code>file_path</code>, and only then deletes the local copy. A sweep retries pending uploads when a user connects Drive.</p>
+
+    <h2>7. Main data tables</h2>
+    <div class="tbl"><table>
+      <tr><th>Table</th><th>Written when</th><th>Key contents</th></tr>
+      <tr><td>users</td><td>Sign-in, settings, Drive connect</td><td>Role, credits, free minutes used, instructions, Drive token and folder</td></tr>
+      <tr><td>mom_sessions</td><td>Each MOC</td><td>Transcript, MOC fields, speakers, tags, project, share token, file location, credits charged</td></tr>
+      <tr><td>recording_uploads</td><td>Live recording</td><td>Recording state and parts</td></tr>
+      <tr><td>credits_log</td><td>Every credit change</td><td>Amount, reason, balance after</td></tr>
+      <tr><td>credit_orders</td><td>Pack purchase</td><td>Razorpay order and status</td></tr>
+      <tr><td>razorpay_webhook_events</td><td>Webhook received</td><td>Processed event ids (no double credit)</td></tr>
+      <tr><td>api_usage_log</td><td>Every paid API call</td><td>Service, units, cost in USD</td></tr>
+      <tr><td>master_prompts / moc_prompt_log</td><td>Prompt edit / each MOC</td><td>Prompt versions; exact prompt, brief, models and errors per MOC</td></tr>
+      <tr><td>consent_log</td><td>Before processing or recording</td><td>Who consented, to what, when</td></tr>
+      <tr><td>auth_otps / user_sessions</td><td>Login</td><td>Short-lived codes; 30-day sessions</td></tr>
+    </table></div>
+
+    <h2>8. Route map</h2>
+    <div class="tbl"><table>
+      <tr><th>Area</th><th>Routes</th></tr>
+      <tr><td>Login</td><td><code>/auth/google</code>, <code>/auth/otp/request</code>, <code>/auth/otp/verify</code>, <code>/auth/logout</code>, <code>/api/me</code></td></tr>
+      <tr><td>Capture</td><td><code>/api/upload/chunk</code>, <code>/api/upload/complete</code>, <code>/api/transcribe</code>, <code>/api/recordings/*</code></td></tr>
+      <tr><td>MOC</td><td><code>/api/history</code>, <code>/api/history/:id</code> (GET, PATCH, DELETE), <code>/regenerate</code>, <code>/rediarize</code>, <code>/tags</code>, <code>/file</code></td></tr>
+      <tr><td>Actions</td><td><code>/api/history/:id/action/:idx</code>, <code>…/email</code>, <code>…/send</code></td></tr>
+      <tr><td>Projects</td><td><code>/api/projects</code> (GET, POST), <code>/api/projects/:id</code> (PATCH, DELETE), <code>/assign</code>, <code>/api/history/:id/project</code></td></tr>
+      <tr><td>Share and export</td><td><code>/api/history/:id/share</code>, <code>/api/share/:token</code>, <code>/send-email</code>, <code>/draft-email</code>, <code>/export/docx</code></td></tr>
+      <tr><td>Drive</td><td><code>/auth/drive</code>, <code>/auth/drive/callback</code>, <code>/api/drive/status</code>, <code>/enabled</code>, <code>/sync</code>, <code>/disconnect</code></td></tr>
+      <tr><td>Credits</td><td><code>/api/credits/balance</code>, <code>/create-order</code>, <code>/verify-payment</code>, <code>/my-orders</code>, <code>/api/razorpay/webhook</code></td></tr>
+      <tr><td>Admin</td><td><code>/api/admin/users</code>, <code>/usage</code>, <code>/cost-intelligence</code>, <code>/master-prompt</code>, <code>/prompt-log</code>, <code>/provider-balances</code>, <code>/orders</code>, <code>/storage</code></td></tr>
+      <tr><td>Health</td><td><code>/health</code></td></tr>
+    </table></div>
+
+    <h2>9. Controls along the flow</h2>
+    <div class="tbl"><table>
+      <tr><th>Stage</th><th>Control</th><th>Evidence</th></tr>
+      <tr><td>Login</td><td>OTP rate limit; Google OAuth; Drive OAuth state check</td><td><code>auth_otps</code>, server logs</td></tr>
+      <tr><td>Upload</td><td>Upload tied to session owner; part count capped at 1,000</td><td><code>.owner</code> file, 403 on mismatch</td></tr>
+      <tr><td>Consent</td><td>Processing blocked without consent</td><td><code>consent_log</code></td></tr>
+      <tr><td>Billing</td><td>Credit check before paid calls; webhook idempotency</td><td><code>credits_log</code>, <code>razorpay_webhook_events</code></td></tr>
+      <tr><td>AI output</td><td>Versioned master prompt; MOC saved as draft for human review</td><td><code>master_prompts</code>, <code>moc_prompt_log</code></td></tr>
+      <tr><td>Cost</td><td>Per-call cost logging; low provider balance alerts</td><td><code>api_usage_log</code>, <code>provider_balances</code></td></tr>
+      <tr><td>Access</td><td>Role checked on the server for admin routes</td><td><code>requireAdmin</code></td></tr>
+    </table></div>
+    <p class="note">Known gaps: no automated tests yet, most logic sits in one large <code>server.js</code>, and local disk use needs monitoring until files move to Drive or object storage.</p>
+  </section>
+</div>
+

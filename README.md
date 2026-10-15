@@ -4,6 +4,13 @@ AiX Track turns a meeting recording into structured **Minutes of Conversation (M
 
 This document explains how the application works, step by step, for anyone reviewing or maintaining the code.
 
+## User flow and technical flow
+
+The full **User flow** (customer and admin journeys) and **Technical flow** (architecture, request sequence, transcription, AI step, credits, file lifecycle, data tables, routes and controls) are documented with diagrams here:
+
+- In this repository: [`docs/aix-track-flows.html`](docs/aix-track-flows.html) (download the file and open it in a browser)
+- Online: [AiX Track Flows](https://claude.ai/artifact/BaSVEkJsEWsxWHj5Nh3jyd)
+
 ---
 
 ## 1. At a glance

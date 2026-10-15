@@ -14,7 +14,7 @@ Write-Host 'Enter the server root password when asked (typing is hidden).' -Fore
 Write-Host ''
 
 # cmd /c keeps the tar → ssh pipe binary-safe (Windows PowerShell would corrupt it)
-cmd /c "tar --exclude=node_modules --exclude=uploads --exclude=.env --exclude=.env.* --exclude=.git --exclude=deploy-test.ps1 -czf - . | ssh -o StrictHostKeyChecking=accept-new $server `"$remote`""
+cmd /c "tar --exclude=node_modules --exclude=uploads --exclude=.env --exclude=.env.* --exclude=.git --exclude=deploy-test.ps1 --exclude=setup-test-drive-env.ps1 -czf - . | ssh -o StrictHostKeyChecking=accept-new $server `"$remote`""
 
 if ($LASTEXITCODE -eq 0) {
   Write-Host ''
