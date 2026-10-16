@@ -1773,7 +1773,8 @@ tbody tr:hover{background:var(--gold-tint);}
           <button class="btn-nav" id="modal-rediarize-btn" onclick="openRegenDialog('speakers')" title="Re-read the recording to identify who said what, then rebuild the MOC" style="display:none">🗣 Regenerate with Speakers</button>
           <button class="btn-nav" id="modal-share-btn" onclick="shareLink()" title="Copy shareable read-only link">🔗 Share</button>
           <button class="btn-nav" id="modal-followup-btn" onclick="openFollowupDraft()" title="AI-draft follow-up email for attendees">✉️ Follow-up</button>
-          <button class="btn-nav" onclick="downloadDOCX()" title="Download as Word document">📝 Word</button>
+          <button class="btn-nav" id="docx-internal-btn" onclick="downloadDOCX('internal')" title="Detailed MOC for internal reference — includes options raised, key figures and transcript evidence">📝 Word (Detailed MOC)</button>
+          <button class="btn-nav" id="docx-client-btn" onclick="downloadDOCX('client')" title="Professional MOM for client circulation — confirmed decisions and agreed actions only">📝 Word (Client MOM)</button>
           <button class="btn-nav" id="modal-email-btn" onclick="modalSendEmail()" title="Email this MOC to yourself">📧 Email</button>
           <button class="btn-nav" id="modal-email-other-btn" onclick="openEmailOthers()" title="Email this MOC to other people">➕ Send to…</button>
           <button class="btn-nav" onclick="modalDownloadTXT()">📄 TXT</button>
@@ -2582,12 +2583,23 @@ async function openModal(id){
       ? nagd.map((a,i)=>`<div class="mom-item"><span class="mom-item-dot" style="font-family:var(--mono);font-size:11px;min-width:24px">${String(i+1).padStart(2,"0")}</span>${esc(a)}</div>`).join("")
       : "";
 
+    // Evidence-checked extras: matters raised but not approved, figures, and the quality-gate notes
+    const mq = (m.moc_quality && typeof m.moc_quality === 'object') ? m.moc_quality : {};
+    const mtrs = Array.isArray(mq.matters_discussed) ? mq.matters_discussed : [];
+    const qWarn = Array.isArray(mq.report?.warnings) ? mq.report.warnings : [];
+    const mtrsHTML = mtrs.map(x=>`<div class="mom-item"><span class="mom-item-dot">•</span><span>${esc(x.item||"")}${x.views?` <span style="color:var(--ink3)">— Views: ${esc(x.views)}</span>`:""}${x.status?` <span class="file-avail-pill">${esc(x.status)}</span>`:""}</span></div>`).join("");
+    const qHTML = qWarn.length ? `<div style="background:var(--gold-tint);border:1px solid var(--gold);border-radius:8px;padding:10px 14px;font-size:12.5px;line-height:1.6;color:var(--ink2)"><b>Review before client circulation</b>${qWarn.map(w=>`<div>• ${esc(w)}</div>`).join("")}</div>` : "";
+    const decHTML = dec.map(d=>{ const pending=/^\[(Requires confirmation|Contested|Conditional|Pending[^\]]*)\]/i.test(String(d));
+      return `<div class="decision-item"><span style="color:${pending?'var(--rust)':'var(--sage)'};font-weight:700">${pending?'?':'✓'}</span><span>${esc(d)}</span></div>`; }).join("");
+
     document.getElementById("modal-body").innerHTML=`
+      ${qHTML?sec("Quality Check", qHTML):""}
       ${execHTML?sec("Executive Summary", execHTML):""}
       ${sec("Attendees", att.length?att.map(a=>`<div class="mom-item"><span class="mom-item-dot">•</span>${esc(a)}</div>`).join(""):none())}
       ${sec("Agenda", ag.length?ag.map((a,i)=>`<div class="mom-item"><span class="mom-item-dot" style="font-family:var(--mono);font-size:11px;min-width:24px">${String(i+1).padStart(2,"0")}</span>${esc(a)}</div>`).join(""):none())}
       ${sec("Key Discussions", dp.length?dp.map(d=>`<div class="disc-item"><div class="disc-topic">${esc(d.topic||"")}</div><div class="disc-details">${esc(d.details||"")}</div></div>`).join(""):none())}
-      ${sec("Decisions Taken", dec.length?dec.map(d=>`<div class="decision-item"><span style="color:var(--sage);font-weight:700">✓</span><span>${esc(d)}</span></div>`).join(""):none())}
+      ${sec("Decisions", dec.length?decHTML:none())}
+      ${mtrsHTML?sec("Matters Discussed / For Future Consideration", mtrsHTML):""}
       ${sec("Action Items", ai.length ? renderModalActions(ai, m.id, parse(m.action_items_done), parseDone(m.action_items_emails)) : none())}
       ${trkHTML?sec("Information &amp; Pending Tracker", trkHTML):""}
       ${agdHTML?sec("Proposed Agenda for Next Meeting", agdHTML):""}
@@ -4319,13 +4331,14 @@ async function regenerateFollowup(){
 //  F03 — WORD (.docx) DOWNLOAD
 // ════════════════════════════════════════════════════════
 
-async function downloadDOCX(){
+async function downloadDOCX(view){
   const m = currentModalData; if(!m) return;
-  const btn = document.querySelector('[onclick="downloadDOCX()"]');
+  const client = view === 'client';
+  const btn = document.getElementById(client ? 'docx-client-btn' : 'docx-internal-btn');
   const orig = btn?.innerHTML;
   if(btn){ btn.disabled=true; btn.innerHTML='⏳'; }
   try{
-    const r = await fetch(`/api/history/${m.id}/export/docx`,{credentials:'same-origin'});
+    const r = await fetch(`/api/history/${m.id}/export/docx${client ? '?view=client' : ''}`,{credentials:'same-origin'});
     if(!r.ok){
       const d = await r.json().catch(()=>({}));
       throw new Error(d.error||`HTTP ${r.status}`);
@@ -4336,10 +4349,10 @@ async function downloadDOCX(){
     const year = new Date(m.created_at||Date.now()).getFullYear();
     const ref  = `MOC-${year}-${String(m.id).padStart(4,'0')}`;
     a.href     = url;
-    a.download = `MOC_${ref}.docx`;
+    a.download = client ? `MOM_${ref}.docx` : `MOC_Detailed_${ref}.docx`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast('Word document downloaded!','success');
+    showToast(client ? 'Client MOM downloaded!' : 'Detailed MOC downloaded!','success');
   }catch(err){
     showToast('Word export: '+err.message,'error');
   }finally{

@@ -23,6 +23,7 @@
   const GoogleStrategy = require('passport-google-oauth20').Strategy;
   const nodemailer     = require('nodemailer');
   const drive          = require('./drive');
+  const { applyQualityGates } = require('./moc-quality');
 
   const app  = express();
   const PORT = process.env.PORT || 3000;
@@ -299,6 +300,8 @@
       `ALTER TABLE mom_sessions ADD COLUMN IF NOT EXISTS executive_summary JSONB DEFAULT '[]'`,
       `ALTER TABLE mom_sessions ADD COLUMN IF NOT EXISTS pending_tracker JSONB DEFAULT '[]'`,
       `ALTER TABLE mom_sessions ADD COLUMN IF NOT EXISTS next_agenda JSONB DEFAULT '[]'`,
+      // Evidence-checked record behind the MOC: decision log, matters discussed, key figures, gate report
+      `ALTER TABLE mom_sessions ADD COLUMN IF NOT EXISTS moc_quality JSONB DEFAULT '{}'`,
       // Project this conversation belongs to
       `ALTER TABLE mom_sessions ADD COLUMN IF NOT EXISTS project_id INTEGER`,
       `CREATE INDEX IF NOT EXISTS mom_sessions_project_idx ON mom_sessions (project_id)`,
@@ -1840,14 +1843,45 @@ SPEAKER IDENTIFICATION: Many transcripts do not label speakers. You MUST attempt
     "agenda": ["Agenda item 1", "Agenda item 2"],
     "discussion_points": [
       { "topic": "Specific topic heading — name the actual subject, not a generic label like 'Discussion' or 'Other matters'",
-        "details": "A substantial account of this topic, written as flowing professional prose in short labelled paragraphs. Cover, in this order and only where the record supports it: what was discussed and the position each participant took (name them); the figures, amounts, dates, percentages, document references and status reported — quote the numbers exactly as stated; any disagreement, alternative considered or constraint raised; and how the topic was left (decided / deferred / open). Typically 6-12 sentences for a substantive topic. Do not compress two unrelated topics into one entry, and do not pad a thin topic — if little was said, say so plainly." }
+        "details": "A substantial account of this topic, written as flowing professional prose in short labelled paragraphs. Cover, in this order and only where the record supports it: what was discussed and the position each participant took (name them); the figures, amounts, dates, percentages, document references and status reported — quote the numbers exactly as stated; any disagreement, alternative considered or constraint raised; and how the topic was left (decided / deferred / open). Typically 6-12 sentences for a substantive topic. Do not compress two unrelated topics into one entry, and do not pad a thin topic — if little was said, say so plainly.",
+        "relevance": "primary (the meeting's main business purpose) / secondary (ancillary business update, e.g. an incidental compliance follow-up) / incidental (social talk or matters unrelated to the business — one or two sentences at most)" }
     ],
-    "decisions": ["Each decision as a complete, self-contained sentence that a reader who did not attend can act on: what was decided, who approved it, what it applies to, and the stated reason or trigger where one was given. Include the effective date or condition when stated."],
+    "decision_log": [
+      { "statement": "A complete, self-contained sentence a reader who did not attend can act on: what was decided, what it applies to, and the stated reason or condition",
+        "status": "confirmed / requires_confirmation / contested",
+        "accepted_by": "Name(s) of the participant(s) who clearly accepted it — empty string if not attributable",
+        "acceptance_quote": "The words of acceptance copied VERBATIM from the transcript, in the language and script of the transcript (do not translate) — empty string if there is none",
+        "topic": "The discussion topic this belongs to" }
+    ],
     "action_items": [
-      { "task": "Clear, specific task description", "owner": "Person or team responsible", "due_date": "DD/MM/YYYY or TBD", "priority": "High / Medium / Low" }
+      { "task": "Clear, specific task description, no longer than two lines",
+        "owner": "The person or side the meeting named — otherwise 'Not agreed'",
+        "owner_status": "explicit / not_agreed",
+        "due_date": "DD/MM/YYYY only when an exact date was agreed — otherwise TBD",
+        "due_status": "agreed / not_agreed",
+        "priority": "High / Medium / Low only when a participant stated the priority or urgency — otherwise empty string",
+        "priority_source": "explicit / none",
+        "acceptance_criteria": "The completion criterion only when a participant stated it — otherwise empty string",
+        "acceptance_criteria_quote": "Verbatim transcript words stating that criterion — otherwise empty string",
+        "commitment_quote": "The words in which someone took on or assigned this work, copied VERBATIM from the transcript in its own language and script (do not translate)",
+        "topic": "The discussion topic this belongs to" }
+    ],
+    "matters_discussed": [
+      { "item": "A proposal, option, idea, suggestion or open question raised but NOT approved or committed to — stated neutrally",
+        "raised_by": "Who raised it, when clear",
+        "classification": "PROPOSAL / OPINION / OPEN_QUESTION",
+        "views": "Differing views expressed, attributed by name, without implying endorsement",
+        "status": "For future consideration / Requires decision / Under examination",
+        "topic": "The discussion topic this belongs to" }
+    ],
+    "key_figures": [
+      { "label": "What the figure is, e.g. 'Amazon panel sales'", "amount": "As stated, e.g. '~17 lakh' or '20%'", "unit": "INR / % / orders / units",
+        "basis": "net / gross / contribution / not stated", "period": "Month or range, or 'not stated'", "approximate": true,
+        "source_type": "participant_reported / dashboard / externally_verified",
+        "note": "Any comparison, mismatch or suggested reason — a suggested reason is labelled as a possible reason, not a cause" }
     ],
     "next_meeting": "Date, time, platform/venue — or empty string if not discussed",
-    "summary": "Executive summary in 4-6 sentences: why the meeting was held, the material decisions taken, the key figures or commitments agreed, the main risk or open question left unresolved, and the immediate next step. Written for a reader who will not read the rest of the document.",
+    "summary": "Executive summary in 4-6 sentences: why the meeting was held, the main matters examined and key figures reported, any decisions actually confirmed (say plainly when none were), the main open question left unresolved, and the agreed next step if any. Never describe a proposal or ambition as agreed. Written for a reader who will not read the rest of the document.",
     "language": "Primary or dominant language — one of: en / hi / mr / te / ta / kn / gu / bn / pa / ml / mixed",
     "languages_detected": ["List every language actually spoken in the meeting, e.g. ['hi','gu'] or ['en','hi']"],
     "confidentiality": "Confidential / Internal / General — based on topics discussed",
@@ -1856,13 +1890,13 @@ SPEAKER IDENTIFICATION: Many transcripts do not label speakers. You MUST attempt
 
   Guidelines:
   - Be precise and professional; avoid generic filler phrases
-  - Capture EVERY decision and action item exactly as discussed
+  - Capture every decision and action that was actually confirmed or committed to — never upgrade a proposal into a decision or a task
   - Indian context: names may include Mr., Ms., Dr., CA, CS, CFO, CTO etc.
   - NAME DEDUPLICATION: Before writing any output, mentally list all unique persons mentioned. Merge variants (e.g. Jainil/Jenil → Jainil, Rahul/Rahool → Rahul). Use the chosen canonical name everywhere — attendees, action item owners, discussion points. Never list the same person twice under different spellings.
   - MULTILINGUAL TRANSCRIPTS: If the transcript contains multiple languages (e.g. a speaker says something in Gujarati then another responds in Hindi), write the ENTIRE MOC in formal English. Translate all spoken content accurately — do not leave untranslated phrases in the output. Preserve only proper nouns (names, company names, city names, brand names) as originally spoken.
   - Set "language" to "mixed" and populate "languages_detected" with all languages you identify in the transcript
   - If a field cannot be determined, return empty string or empty array — do not invent details
-  - Action item priority: High = committed deadline, Medium = discussed but flexible, Low = background task
+  - Action item priority: only when a participant stated it; otherwise leave it empty
   - Confidentiality: Confidential if financials/legal/HR discussed, Internal for ops/strategy, General otherwise
   - suggested_tags: 5-10 tags — ALWAYS add each attendee's first name or short name (e.g. "Rahul", "Priya-CA", "Mehta") as individual tags, then add project names, company names, topic areas (GST/Finance/HR/Audit/Sales/Legal), quarter (Q1-2025), and platform`;
 
@@ -1909,25 +1943,55 @@ SPEAKER IDENTIFICATION: Many transcripts do not label speakers. You MUST attempt
 - Recommendations: enabled, drawn only from what the meeting itself raised. External enrichment: disabled. MOC status: Draft.
 - Timezone: Asia/Kolkata unless the meeting states another.
 
+EVIDENCE CLASSIFICATION (apply before writing any section)
+Silently classify every material statement in the meeting as one of:
+FACT_REPORTED (a participant reported a figure, status or event), OPINION (a view or preference), PROPOSAL (an idea, option, target, benchmark or suggested next step), CONFIRMED_DECISION (clear acceptance by the participant(s) with authority), EXPLICIT_ACTION (someone clearly took on, or was clearly assigned, a piece of work), OPEN_QUESTION, or INCIDENTAL (social talk, logistics, matters unrelated to the business purpose).
+Each classification decides where the item goes, and each concept is written ONCE in its authoritative section — the other sections refer to it by topic instead of restating it.
+
+APPROVAL GATE — decision_log
+- A PROPOSAL never becomes a decision on its own. Discussing a figure, saying "we should", "let us target", "ideally", "at least 20%" or nodding along is NOT acceptance.
+- status "confirmed" needs clear, attributable assent (for example "yes, we will do that", "approved", "final — go ahead") from the person or people with authority. Put that assent, copied verbatim from the transcript in its own language and script, in acceptance_quote and name the person in accepted_by. The application checks that quote against the transcript; an untraceable quote is downgraded automatically.
+- status "requires_confirmation" when acceptance is implied, partial, conditional or unclear; status "contested" when participants disagreed and it was not resolved.
+- A target or benchmark is confirmed only when its value, basis (for example net margin, gross margin, contribution) and period were all stated and accepted. Otherwise record it in matters_discussed, e.g. "Participants discussed margin improvement, including 15% and 20% benchmarks. The applicable margin definition, target period and formal approval were not established."
+- If nothing was decided, return an empty decision_log. That is a correct, valuable result.
+
+ACTION GATE — action_items
+- Create an action only for an EXPLICIT_ACTION: a person or side clearly committed to, or was clearly assigned, a piece of work. Copy those words verbatim (transcript language and script) into commitment_quote. An action without a commitment quote is removed by the application.
+- A topic, an analysis someone suggested, a "we could look at", or a people-pairing for future examination is NOT an action. Record it in matters_discussed. Example: "Two participant pairs were identified to examine platform-related and fabric-to-delivery matters. Detailed deliverables, scope and completion dates remain to be decided."
+- There is no expected number of actions. A discussion meeting may correctly have none.
+- Never fabricate an owner, a due date, a priority or a completion criterion. owner "Not agreed" and owner_status "not_agreed" when no person or side was named. due_date "TBD" and due_status "not_agreed" unless an exact date was agreed. priority empty and priority_source "none" unless a participant stated urgency. acceptance_criteria empty unless stated, with its own verbatim quote.
+- Consolidate genuinely repeated statements of the same commitment into one action. Keep task text short and outcome-focused.
+
+FIGURES AND CAUSES
+- Record each material figure once in key_figures with its basis, period and whether it was approximate, and use the same figure in the narrative.
+- Check consistency before writing: net vs gross, margin vs profit vs contribution, month or range, sales value vs orders vs units, marketplace RTO vs customer return, figures cited from memory vs from a dashboard or report. Where the record does not settle the basis, say so.
+- Separate an observed mismatch from its possible cause. Write "X and Y were compared; Z was suggested as one possible reason, without reconciliation" — never "the difference was caused by Z" unless the cause was actually established in the meeting.
+- Do not compare return or RTO rates across platforms as like-for-like unless the meeting established the same definition.
+- Where participants held differing views (for example on advertising spend), record each view by name and state that no change was approved, unless one was.
+
+RELEVANCE
+- Identify the meeting's primary purpose from the agenda and discussion. Main business = relevance "primary"; ancillary business updates (incidental compliance follow-ups, staffing notes, other matters) = "secondary"; social conversation and matters unrelated to the business = "incidental", written in one or two sentences at most.
+- The agenda field lists the primary agenda items; put ancillary updates under a final agenda item "Other matters".
+
 Mapping rules for the application schema:
-- decisions: only items that pass the decision test. If a decision is not Final, start the sentence with its status in square brackets, for example "[Conditional] ..." or "[Pending ratification] ...".
-- action_items: every next step the meeting treats as work to be done — agreed, accepted, or stated as pending, required or to be completed (for example "September data will come next week", "PMS has to be implemented", "the CPA meeting is to be scheduled"). A real working meeting normally yields many such items, so do not stop at the few that were explicitly assigned. Leave out pure ideas, options and opinions that nobody treated as work to be done, and keep proposed items out of decisions.
-  - Consolidate: one action per workstream or deliverable, not one per sentence. Merge the related steps of a single piece of work (for example buying seats, preparing questions and drafting the policy for one AI rollout) into one action. A long meeting normally gives about 8 to 15 actions. Leave out trivial errands and low-impact notes-to-self that a client would not track.
-  - owner: the person named for the work; otherwise the side the record shows must act — "Client", the advising firm's name when the project details give it, or "Joint" when both must act; use "Not assigned" only when the record gives no indication of the responsible side. Never guess a named individual.
-  - due_date: DD/MM/YYYY when an exact date was agreed or can be resolved unambiguously; otherwise "TBD".
-  - priority: High, Medium or Low only (treat Critical as High).
-  - task: the outcome-focused action; when a completion criterion is explicit or safely derivable, end the task with " — Done when: <criterion>".
+- decision_log: as set out in the APPROVAL GATE. Do not also return a "decisions" field — the application builds it from decision_log.
+- action_items: as set out in the ACTION GATE.
+  - owner: the person named for the work, or the side the meeting named — "Client", the advising firm's name when the project details give it, or "Joint" when both were named; otherwise "Not agreed". Never guess a named individual.
+  - due_date: DD/MM/YYYY only when an exact date was agreed or an agreed relative date resolves unambiguously against the reference date; otherwise "TBD".
+  - priority: High, Medium or Low only when stated (treat Critical as High); otherwise empty.
+  - task: the outcome-focused action. Do not append a "Done when" criterion.
+- matters_discussed: every material PROPOSAL, OPINION and OPEN_QUESTION that is not a confirmed decision or explicit action — targets discussed, options raised, suggested analyses, differing views — written neutrally, without implying endorsement.
 - discussion_points: one entry per material topic — this is the body of the MOC and the section a reader relies on, so it carries the detail that the flat schema has no other place for.
   - Work through the transcript in order and give every material topic its own entry. Do not merge unrelated topics, and do not stop early: a one-hour meeting normally yields several topics, not two or three.
   - Build "details" from section 4 of the master instruction — context and key discussion, evidence/figures/status reported, decision, action, open point, and risk/issue/blocker/dependency — written as prose under short labels, including only the labels the record actually supports.
   - Attribute positions to the people who took them, by name, wherever the record makes the speaker clear.
   - Reproduce every figure, amount, percentage, rate, date, period, document name and reference number exactly as stated. Where two clearly stated numbers conflict, record both and mark the conflict rather than choosing one. Where a figure is garbled or inconsistent because the audio or speech-to-text was unclear (several different values for the same item, unclear units), do not list the variants and do not write phrases such as "as stated, though garbled" or "figures unclear". Write the business point plainly (for example "Pricing for the two-seat plan was discussed; the exact amount could not be confirmed from the recording"), include a figure only when the record states it consistently, and add one precise confirmation question for it.
   - Where the meeting covered an audit, control, compliance or review point, use the three-part structure the master instruction requires: expected requirement, review performed, actual conclusion.
-  - Then, in this order, add these entries when the material exists:
-    - topic "Open items and confirmations" — each unresolved question, who must resolve it, the target date, and what it blocks.
-    - topic "Risks, issues, blockers and dependencies" — each item with its type, description, impact, owner and the agreed response.
-    - topic "Recommendations" — only recommendations that follow from what was discussed, each with its reason. Never introduce outside advice, market data or regulatory requirements that the meeting did not raise.
-    - topic "Confirmation required" — each material ambiguity as a precise question, limited to points that could change responsibility, deadline, decision status, money, scope, risk or execution.
+  - Each topic entry ends with one short line on how it was left — "Outcome: no decision taken", "Outcome: see decision log", "Outcome: open — see matters for consideration" — rather than restating the decision, action or open question in full.
+  - Then, in this order, add these entries when the material exists (unresolved questions themselves go in matters_discussed, not here):
+    - topic "Risks, issues, blockers and dependencies", relevance "secondary" — each item with its type, description, impact, and the response only if one was agreed. Do not repeat a point already made in a topic entry; refer to the topic instead.
+    - topic "Recommendations", relevance "internal" — only recommendations that follow from what was discussed, each with its reason, labelled as suggestions for internal review. Never introduce outside advice, market data or regulatory requirements that the meeting did not raise.
+    - topic "Confirmation required", relevance "secondary" — each material ambiguity as a precise question, limited to points that could change responsibility, deadline, decision status, money, scope, risk or execution.
 - Coverage: the meeting brief lists the topics found across the whole recording. Every topic in it that the transcript supports gets its own entry in discussion_points, including strategy, execution-review and carry-forward items — not only the topics that sound like decisions. Before finishing, scan the whole transcript once more for any theme without an entry.
 - Speech-to-text often mishears names of clients, firms and products. When the project details or the brief give the correct name, use it everywhere. Write about the client's own business from the client's point of view; do not treat the client's own name as a separate third-party engagement.
 - Write the business meaning in polished prose, as a senior professional would minute it. Do not transcribe noise.
@@ -1936,7 +2000,7 @@ Mapping rules for the application schema:
 - summary: the executive summary in 4-6 sentences, as described in the schema.
 - speakers (only when the transcript is DIARIZED): add a field "speakers": [{"label": "Speaker 1", "name": "real name or null", "role": "role or null"}] — one entry per speaker label, using a name only when the evidence supports it.
 - attendees: write a role or designation only when the meeting states it or the project details give it. Never infer or invent a role from the way a person spoke or the topic they discussed; write the name alone when no role is stated. Do not list people who were only mentioned as attendees.
-- Never invent values; use an empty string, an empty array, "Not assigned" or "TBD" as the schema allows.
+- Never invent values; use an empty string, an empty array, "Not agreed" or "TBD" as the schema allows.
 
 INDIAN MULTILINGUAL MEETINGS
 - Speech-to-text often spells the same Indian name differently (e.g. "Jainil"/"Jenil", "Mehta"/"Mehtha"). Identify variants of the same person and use one consistent spelling in every field; prefer the most complete form.
@@ -1986,13 +2050,13 @@ This meeting is minuted as professional advisory minutes. Apply everything above
 - discussion_points: group the meeting into its natural themes and give each theme ONE entry whose topic is the theme name, for example "Founder delegation and leadership system" or "Fund planning and capital deployment". Each theme carries four to seven short paragraphs of continuous prose, one point per paragraph, separated by a blank line. Do not use a bullet character. This is the body of the document — it should read as a professional record written by a person, not as notes.
 - action_items: in advisory work the accountable party is often an organisation rather than an individual. Set "owner" to the party as the meeting assigned it — the client, the advising firm, or a named person when one was named.
   - due_date: use DD/MM/YYYY only when a real date was agreed. Where the meeting set a condition rather than a date, put that condition in "timeline" and leave due_date as "TBD". Never invent a date to fill the field.
-  - timeline: add this field to every action item — the plain-language timing or status actually used in the meeting, such as "At the earliest", "Pending client review", "Before next strategy review", "Priority - current month", "After PMS data". This is what the reader relies on, so it must be faithful to the record.
-- pending_tracker: everything still awaited, including items carried forward from earlier meetings where the record mentions them. An item may appear here and in action_items — the tracker is the standing register, the action plan is what was agreed this time.
-- decisions: write these as forward-looking working conclusions — the direction agreed, phrased so it can be acted on, rather than a past-tense note that something was discussed.
-- next_agenda: the proposed agenda for the next meeting, drawn from what was deferred, left open or explicitly scheduled. Six to ten items where the meeting supports it.
+  - timeline: add this field to every action item — the plain-language timing actually used in the meeting, such as "At the earliest", "Pending client review", "Before next strategy review", "After PMS data". Use "Not agreed" when no timing was stated. This is what the reader relies on, so it must be faithful to the record.
+- pending_tracker: documents, data, access or confirmations the record shows are actually awaited, including items carried forward from earlier meetings where the record mentions them. Do not turn a suggestion into a pending requirement. Do not repeat an item that is already an action — the tracker is for inputs awaited, the action plan for work committed.
+- decision_log: the APPROVAL GATE applies in full. Write confirmed decisions as forward-looking directions that can be acted on; a direction that was only proposed or favoured belongs in matters_discussed.
+- next_agenda: the proposed agenda for the next meeting, drawn only from what was deferred, left open or explicitly scheduled. There is no expected number of items.
 - Where a numeric target, investment figure or compliance position was discussed but not confirmed, say plainly that it remains to be validated. Do not present it as settled.
-- Advice given by the advising firm is part of the record. Where the advisor recommended a course of action — products to focus on, a collaboration, a method, a sequence of steps — write each piece of advice in the relevant theme with its specifics (names, numbers, programmes, grades, sequence). Mark it as advice, not as a decision, unless the client accepted it.
-- Responsible parties: use the project details to learn who the advising firm is and who the client is. Write "Client", the advising firm's name, or "Joint" (when both must act) in the owner and responsible fields instead of "Not assigned", whenever the record shows which side must act. Use "Not assigned" only when the record does not show the side.
+- Advice given by the advising firm is part of the record. Where the advisor recommended a course of action — products to focus on, a collaboration, a method, a sequence of steps — write each piece of advice in the relevant theme with its specifics (names, numbers, programmes, grades, sequence). Mark it as advice, not as a decision or an action, unless the client accepted it in words that pass the approval gate.
+- Responsible parties: use the project details to learn who the advising firm is and who the client is. Write "Client", the advising firm's name, or "Joint" in the owner and responsible fields when the meeting named that side for the work. Use "Not agreed" when it did not.
 - Every action item also carries "status": one of Not started, In progress, Awaiting input, Pending confirmation, Blocked, Deferred, Completed — taken from the record; use Not started for a newly agreed action.`,
     },
   };
@@ -2033,6 +2097,8 @@ Rules:
 - List every material topic you can see in "topics", in the order discussed. The MOC model writes one section per topic, so a topic you leave out is likely to be thin or missed in the minutes.
 - In "focus_instructions", name the figures, documents, deadlines and disputed points the MOC model must not lose, and any audit, control or compliance point that needs the expected-requirement / review-performed / actual-conclusion treatment.
 - Items in AUTHORIZED USER INSTRUCTIONS may be carried into the brief when they are consistent with the master prompt's evidence and safety rules. If one conflicts, leave it out and explain why in cautions.
+- In "cautions", name every target, benchmark or plan that was discussed but whose approval is unclear, every suggested cause of a figure mismatch that was not established, and every people-pairing or follow-up that was raised without a clear commitment — so the MOC model keeps them out of decisions and actions.
+- Name the meeting's primary business purpose in "final_prompt", and list in "cautions" any social or unrelated conversation to treat as incidental.
 - Include a glossary meaning only when it is certain from context.
 - Use simple, neutral business English.
 
@@ -2236,6 +2302,12 @@ ${TRANSCRIPT_SLOT}`;
       console.error('[prompt-log] Failed to save:', err.message);
       return null;
     }
+  }
+
+  async function saveMocQuality(sessionId, mom) {
+    if (!sessionId || !mom?.moc_quality) return;
+    try { await pool.query('UPDATE mom_sessions SET moc_quality = $1 WHERE id = $2', [JSON.stringify(mom.moc_quality), sessionId]); }
+    catch (err) { console.error('[moc-quality] Failed to save:', err.message); }
   }
 
   async function linkPromptLog(promptLogId, sessionId) {
@@ -2513,6 +2585,13 @@ ${transcript}`;
       composerError, userInstructions, finalSystemPrompt,
       mocModel:             result.servedModel || mocModel,
     });
+
+    // Evidence gates: no decision, action, owner, date or priority survives without support in the transcript
+    try {
+      applyQualityGates(result.mom, transcript);
+      const q = result.mom.moc_quality.report;
+      console.log(`[moc] Quality gates — decisions confirmed ${q.decisions.confirmed}, requires confirmation ${q.decisions.requires_confirmation}, demoted ${q.decisions.demoted.length}; actions kept ${q.actions.kept}, moved to matters ${q.actions.moved_to_matters.length}, priority removed ${q.actions.priority_removed}, due cleared ${q.actions.due_cleared}`);
+    } catch (e) { console.error('[moc] Quality gates failed:', e.message); }
 
     return { mom: result.mom, inputTokens: result.inputTokens, outputTokens: result.outputTokens, promptLogId };
   }
@@ -3000,6 +3079,7 @@ ${transcript}`;
       ]);
 
       const saved = dbResult.rows[0];
+      await saveMocQuality(saved.id, mom);
       // Recording moves to the customer's Drive in the background, if connected
       offloadToDriveInBackground(saved.id, req.session.user.email);
       await fileSessionIntoProject(saved.id, req.session.user.email, req.body?.project_id);
@@ -3443,6 +3523,7 @@ ${transcript}`;
       ]);
 
       const saved = dbResult.rows[0];
+      await saveMocQuality(saved.id, mom);
       // Recording moves to the customer's Drive in the background, if connected
       offloadToDriveInBackground(saved.id, req.session.user.email);
       await fileSessionIntoProject(saved.id, req.session.user.email, req.body?.project_id);
@@ -3918,6 +3999,7 @@ ${transcript}`;
         jsonArr(mom.executive_summary), jsonArr(mom.pending_tracker), jsonArr(mom.next_agenda),
         m.id, email, tplKey
       ]);
+    await saveMocQuality(m.id, mom);
     if (hasSpeakers && Array.isArray(mom.speakers)) {
       await pool.query('UPDATE mom_sessions SET speakers = $1 WHERE id = $2', [JSON.stringify(mom.speakers), m.id]);
     }
@@ -6864,6 +6946,41 @@ Body rules (plain text, \\n for line breaks):
       const year    = new Date(m.created_at).getFullYear();
       const refId   = `MOC-${year}-${String(m.id).padStart(4, '0')}`;
 
+      // Two views from the same checked record:
+      //   internal (default) — Detailed MOC: everything, incl. options raised, figures register, evidence appendix
+      //   client  (?view=client) — Professional MOM: agenda business, confirmed decisions, agreed actions only
+      const CLIENT   = req.query.view === 'client';
+      const qual     = (m.moc_quality && typeof m.moc_quality === 'object') ? m.moc_quality : {};
+      const matters  = safeArr(qual.matters_discussed);
+      const figures  = safeArr(qual.key_figures);
+      const qReport  = qual.report || null;
+      // Decisions stay plain strings so user edits flow through; removing the bracketed status confirms one
+      const UNCONF_RE  = /^\[(Requires confirmation|Contested|Conditional|Pending[^\]]*)\]\s*/i;
+      const decConfirmed = dec.map(String).filter(d => !UNCONF_RE.test(d));
+      const decPending   = dec.map(String).filter(d => UNCONF_RE.test(d));
+      const dpView   = CLIENT ? dp.filter(d => !['incidental', 'internal'].includes(d && d.relevance)) : dp;
+      const aiPending = ai.filter(a => a && a.requires_confirmation);
+      const aiView   = CLIENT ? ai.filter(a => a && !a.requires_confirmation) : ai;
+      const ownerOf  = a => (!a.owner || /^(—|-|not assigned|tbd)$/i.test(String(a.owner).trim())) ? 'Not agreed' : a.owner;
+      const timingOf = a => a.timeline || (a.due_date && a.due_date !== 'TBD' ? a.due_date : 'Not agreed');
+      const matterText = x => [String(x.item || '').replace(/([^.?!])$/, '$1.'), x.raised_by ? `Raised by ${x.raised_by}.` : '', x.views ? `Views: ${x.views}` : '',
+        x.status ? `Status: ${x.status}.` : ''].filter(Boolean).join(' ');
+      const figureRows = figures.map(f => [
+        f.label || '',
+        [f.approximate ? '~' : '', f.amount || '', f.unit && !/INR|%/.test(f.unit) ? ' ' + f.unit : ''].join('').replace(/^~~/, '~'),
+        [f.basis && f.basis !== 'not stated' ? f.basis : '', f.period && f.period !== 'not stated' ? f.period : ''].filter(Boolean).join(', ') || 'Not stated',
+        [String(f.source_type || '').replace(/_/g, ' '), f.note || ''].filter(Boolean).join(' — '),
+      ]);
+      // Internal traceability: the transcript words behind each decision and action
+      const evQuote = (q, ev) => q ? `"${q}"` + (ev === 'not_found' ? ' (not located in transcript)' : '') : 'Not recorded';
+      const evidenceRows = [
+        ...safeArr(qual.decision_log).filter(d => d && d.statement)
+          .map(d => ['Decision', d.statement, String(d.status || '').replace(/_/g, ' '), evQuote(d.acceptance_quote, d.evidence)]),
+        ...ai.filter(a => a && a.task)
+          .map(a => ['Action', a.task, a.requires_confirmation ? 'requires confirmation' : 'agreed', evQuote(a.commitment_quote, a.evidence)]),
+      ];
+      const qualityNotes = qReport ? safeArr(qReport.warnings) : [];
+
       const {
         Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
         WidthType, BorderStyle, ShadingType, AlignmentType, HeadingLevel,
@@ -6991,7 +7108,7 @@ Body rules (plain text, \\n for line breaks):
           ['Subject',          m.subject || m.meeting_title || 'Not recorded'],
           ['Meeting Date',     [niceDate(m.meeting_date), m.meeting_time].filter(Boolean).join('  ·  ') || 'Not recorded'],
           ['Present',          att.length ? att.join(String.fromCharCode(10)) : 'Not recorded'],
-          ['MOM Status',       'Draft - for review and confirmation'],
+          ['MOM Status',       CLIENT ? 'Draft - for review and confirmation' : 'Detailed MOC - internal reference, not for circulation'],
           ['Prepared By / On', preparedOn || 'Not recorded'],
         ], [22, 78]));
 
@@ -7001,20 +7118,19 @@ Body rules (plain text, \\n for line breaks):
         else if (m.summary) A.push(body(m.summary));
         else A.push(body('Not recorded.'));
 
-        // ── 1. Action plan ──
-        if (ai.length) {
-          A.push(secHead('1.  Action Plan'));
+        // ── 1. Action plan — only work someone committed to ──
+        A.push(secHead('1.  Agreed Action Plan'));
+        if (aiView.length) {
+          const withPri = aiView.some(a => a.priority);
           A.push(table(
-            ['#', 'Action / Deliverable', 'Responsible', 'Timeline', 'Priority', 'Status'],
-            ai.map((a, i) => [
-              String(i + 1),
-              a.task || '',
-              a.owner || 'Not assigned',
-              a.timeline || (a.due_date && a.due_date !== 'TBD' ? a.due_date : 'Not agreed'),
-              a.priority || '',
-              a.status || 'Not started',
+            ['#', 'Action / Deliverable', 'Responsible', 'Timeline', ...(withPri ? ['Priority'] : []), 'Status'],
+            aiView.map((a, i) => [
+              String(i + 1), a.task || '', ownerOf(a), timingOf(a),
+              ...(withPri ? [a.priority || '—'] : []), a.status || 'Not started',
             ]),
-            [5, 41, 14, 16, 9, 15]));
+            withPri ? [5, 41, 14, 16, 9, 15] : [5, 47, 16, 17, 15]));
+        } else {
+          A.push(body('No action items were explicitly agreed in the meeting. Matters raised for follow-up are listed under Matters for Future Consideration.'));
         }
 
         // ── 2. Pending tracker ──
@@ -7027,20 +7143,37 @@ Body rules (plain text, \\n for line breaks):
         }
 
         // ── 3. Points discussed ──
-        if (dp.length) {
+        if (dpView.length) {
           A.push(secHead('3.  Points Discussed'));
-          dp.forEach(d => {
-            A.push(themeHead(d.topic || ''));
+          dpView.forEach(d => {
+            A.push(themeHead((d.topic || '') + (!CLIENT && d.relevance === 'incidental' ? '  (incidental — internal note)' : '')
+              + (!CLIENT && d.relevance === 'internal' ? '  (internal — not for circulation)' : '')));
             const paras = LINES(d.details);
             if (paras.length) paras.forEach(p => A.push(body(p, { after: 110 })));
             else A.push(body('Not recorded.', { after: 110 }));
           });
         }
 
-        // ── 4. Working conclusions ──
-        if (dec.length) {
-          A.push(secHead('4.  Agreed Directions / Working Conclusions'));
-          dec.forEach((d, i) => A.push(numbered((i + 1) + '.   ' + d)));
+        // ── 4. Decisions — confirmed ones only; the rest are listed as requiring confirmation ──
+        A.push(secHead('4.  Decisions'));
+        if (decConfirmed.length) decConfirmed.forEach((d, i) => A.push(numbered((i + 1) + '.   ' + d)));
+        else A.push(body('No decisions were formally confirmed in the meeting.'));
+        const advPending = [...decPending, ...(CLIENT ? aiPending.map(a => `${a.task} (responsibility: ${ownerOf(a)})`) : [])];
+        if (advPending.length) {
+          A.push(themeHead('Matters requiring confirmation'));
+          advPending.forEach((d, i) => A.push(numbered((i + 1) + '.   ' + d.replace(UNCONF_RE, ''))));
+        }
+
+        // ── 4A. Matters for future consideration ──
+        if (matters.length) {
+          A.push(secHead(CLIENT ? '4A.  Matters Discussed / For Future Consideration' : '4A.  Discussion / Options Raised (not approved)'));
+          matters.forEach((x, i) => A.push(numbered((i + 1) + '.   ' + matterText(x))));
+        }
+
+        // ── Key figures (internal) ──
+        if (!CLIENT && figureRows.length) {
+          A.push(secHead('Key Figures Reported'));
+          A.push(table(['Figure', 'Amount', 'Basis / Period', 'Source / Note'], figureRows, [26, 14, 20, 40]));
         }
 
         // ── 5. Next agenda ──
@@ -7050,6 +7183,13 @@ Body rules (plain text, \\n for line breaks):
         } else if (m.next_meeting) {
           A.push(secHead('5.  Next Meeting'));
           A.push(body(m.next_meeting));
+        }
+
+        // ── Internal appendix: evidence and review notes ──
+        if (!CLIENT && (evidenceRows.length || qualityNotes.length)) {
+          A.push(secHead('Appendix — Evidence and Review Notes (internal)'));
+          if (qualityNotes.length) qualityNotes.forEach(n => A.push(body('•  ' + n, { after: 60 })));
+          if (evidenceRows.length) A.push(table(['Type', 'Item', 'Status', 'Transcript evidence'], evidenceRows, [11, 37, 14, 38]));
         }
 
         // ── Disclaimer ──
@@ -7069,7 +7209,7 @@ Body rules (plain text, \\n for line breaks):
         const advName = (m.client_name || m.meeting_title || 'MOM')
           .replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/ +/g, '_').slice(0, 40);
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-        res.setHeader('Content-Disposition', 'attachment; filename="MOM_' + advName + '_' + refId + '.docx"');
+        res.setHeader('Content-Disposition', 'attachment; filename="' + (CLIENT ? 'MOM_' : 'MOC_Detailed_') + advName + '_' + refId + '.docx"');
         return res.send(advBuf);
       }
 
@@ -7078,7 +7218,7 @@ Body rules (plain text, \\n for line breaks):
       // ── Letterhead ──
       children.push(new Paragraph({
         children: [
-          new TextRun({ text: 'MINUTES OF CONVERSATION', bold: true, size: 24, color: NAVY, font: 'Calibri', characterSpacing: 80 }),
+          new TextRun({ text: CLIENT ? 'MINUTES OF MEETING' : 'MINUTES OF CONVERSATION — DETAILED (INTERNAL)', bold: true, size: 24, color: NAVY, font: 'Calibri', characterSpacing: 80 }),
           new TextRun({ text: '   ·   ', size: 20, color: GOLD }),
           new TextRun({ text: refId, size: 18, color: GOLD, font: 'Courier New' }),
         ],
@@ -7118,12 +7258,23 @@ Body rules (plain text, \\n for line breaks):
         children.push(new Paragraph({ spacing: { after: 120 } }));
       }
 
+      // ── Summary — first, for a reader who will not read further ──
+      if (m.summary) {
+        children.push(sectionTitle('Summary'));
+        children.push(new Paragraph({
+          children: [new TextRun({ text: m.summary, size: 20, color: INK2, font: 'Calibri' })],
+          spacing: { after: 80 }, indent: { left: 280 },
+        }));
+        children.push(new Paragraph({ spacing: { after: 120 } }));
+      }
+
       // ── Discussions ──
-      if (dp.length) {
+      if (dpView.length) {
         children.push(sectionTitle('Key Discussions'));
-        dp.forEach(d => {
+        dpView.forEach(d => {
+          const tag = CLIENT ? '' : d.relevance === 'incidental' ? '  (incidental — internal note)' : d.relevance === 'internal' ? '  (internal — not for circulation)' : '';
           children.push(new Paragraph({
-            children: [new TextRun({ text: `§   ${d.topic || ''}`, bold: true, size: 22, color: NAVY, font: 'Calibri', italics: true })],
+            children: [new TextRun({ text: `§   ${d.topic || ''}${tag}`, bold: true, size: 22, color: NAVY, font: 'Calibri', italics: true })],
             spacing: { before: 120, after: 60 },
           }));
           if (d.details) String(d.details).split('\n').forEach(line => {
@@ -7137,54 +7288,79 @@ Body rules (plain text, \\n for line breaks):
         children.push(new Paragraph({ spacing: { after: 120 } }));
       }
 
-      // ── Decisions ──
-      if (dec.length) {
-        children.push(sectionTitle('Decisions Taken'));
-        dec.forEach(d => children.push(new Paragraph({
-          children: [new TextRun({ text: `✓   ${d}`, size: 20, color: SAGE, font: 'Calibri', bold: true })],
-          spacing: { after: 60 }, indent: { left: 280 },
-        })));
+      const hCell = (txt, w) => new TableCell({
+        width: { size: w, type: WidthType.PERCENTAGE },
+        children: [new Paragraph({ children: [new TextRun({ text: txt, bold: true, size: 18, color: 'FFFFFF', font: 'Calibri' })], alignment: AlignmentType.LEFT })],
+        shading: { type: ShadingType.SOLID, color: NAVY },
+        margins: { top: 80, bottom: 80, left: 100, right: 100 },
+      });
+      const dCell = (txt, w, col = INK2, bg = 'FFFFFF') => new TableCell({
+        width: { size: w, type: WidthType.PERCENTAGE },
+        children: [new Paragraph({ children: [new TextRun({ text: String(txt || '—'), size: 18, color: col, font: 'Calibri' })], alignment: AlignmentType.LEFT })],
+        shading: { type: ShadingType.SOLID, color: bg },
+        margins: { top: 70, bottom: 70, left: 100, right: 100 },
+      });
+      // Few, wide columns so long cells stay readable
+      const stdTable = (headers, rows, widths, colors = []) => {
+        children.push(new Table({
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          rows: [
+            new TableRow({ tableHeader: true, children: headers.map((h, i) => hCell(h, widths[i])) }),
+            ...rows.map((r, ri) => new TableRow({
+              children: r.map((c, i) => dCell(c, widths[i], colors[i] || INK2, ri % 2 === 0 ? 'FAF8F3' : 'FFFFFF')),
+            })),
+          ],
+        }));
+        children.push(new Paragraph({ spacing: { after: 160 } }));
+      };
+      const plain = (txt, opts = {}) => children.push(new Paragraph({
+        children: [new TextRun({ text: txt, size: 20, color: opts.color || INK2, font: 'Calibri', bold: !!opts.bold, italics: !!opts.italics })],
+        spacing: { after: 60 }, indent: { left: 280 },
+      }));
+
+      // ── Key figures (internal) ──
+      if (!CLIENT && figureRows.length) {
+        children.push(sectionTitle('Key Figures Reported'));
+        stdTable(['Figure', 'Amount', 'Basis / Period', 'Source / Note'], figureRows, [26, 14, 20, 40], [NAVY]);
+      }
+
+      // ── Decisions — only those confirmed in the meeting ──
+      children.push(sectionTitle('Decisions'));
+      if (decConfirmed.length) decConfirmed.forEach(d => plain(`✓   ${d}`, { color: SAGE, bold: true }));
+      else plain('No decisions were formally confirmed in the meeting.', { italics: true });
+      const stdPending = [...decPending, ...(CLIENT ? aiPending.map(a => `${a.task} (responsibility: ${ownerOf(a)})`) : [])];
+      if (stdPending.length) {
+        children.push(new Paragraph({
+          children: [new TextRun({ text: 'Matters requiring confirmation', bold: true, size: 20, color: NAVY, font: 'Calibri' })],
+          spacing: { before: 120, after: 60 }, indent: { left: 280 },
+        }));
+        stdPending.forEach(d => plain(`?   ${d.replace(UNCONF_RE, '')}`, { color: RUST }));
+      }
+      children.push(new Paragraph({ spacing: { after: 120 } }));
+
+      // ── Matters discussed / options raised ──
+      if (matters.length) {
+        children.push(sectionTitle(CLIENT ? 'Matters Discussed / For Future Consideration' : 'Discussion / Options Raised (not approved)'));
+        matters.forEach(x => plain(`•   ${matterText(x)}`));
         children.push(new Paragraph({ spacing: { after: 120 } }));
       }
 
-      // ── Action Items Table ──
-      if (ai.length) {
-        children.push(sectionTitle('Action Items'));
-
-        const hCell = txt => new TableCell({
-          children: [new Paragraph({ children: [new TextRun({ text: txt, bold: true, size: 18, color: 'FFFFFF', font: 'Calibri' })], alignment: AlignmentType.LEFT })],
-          shading: { type: ShadingType.SOLID, color: NAVY },
-          margins: { top: 80, bottom: 80, left: 100, right: 100 },
-        });
-
-        const priColor = p => p === 'High' ? RUST : p === 'Medium' ? GOLD : INK3;
-
-        const dCell = (txt, col = INK2, bg = 'FFFFFF') => new TableCell({
-          children: [new Paragraph({ children: [new TextRun({ text: String(txt || '—'), size: 18, color: col, font: 'Calibri' })], alignment: AlignmentType.LEFT })],
-          shading: { type: ShadingType.SOLID, color: bg },
-          margins: { top: 70, bottom: 70, left: 100, right: 100 },
-        });
-
-        const headerRow = new TableRow({
-          tableHeader: true,
-          children: ['#', 'Task', 'Owner', 'Due Date', 'Priority'].map(h => hCell(h)),
-        });
-
-        const dataRows = ai.map((a, i) => new TableRow({
-          children: [
-            dCell(String(i + 1).padStart(2, '0'), GOLD, i % 2 === 0 ? 'FAF8F3' : 'FFFFFF'),
-            dCell(a.task || '', NAVY, i % 2 === 0 ? 'FAF8F3' : 'FFFFFF'),
-            dCell(a.owner || '—', INK2, i % 2 === 0 ? 'FAF8F3' : 'FFFFFF'),
-            dCell(a.due_date || 'TBD', RUST, i % 2 === 0 ? 'FAF8F3' : 'FFFFFF'),
-            dCell(a.priority || '—', priColor(a.priority || ''), i % 2 === 0 ? 'FAF8F3' : 'FFFFFF'),
-          ],
-        }));
-
-        children.push(new Table({
-          rows:  [headerRow, ...dataRows],
-          width: { size: 100, type: WidthType.PERCENTAGE },
-        }));
-        children.push(new Paragraph({ spacing: { after: 160 } }));
+      // ── Action items — the one authoritative list ──
+      children.push(sectionTitle(CLIENT ? 'Agreed Actions' : 'Action Items'));
+      if (aiView.length) {
+        const withPri = aiView.some(a => a.priority);
+        stdTable(
+          ['#', 'Action', 'Responsible', 'Timing', ...(withPri ? ['Priority'] : [])],
+          aiView.map((a, i) => [
+            String(i + 1).padStart(2, '0'),
+            a.task + (a.acceptance_criteria ? ` — Done when: ${a.acceptance_criteria}` : '') + (!CLIENT && a.requires_confirmation ? '  (requires confirmation)' : ''),
+            ownerOf(a), timingOf(a), ...(withPri ? [a.priority || '—'] : []),
+          ]),
+          withPri ? [6, 52, 17, 15, 10] : [6, 56, 20, 18],
+          [GOLD, NAVY, INK2, RUST]);
+      } else {
+        plain('No action items were explicitly agreed in the meeting.', { italics: true });
+        children.push(new Paragraph({ spacing: { after: 120 } }));
       }
 
       // ── Next Meeting ──
@@ -7197,13 +7373,11 @@ Body rules (plain text, \\n for line breaks):
         children.push(new Paragraph({ spacing: { after: 120 } }));
       }
 
-      // ── Summary ──
-      if (m.summary) {
-        children.push(sectionTitle('Summary'));
-        children.push(new Paragraph({
-          children: [new TextRun({ text: m.summary, size: 20, color: INK2, font: 'Calibri' })],
-          spacing: { after: 80 }, indent: { left: 280 },
-        }));
+      // ── Internal appendix: evidence and review notes ──
+      if (!CLIENT && (evidenceRows.length || qualityNotes.length)) {
+        children.push(sectionTitle('Appendix — Evidence and Review Notes (internal)'));
+        qualityNotes.forEach(n => plain(`•   ${n}`, { color: INK3 }));
+        if (evidenceRows.length) stdTable(['Type', 'Item', 'Status', 'Transcript evidence'], evidenceRows, [11, 37, 14, 38], [GOLD, NAVY]);
       }
 
       // ── Footer ──
@@ -7237,7 +7411,7 @@ Body rules (plain text, \\n for line breaks):
       const fname  = (m.meeting_title || 'MOC').replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/ +/g, '_').slice(0, 40);
 
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-      res.setHeader('Content-Disposition', `attachment; filename="MOC_${fname}_${refId}.docx"`);
+      res.setHeader('Content-Disposition', `attachment; filename="${CLIENT ? 'MOM' : 'MOC_Detailed'}_${fname}_${refId}.docx"`);
       res.send(buffer);
 
     } catch (err) {
