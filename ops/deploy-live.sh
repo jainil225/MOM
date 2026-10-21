@@ -14,7 +14,8 @@ STAGE="${1:?Usage: deploy-live.sh <staging dir>}"
 APP=/root/mom-tool
 PM2_NAME=mom-tool
 PORT=3000
-FILES=(server.js public/index.html ops)
+# Everything the live app needs from this release. Local modules server.js requires must be listed here.
+FILES=(server.js drive.js moc-quality.js public/index.html public/history.html public/js/rates.js public/usage.html public/cost.html public/credits.html public/activity.html public/admin.html public/login.html public/profile.html public/pricing.html public/terms.html public/privacy.html public/usage-policy.html public/terms-v1.html public/privacy-v1.html public/consent.html public/js/theme.js prompts/master-moc-prompt.md ops)
 STAMP="$(date +%Y%m%d-%H%M%S)"
 CODE_BACKUP_DIR=/var/backups/aix/code
 CODE_BACKUP="$CODE_BACKUP_DIR/$PM2_NAME-$STAMP.tgz"
@@ -23,6 +24,14 @@ step() { echo; echo "── $1"; }
 stop() { echo; echo "STOPPED: $1"; echo "Nothing on live was changed."; rm -rf "$STAGE"; exit 1; }
 
 cd "$APP" || stop "$APP not found"
+
+# 0. Every file in this release, and every local module server.js requires, must be in the upload
+step "0/6  Checking the upload is complete"
+for f in "${FILES[@]}"; do [ -e "$STAGE/$f" ] || stop "$f is missing from the upload."; done
+for mod in $(grep -oE "require\(['\"]\./[^'\"]+['\"]\)" "$STAGE/server.js" | sed -E "s/require\(['\"]\.\/([^'\"]+)['\"]\)/\1/"); do
+  [ -e "$STAGE/$mod" ] || [ -e "$STAGE/$mod.js" ] || stop "server.js needs ./$mod but it is not in the upload — add it to FILES in deploy-live.sh and deploy-live.ps1."
+done
+echo "     all files present"
 
 # 1. Packages — this deploy never runs npm install on live and never replaces its lock file.
 #    package.json must match. A lock file that differs only by version drift is fine as
@@ -64,8 +73,10 @@ echo "     $CODE_BACKUP"
 
 # 5. Copy the new files in and restart
 step "5/6  Installing new files and restarting $PM2_NAME"
-cp "$STAGE/server.js" "$APP/server.js"
-cp "$STAGE/public/index.html" "$APP/public/index.html"
+for f in "${FILES[@]}"; do
+  [ "$f" = ops ] && continue
+  mkdir -p "$APP/$(dirname "$f")" && cp "$STAGE/$f" "$APP/$f"
+done
 mkdir -p "$APP/ops" && cp "$STAGE"/ops/* "$APP/ops/"
 pm2 restart "$PM2_NAME" >/dev/null && echo "     restarted"
 

@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <script src="/js/theme.js"></script>
+<script src="/js/rates.js"></script>
 <title>API Credits · AiX Track</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -184,7 +185,7 @@ tbody td:first-child{padding-left:20px}
 <div class="page">
 
   <div class="pricing-note">
-    <strong>Estimated costs</strong> — Sarvam AI saaras:v3 ~$0.0002/sec · Claude Haiku $0.25/$1.25 per MTok · OpenAI GPT-4o $5/$15 per MTok in/out. INR ≈ cost × 84. Verify against provider dashboards for billing accuracy.
+    <strong>Estimated costs</strong> — Sarvam <strong>₹0.49/min</strong> (₹0.59/min with speakers) · Claude Sonnet 5.5 <strong>$2/$10</strong> per MTok in/out · ChatGPT GPT-4o <strong>$2.50/$10</strong> per MTok in/out · INR at <span data-fx>₹96</span>/USD (USD_INR in .env) · Published rates checked 16 Oct 2026 — verify against provider dashboards for billing.
   </div>
 
   <div class="stat-grid" id="stat-grid">
@@ -241,7 +242,7 @@ tbody td:first-child{padding-left:20px}
     <div class="section-head"><div class="section-title">Monthly totals</div></div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Month</th><th>Cost (USD)</th><th>Cost (INR ~84×)</th></tr></thead>
+        <thead><tr><th>Month</th><th>Cost (USD)</th><th>Cost (INR)</th></tr></thead>
         <tbody id="monthly-tbody"><tr><td colspan="3" class="loading-state">Loading…</td></tr></tbody>
       </table>
     </div>
@@ -276,7 +277,7 @@ async function loadData(){
 }
 
 function fmt$(v){return'$'+parseFloat(v||0).toFixed(4);}
-function fmtINR(v){return'₹'+(parseFloat(v||0)*84).toFixed(2);}
+function fmtINR(v){return'₹'+(parseFloat(v||0)*AIX_FX()).toFixed(2);}
 function fmtNum(v){return parseFloat(v||0).toLocaleString('en-IN');}
 function fmtDate(d){if(!d)return'—';return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
 

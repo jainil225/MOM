@@ -1,12 +1,12 @@
 // Send an ops alert email using the app's own SMTP settings.
 // Usage: node ops/notify.js <app dir> "<subject>" "<message>"
-// Recipients: OPS_ALERT_EMAILS, else BALANCE_ALERT_EMAILS, else carajanikant@gmail.com
+// Recipients: OPS_ALERT_EMAILS, else BALANCE_ALERT_EMAILS, else carajnikant@gmail.com
 const path = require('path');
 
 async function sendAlert(appDir, subject, message) {
   const need = (m) => require(path.join(appDir, 'node_modules', m));
   need('dotenv').config({ path: path.join(appDir, '.env') });
-  const to = (process.env.OPS_ALERT_EMAILS || process.env.BALANCE_ALERT_EMAILS || 'carajanikant@gmail.com')
+  const to = (process.env.OPS_ALERT_EMAILS || process.env.BALANCE_ALERT_EMAILS || 'carajnikant@gmail.com')
     .split(',').map(s => s.trim()).filter(Boolean).join(', ');
   const line = `${new Date().toISOString()} ${subject} — ${message}`;
   if (!process.env.SMTP_HOST) { console.error('[notify] SMTP not configured:', line); return false; }

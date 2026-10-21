@@ -22,9 +22,9 @@ $testHost = 'https://testtrack.aiextensive.com'
 $block = @"
 
 # ── Signup and referral bonuses (credits) — change and restart ──
-JOINING_BONUS_CREDITS=30
+JOINING_BONUS_CREDITS=86
 REFERRAL_FRIEND_BONUS=30
-REFERRAL_REWARD_CREDITS=30
+REFERRAL_REWARD_CREDITS=86
 
 # ── Customer Google Drive storage ──
 # Blank client id/secret means the login OAuth client is reused.

@@ -1774,7 +1774,7 @@ tbody tr:hover{background:var(--gold-tint);}
           <button class="btn-nav" id="modal-share-btn" onclick="shareLink()" title="Copy shareable read-only link">🔗 Share</button>
           <button class="btn-nav" id="modal-followup-btn" onclick="openFollowupDraft()" title="AI-draft follow-up email for attendees">✉️ Follow-up</button>
           <button class="btn-nav" id="docx-internal-btn" onclick="downloadDOCX('internal')" title="Detailed MOC for internal reference — includes options raised, key figures and transcript evidence">📝 Word (Detailed MOC)</button>
-          <button class="btn-nav" id="docx-client-btn" onclick="downloadDOCX('client')" title="Professional MOM for client circulation — confirmed decisions and agreed actions only">📝 Word (Client MOM)</button>
+          <button class="btn-nav" id="docx-client-btn" onclick="downloadDOCX('client')" title="Client MOC for circulation — confirmed decisions and agreed actions only">📝 Word (Client MOC)</button>
           <button class="btn-nav" id="modal-email-btn" onclick="modalSendEmail()" title="Email this MOC to yourself">📧 Email</button>
           <button class="btn-nav" id="modal-email-other-btn" onclick="openEmailOthers()" title="Email this MOC to other people">➕ Send to…</button>
           <button class="btn-nav" onclick="modalDownloadTXT()">📄 TXT</button>
@@ -3018,7 +3018,7 @@ function modalPrint(){
   <div class="header">
     ${ADV&&LH.firm_name?`<div class="firm">${esc(LH.firm_name)}</div>`:''}
     ${ADV&&LH.firm_service_line?`<div class="firm-line">${esc(LH.firm_service_line)}</div>`:''}
-    <div class="eyebrow">${ADV?'Minutes of Meeting':'Minutes of Conversation'} · ${refId}</div>
+    <div class="eyebrow">Minutes of Conversation · ${refId}</div>
     <h1>${esc(m.meeting_title||"Conversation")}</h1>
     <div class="meta">${[m.meeting_date,m.meeting_time].filter(Boolean).join(" · ")}</div>
   </div>`;
@@ -4090,13 +4090,15 @@ function openRegenDialog(mode){
   d.style.cssText = 'position:fixed;inset:0;z-index:1000;background:rgba(8,14,30,0.6);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px';
   const mins = Math.ceil((Number(m.duration_seconds)||0)/60);
   const extra = mins * Math.max(0,(window.AIX_RATES?.diarization_per_min||2)-(window.AIX_RATES?.standard_per_min||1));
+  const regenRate = window.AIX_RATES?.regenerate_per_min ?? 0.5;
+  const regenCr = Math.ceil(Math.max(1, mins) * regenRate);
   d.innerHTML = `
     <div style="width:100%;max-width:480px;background:var(--card);color:var(--ink);border:1px solid var(--border-strong);border-radius:16px;box-shadow:0 18px 48px rgba(0,0,0,0.35);padding:22px;font-family:var(--sans)">
       <div style="font-family:var(--serif);font-size:20px;margin-bottom:6px">${speakers ? '🗣 Regenerate with Speakers' : '🔄 Regenerate MOC'}</div>
       <div style="font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:12px">
         ${speakers
           ? `The recording is read again to identify who said what, then the MOC is rebuilt with each point attributed to the right person.${extra ? ` This adds <b>${extra} credits</b> (speaker rate for ${mins} min, minus what was already charged).` : ''}`
-          : 'The MOC is rebuilt from the saved transcript using your tone, master prompt and project details. No credits are charged.'}
+          : `The MOC is rebuilt from the saved transcript using your tone, master prompt and project details.${regenCr ? ` This uses <b>${regenCr} credits</b> (${regenRate} credit/min for ${Math.max(1, mins)} min), charged only if it succeeds.` : ''}`}
       </div>
       <div class="edit-label" style="margin-bottom:6px">MOC format</div>
       <select id="regen-dlg-template" class="edit-input" style="margin-bottom:12px">
@@ -4141,7 +4143,8 @@ async function runRegen(mode){
     let data; try{ data = JSON.parse(raw); }catch{ throw new Error('Server returned an invalid response — please try again.'); }
     if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     closeRegenDialog();
-    showToast(speakers ? `🗣 Done — ${data.speaker_count} speaker(s) identified, MOC regenerated.` : '✨ MOC regenerated.', 'success');
+    const crNote = Number(data.credits_deducted) > 0 ? ` ${data.credits_deducted} credits used · ${data.credits_remaining} left.` : '';
+    showToast((speakers ? `🗣 Done — ${data.speaker_count} speaker(s) identified, MOC regenerated.` : '✨ MOC regenerated.') + crNote, 'success');
     await loadHistory();
     openModal(m.id);
   }catch(err){
@@ -4349,10 +4352,10 @@ async function downloadDOCX(view){
     const year = new Date(m.created_at||Date.now()).getFullYear();
     const ref  = `MOC-${year}-${String(m.id).padStart(4,'0')}`;
     a.href     = url;
-    a.download = client ? `MOM_${ref}.docx` : `MOC_Detailed_${ref}.docx`;
+    a.download = client ? `MOC_Client_${ref}.docx` : `MOC_Detailed_${ref}.docx`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast(client ? 'Client MOM downloaded!' : 'Detailed MOC downloaded!','success');
+    showToast(client ? 'Client MOC downloaded!' : 'Detailed MOC downloaded!','success');
   }catch(err){
     showToast('Word export: '+err.message,'error');
   }finally{

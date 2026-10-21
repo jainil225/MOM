@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <script src="/js/theme.js"></script>
+<script src="/js/rates.js"></script>
 <title>User Activity · AiX Track</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -593,11 +594,11 @@ function renderKPIs() {
   document.getElementById('kpiActiveToday').textContent = activeToday;
   document.getElementById('kpiSessionsToday').textContent = todaySessions.length;
   document.getElementById('kpiSarvamToday').textContent = `$${sarvamToday.toFixed(4)}`;
-  document.getElementById('kpiSarvamInr').textContent = `₹${(sarvamToday*84).toFixed(2)}`;
+  document.getElementById('kpiSarvamInr').textContent = `₹${(sarvamToday*AIX_FX()).toFixed(2)}`;
   document.getElementById('kpiAiToday').textContent = `$${aiToday.toFixed(4)}`;
-  document.getElementById('kpiAiInr').textContent = `₹${(aiToday*84).toFixed(2)}`;
+  document.getElementById('kpiAiInr').textContent = `₹${(aiToday*AIX_FX()).toFixed(2)}`;
   document.getElementById('kpiTotal30').textContent = `$${total30.toFixed(4)}`;
-  document.getElementById('kpiTotal30Inr').textContent = `₹${(total30*84).toFixed(2)}`;
+  document.getElementById('kpiTotal30Inr').textContent = `₹${(total30*AIX_FX()).toFixed(2)}`;
   document.getElementById('kpiTotalUsers').textContent = allUsers.length;
 }
 
@@ -636,7 +637,7 @@ function renderUsers() {
       <td class="text-center mono">${u.meetings||0}</td>
       <td class="text-right"><span class="mono">$${sarvamEst.toFixed(4)}</span></td>
       <td class="text-right"><span class="mono">$${aiEst.toFixed(4)}</span></td>
-      <td class="text-right"><span class="mono" style="color:var(--gold);font-weight:600">$${cost.toFixed(4)}</span><br><span style="font-size:9px;color:var(--ink3)">₹${(cost*84).toFixed(0)}</span></td>
+      <td class="text-right"><span class="mono" style="color:var(--gold);font-weight:600">$${cost.toFixed(4)}</span><br><span style="font-size:9px;color:var(--ink3)">₹${(cost*AIX_FX()).toFixed(0)}</span></td>
       <td class="text-right">
         <div class="cost-bar"><div class="cost-fill" style="width:${pct}%"></div></div>
         <div style="font-size:9px;color:var(--ink3);margin-top:2px">${pct.toFixed(1)}%</div>

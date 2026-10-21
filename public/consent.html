@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<script src="/js/theme.js"></script>
+<title>Policy Update · AiX Track</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0F1524;--ink2:#4A5468;--ink3:#8A93A8;--ink4:#B8BFCC;
+  --paper:#FAF8F3;--paper2:#F4F0E6;--card:#FFFFFF;
+  --border:#E8E4D8;--border-strong:#D4CFC0;
+  --navy:#0F1B3D;--navy-h:#1F2D57;
+  --gold:#B8912A;--gold-h:#C89A3D;
+  --gold-tint:rgba(184,145,42,0.10);--gold-tint-strong:rgba(184,145,42,0.22);
+  --sage:#4A7C59;--rust:#A0472E;
+  --shadow-1:0 1px 2px rgba(15,21,36,0.04),0 2px 6px rgba(15,21,36,0.03);
+  --shadow-2:0 4px 20px rgba(15,21,36,0.06);
+  --serif:'Roboto',Georgia,serif;
+  --sans:'Roboto',-apple-system,sans-serif;
+  --mono:'Roboto Mono',monospace;
+}
+[data-theme="dark"]{
+  --ink:#F5F1E6;--ink2:#B8B0A0;--ink3:#6B6455;--ink4:#3D3830;
+  --paper:#0C0D10;--paper2:#141519;--card:#161820;
+  --border:#25272F;--border-strong:#333540;
+  --navy:#4A5B8C;--gold:#D4A94A;
+  --gold-tint:rgba(212,169,74,0.10);--gold-tint-strong:rgba(212,169,74,0.20);
+}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.7;font-size:15px;transition:background .3s,color .3s}
+a{color:var(--gold);text-decoration:none}
+a:hover{text-decoration:underline}
+
+.top-bar{
+  position:sticky;top:0;z-index:100;
+  background:var(--card);border-bottom:1px solid var(--border);
+  padding:14px 2rem;display:flex;align-items:center;justify-content:space-between;
+  box-shadow:var(--shadow-1);
+}
+.top-bar-left{display:flex;align-items:center;gap:14px}
+.back-btn{
+  display:flex;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  color:var(--ink3);letter-spacing:0.06em;text-transform:uppercase;
+  background:none;border:1px solid var(--border);border-radius:6px;
+  padding:6px 12px;cursor:pointer;transition:all .15s;
+}
+.back-btn:hover{color:var(--gold);border-color:var(--gold)}
+.brand{font-family:var(--serif);font-size:20px;color:var(--ink);font-style:italic}
+.brand em{color:var(--gold)}
+.theme-toggle{
+  background:var(--card);border:1px solid var(--border);border-radius:999px;
+  padding:6px 12px;font-size:11px;font-family:var(--mono);font-weight:500;
+  color:var(--ink2);cursor:pointer;display:flex;align-items:center;gap:6px;
+  transition:all .2s;letter-spacing:.02em;text-transform:uppercase;
+}
+.theme-toggle:hover{border-color:var(--gold);color:var(--gold)}
+
+.page{max-width:760px;margin:0 auto;padding:3rem 2rem 5rem}
+
+.page-eyebrow{
+  font-family:var(--mono);font-size:10px;font-weight:600;
+  color:var(--gold);letter-spacing:.18em;text-transform:uppercase;
+  margin-bottom:12px;
+}
+.page-title{
+  font-family:var(--serif);font-size:42px;font-weight:400;
+  line-height:1.1;letter-spacing:-.02em;color:var(--ink);margin-bottom:8px;
+}
+.page-title em{color:var(--gold);font-style:italic}
+.page-meta{font-size:13px;color:var(--ink3);margin-bottom:2.5rem;font-family:var(--mono)}
+.divider{height:1px;background:var(--border);margin:2.5rem 0}
+
+.toc{
+  background:var(--paper2);border:1px solid var(--border);
+  border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:2.5rem;
+}
+.toc-title{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--ink3);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px}
+.toc ol{padding-left:1.25rem}
+.toc li{margin-bottom:4px}
+.toc a{color:var(--ink2);font-size:13px}
+.toc a:hover{color:var(--gold)}
+
+section{margin-bottom:2.5rem}
+section h2{
+  font-family:var(--serif);font-size:22px;font-weight:400;
+  color:var(--ink);margin-bottom:10px;padding-bottom:8px;
+  border-bottom:1px solid var(--border);
+}
+section h2 .num{font-family:var(--mono);font-size:12px;color:var(--gold);margin-right:8px}
+section p{color:var(--ink2);margin-bottom:10px;font-size:14px;line-height:1.75}
+section ul{color:var(--ink2);font-size:14px;padding-left:1.25rem;margin-bottom:10px}
+section ul li{margin-bottom:6px;line-height:1.65}
+section strong{color:var(--ink);font-weight:600}
+
+.highlight-box{
+  background:var(--gold-tint);border:1px solid var(--gold-tint-strong);
+  border-radius:8px;padding:14px 16px;margin-bottom:1.5rem;
+  font-size:13px;color:var(--ink2);line-height:1.6;
+}
+.highlight-box strong{color:var(--gold)}
+
+.footer-note{
+  margin-top:3rem;padding:1.5rem;
+  background:var(--paper2);border-radius:10px;border:1px solid var(--border);
+  font-size:12px;color:var(--ink3);text-align:center;font-family:var(--mono);
+  line-height:1.6;
+}
+
+/* v2.0 additions — tables and placeholders still to be confirmed */
+.tbl{overflow-x:auto;margin:0 0 12px;border:1px solid var(--border);border-radius:8px}
+.tbl table{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
+.tbl th{background:var(--paper2);color:var(--ink);font-weight:600;text-align:left;padding:9px 12px;border-bottom:1px solid var(--border)}
+.tbl td{color:var(--ink2);padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.55}
+.tbl tr:last-child td{border-bottom:none}
+.ph{background:#FFF3B0;color:#6B4E00;border-radius:3px;padding:0 3px}
+[data-theme="dark"] .ph{background:rgba(255,214,0,0.18);color:#FFE38A}
+.policy-links{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+@media (max-width:600px){.page{padding:2rem 16px 4rem}.page-title{font-size:32px}}
+
+.rc-card{background:var(--card);border:1px solid var(--border-strong);border-radius:12px;padding:20px 22px;box-shadow:var(--shadow-2);margin-bottom:2rem}
+.rc-row{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px;color:var(--ink);line-height:1.6;cursor:pointer}
+.rc-row:last-of-type{border-bottom:none}
+.rc-row input{width:18px;height:18px;margin-top:3px;flex-shrink:0;accent-color:var(--gold);cursor:pointer}
+.rc-note{font-size:12px;color:var(--ink3);margin:12px 0 4px;line-height:1.6}
+.rc-error{display:none;color:var(--rust);font-size:13px;margin-top:10px}
+.rc-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.rc-btn{font-family:var(--sans);font-size:14px;font-weight:500;padding:11px 18px;border-radius:8px;border:1px solid var(--border-strong);background:var(--card);color:var(--ink);cursor:pointer}
+.rc-btn:hover{border-color:var(--gold);color:var(--gold)}
+.rc-btn.primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+.rc-btn.primary:hover{background:var(--navy-h);color:#fff}
+.rc-btn.primary:disabled{opacity:.45;cursor:not-allowed}
+.rc-btn.danger{color:var(--rust);border-color:var(--rust)}
+.rc-btn.danger:hover{background:var(--rust);color:#fff}
+.rc-exit{background:var(--paper2);border:1px solid var(--border);border-radius:12px;padding:20px 22px}
+.rc-exit h2{font-family:var(--serif);font-size:20px;font-weight:400;margin-bottom:10px}
+.rc-exit p{font-size:14px;color:var(--ink2);margin-bottom:10px;line-height:1.7}
+@media (max-width:600px){.page{padding:2rem 16px 4rem}.page-title{font-size:30px}.rc-btn{width:100%}}
+</style>
+<link rel="stylesheet" href="/css/theme-dark.css">
+<link rel="stylesheet" href="/css/aix-uniform.css">
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-bar-left">
+        <span class="brand">AiX <em>Track</em></span>
+  </div>
+  <button class="theme-toggle" onclick="toggleTheme()">
+    <span id="theme-icon">◐</span>
+    <span id="theme-label">DARK</span>
+  </button>
+</div>
+
+<div class="page">
+
+  <div class="page-eyebrow">AiX Track · Policy update</div>
+  <h1 class="page-title">We have updated our <em>policies</em></h1>
+  <div class="page-meta" id="rc-meta">Version 2.0</div>
+
+  <div class="highlight-box" id="rc-summary">
+    <strong>What changed:</strong> <span id="rc-change">Loading…</span>
+  </div>
+
+  <section>
+    <p>Please read the updated documents. They form one agreement between you and RMP AI Private Limited.</p>
+    <ul>
+      <li><a href="/terms" target="_blank" rel="noopener">Terms of Use</a> (version 2.0)</li>
+      <li><a href="/usage-policy" target="_blank" rel="noopener">Usage Policy</a> (version 2.0)</li>
+      <li><a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a> (version 2.0)</li>
+    </ul>
+  </section>
+
+  <div class="rc-card">
+    <label class="rc-row"><input type="checkbox" id="rc-agree" onchange="rcToggle()">
+      <span id="rc-agree-text">I agree to the updated <a href="/terms" target="_blank" rel="noopener">Terms of Use</a>, <a href="/usage-policy" target="_blank" rel="noopener">Usage Policy</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
+    <label class="rc-row"><input type="checkbox" id="rc-processing" onchange="rcToggle()">
+      <span id="rc-processing-text">I consent to AiX Track processing my account details and the conversations I upload, as described in the Privacy Policy, including sending transcript text to AI providers that may process it outside India.</span></label>
+    <div class="rc-note">Your acceptance is logged with the time, your account, IP address and the policy version. You can withdraw consent at any time from Profile → Privacy, or by writing to <a href="mailto:notification.aix@gmail.com">notification.aix@gmail.com</a>.</div>
+    <div class="rc-error" id="rc-error"></div>
+    <div class="rc-actions">
+      <button class="rc-btn primary" id="rc-accept" onclick="rcAccept()" disabled>Accept and continue</button>
+      <button class="rc-btn" onclick="rcExit()">Download my data and close account</button>
+    </div>
+  </div>
+
+  <div class="rc-exit" id="rc-exit" style="display:none">
+    <h2>Download your data and close your account</h2>
+    <p>1. Download a copy of your conversations, minutes, credit history and consent records.</p>
+    <button class="rc-btn" onclick="rcDownload(this)">Download my data (JSON)</button>
+    <p style="margin-top:18px">2. Close your account. Conversations, transcripts and recordings are deleted. Invoices and consent records are kept as the law requires. Unused <strong>purchased</strong> credits are refunded to your original payment method (Terms §6.4); our team will contact you at your account email.</p>
+    <button class="rc-btn danger" onclick="rcClose(this)">Close my account permanently</button>
+  </div>
+
+</div>
+
+<script>
+/* Screen D — the server keeps the user here until both boxes are accepted for the current version */
+function rcToggle(){
+  document.getElementById('rc-accept').disabled = !(document.getElementById('rc-agree').checked && document.getElementById('rc-processing').checked);
+}
+function rcErr(msg){ const e = document.getElementById('rc-error'); e.textContent = msg; e.style.display = msg ? 'block' : 'none'; }
+async function rcLoad(){
+  try {
+    const st = await fetch('/api/consent/status', { credentials: 'same-origin' });
+    if (st.status === 401) { location.href = '/login.html'; return; }
+    const s = await st.json();
+    if (s.ok) { location.href = '/'; return; }            // already accepted (e.g. another tab)
+  } catch (_) {}
+  try {
+    const r = await fetch('/api/consent/texts'); const d = await r.json();
+    document.getElementById('rc-change').textContent = d.change_summary || 'Updated policies.';
+    document.getElementById('rc-meta').textContent = 'Version ' + d.version + (d.effective_date ? ' · effective ' + d.effective_date : '');
+  } catch (_) { document.getElementById('rc-change').textContent = 'Updated Terms of Use, Usage Policy and Privacy Policy.'; }
+}
+async function rcAccept(){
+  const btn = document.getElementById('rc-accept'); rcErr('');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const r = await fetch('/api/consent/reconsent', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agree: document.getElementById('rc-agree').checked, processing: document.getElementById('rc-processing').checked }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Could not save your acceptance.');
+    const next = new URLSearchParams(location.search).get('next');
+    location.href = next && next.startsWith('/') && !next.startsWith('//') ? next : '/';
+  } catch (e) { rcErr(e.message); btn.textContent = 'Accept and continue'; rcToggle(); }
+}
+function rcExit(){ const x = document.getElementById('rc-exit'); x.style.display = 'block'; x.scrollIntoView({ behavior: 'smooth' }); }
+function rcDownload(btn){ btn.textContent = 'Preparing…'; location.href = '/api/user/export'; setTimeout(() => btn.textContent = 'Download my data (JSON)', 3000); }
+async function rcClose(btn){
+  if (!confirm('Close your AiX Track account permanently? Conversations, transcripts and recordings will be deleted. This cannot be undone.')) return;
+  btn.disabled = true; btn.textContent = 'Closing…';
+  try {
+    const r = await fetch('/api/user/account', { method: 'DELETE', credentials: 'same-origin' });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Could not close the account.');
+    alert('Your account has been closed.' + (d.drive_note ? '\n\n' + d.drive_note : '') + '\n\nIf you had unused purchased credits, our team will contact you about the refund.');
+    location.href = '/login.html';
+  } catch (e) { alert(e.message); btn.disabled = false; btn.textContent = 'Close my account permanently'; }
+}
+rcLoad();
+</script>
+</body>
+</html>

@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AiX Track User Flow</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column; overview diagram first, then one card per journey (goal, entry, steps, outcome, exceptions) */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --fg:#17202b; --muted:#566273; --line:#dde2e9;
+  --accent:#1f5fbf; --accent-soft:#e6eefa; --ok:#1d7a4f; --ok-soft:#e5f4ec; --warn:#a15c00; --warn-soft:#fbf0e0;
+  --display:"Fraunces",Georgia,serif; --body:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#11161d;--surface:#18202a;--fg:#e4e9f0;--muted:#9aa6b6;--line:#2a3442;--accent:#7fb0ff;--accent-soft:#1d2b40;--ok:#5fcf98;--ok-soft:#163026;--warn:#f0b35a;--warn-soft:#33270f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#11161d;--surface:#18202a;--fg:#e4e9f0;--muted:#9aa6b6;--line:#2a3442;--accent:#7fb0ff;--accent-soft:#1d2b40;--ok:#5fcf98;--ok-soft:#163026;--warn:#f0b35a;--warn-soft:#33270f;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 var(--body)}
+.wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:32px 64px}
+h1,h2{font-family:var(--display);font-weight:600;text-wrap:balance;line-height:1.2}
+h1{font-size:2.1rem;margin:0 0 6px}
+h2{font-size:1.4rem;margin:0 0 4px}
+h3{font-size:.8rem;margin:18px 0 6px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+p,li{max-width:70ch}
+.lede{color:var(--muted);margin:0 0 20px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 28px}
+nav.toc a{font:500 13px var(--body);color:var(--accent);text-decoration:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 12px}
+nav.toc a:hover,nav.toc a:focus-visible{background:var(--accent-soft);outline:none}
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;overflow-x:auto;margin:12px 0 32px}
+.diagram pre{margin:0;background:none;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.flow{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px 22px 18px;margin:0 0 24px;scroll-margin-top:16px}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 24px;margin:12px 0 4px}
+.meta div{min-width:0}
+.meta b{display:block;font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+td.n{width:2.2em;color:var(--muted);font-variant-numeric:tabular-nums}
+.outcome{background:var(--ok-soft);border-radius:6px;padding:10px 14px;margin:14px 0 0}
+.outcome b{color:var(--ok)}
+ul.exc{margin:6px 0 0;padding-left:20px}
+ul.exc li{margin:4px 0}
+.exc-box{background:var(--warn-soft);border-radius:6px;padding:10px 14px;margin:12px 0 0}
+.exc-box b{color:var(--warn)}
+.ui{font:500 .88em var(--mono);background:var(--accent-soft);color:var(--fg);padding:1px 6px;border-radius:4px;white-space:nowrap}
+footer{color:var(--muted);font-size:13px;margin-top:36px;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">AiX Track · MOC Generator</div>
+  <h1>User Flow</h1>
+  <p class="lede">How a customer goes from a meeting recording to finished Minutes of Conversation (MOC), and everything they can do afterwards. Each journey below states its goal, where it starts, each user action with what AiX Track does in response, the expected outcome, and what happens when something goes wrong.</p>
+
+  <nav class="toc" aria-label="Journeys">
+    <a href="#overview">Overview</a>
+    <a href="#f1">1 · Sign in</a>
+    <a href="#f2">2 · Record live</a>
+    <a href="#f3">3 · Upload a file</a>
+    <a href="#f4">4 · Meeting options</a>
+    <a href="#f5">5 · Minutes and credits</a>
+    <a href="#f6">6 · Review the MOC</a>
+    <a href="#f7">7 · Share and follow up</a>
+    <a href="#f8">8 · Records</a>
+    <a href="#f9">9 · Action tracker</a>
+    <a href="#f10">10 · Projects</a>
+    <a href="#f11">11 · Profile and Drive</a>
+    <a href="#f12">12 · Admin</a>
+    <a href="#errors">Common messages</a>
+  </nav>
+
+  <!-- ═══════════ OVERVIEW ═══════════ -->
+  <section id="overview">
+    <h2>Overview</h2>
+    <p>The main path a customer follows on every meeting:</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart TD
+  A([Open AiX Track]) --> B{Signed in?}
+  B -- No --> L[1 · Sign in<br/>Google or work email code]
+  L --> H
+  B -- Yes --> H[Home: Record or Upload]
+  H --> C{How is the meeting captured?}
+  C -- During the meeting --> R[2 · Record live]
+  C -- After the meeting --> U[3 · Upload a file]
+  R --> O[4 · Meeting options<br/>language, format, project,<br/>speaker names, instructions]
+  U --> O
+  O --> K[Confirm consent]
+  K --> P{5 · Enough minutes<br/>or credits?}
+  P -- No --> BUY[Buy a credit pack] --> P
+  P -- Yes --> W[Processing<br/>upload → transcribe → write MOC]
+  W --> M[6 · Review and edit MOC draft]
+  M --> S[7 · Share, email, export,<br/>send action items]
+  M --> REC[8 · Saved in Records]
+  REC --> ACT[9 · Action tracker]
+  REC --> PRJ[10 · Projects]
+    </pre></div>
+  </section>
+
+  <!-- ═══════════ 1 SIGN IN ═══════════ -->
+  <article class="flow" id="f1">
+    <div class="eyebrow">Journey 1</div>
+    <h2>Sign in</h2>
+    <div class="meta">
+      <div><b>Goal</b>Get into AiX Track securely</div>
+      <div><b>Who</b>New and returning customers</div>
+      <div><b>Starts at</b>Login page, or a referral link shared by a friend</div>
+    </div>
+    <h3>Steps</h3>
+    <div class="tbl"><table>
+      <tr><th></th><th>User does</th><th>AiX Track does</th></tr>
+      <tr><td class="n">1</td><td>Opens AiX Track</td><td>Shows the login page if the user is not signed in</td></tr>
+      <tr><td class="n">2a</td><td>Clicks <span class="ui">Continue with Google</span></td><td>Opens Google sign-in, then returns the user to the app</td></tr>
+      <tr><td class="n">2b</td><td>Or enters a <span class="ui">Work email</span></td><td>Emails a 6-digit login code</td></tr>
+      <tr><td class="n">3</td><td>Enters the code</td><td>Checks it and signs the user in</td></tr>
+      <tr><td class="n">4</td><td>First sign-in only</td><td>Creates the account and adds the joining bonus and free trial minutes. If the user came from a referral link, records the referrer</td></tr>
+      <tr><td class="n">5</td><td>—</td><td>Opens the Home screen. The login stays active for 30 days on that device</td></tr>
+    </table></div>
+    <div class="outcome"><b>Outcome:</b> user is on Home, signed in, with their minutes and credits visible in the top bar.</div>
+    <div class="exc-box"><b>If something goes wrong</b>
+      <ul class="exc">
+        <li>Wrong or expired code: an error is shown. The user can request a new code or use <span class="ui">← Change email</span>.</li>
+        <li>Too many code requests in a short time: requests are paused for a few minutes.</li>
+        <li>Code email not received: the user checks spam, or signs in with Google instead.</li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- ═══════════ 2 RECORD LIVE ═══════════ -->
+  <article class="flow" id="f2">
+    <div class="eyebrow">Journey 2</div>
+    <h2>Record a meeting live</h2>
+    <div class="meta">
+      <div><b>Goal</b>Capture a meeting as it happens</div>
+      <div><b>Who</b>Customer attending the meeting</div>
+      <div><b>Starts at</b>Home → <span class="ui">Record Live</span></div>
+    </div>
+    <h3>Steps</h3>
+    <div class="tbl"><table>
+      <tr><th></th><th>User does</th><th>AiX Track does</th></tr>
+      <tr><td class="n">1</td><td>Clicks <span class="ui">Record Live</span></td><td>Shows the minutes the user can record with their current balance</td></tr>
+      <tr><td class="n">2</td><td>Confirms recording consent</td><td>Records that consent was given before starting</td></tr>
+      <tr><td class="n">3</td><td>Allows microphone access in the browser</td><td>Starts recording and shows a running timer</td></tr>
+      <tr><td class="n">4</td><td>Holds the meeting</td><td>Saves the audio to the server in small pieces every few seconds, so a dropped connection does not lose the meeting. Warns the user before they leave the page</td></tr>
+      <tr><td class="n">5</td><td>Clicks stop</td><td>Completes the recording and moves on to meeting options (Journey 4)</td></tr>
+    </table></div>
+    <div class="outcome"><b>Outcome:</b> the full recording is saved and ready to be turned into a MOC.</div>
+    <div class="exc-box"><b>If something goes wrong</b>
+      <ul class="exc">
+        <li>Microphone blocked: the app explains how to allow it from the browser's lock icon.</li>
+        <li>Microphone unplugged or used by another app: the app asks the user to reconnect it and try again.</li>
+        <li>Browser closed or connection lost mid-meeting: the saved pieces can be recovered and processed from Home.</li>
+        <li>Balance runs low: the app shows how many minutes are left before recording starts.</li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- ═══════════ 3 UPLOAD ═══════════ -->
+  <article class="flow" id="f3">
+    <div class="eyebrow">Journey 3</div>
+    <h2>Upload a recording</h2>
+    <div class="meta">
+      <div><b>Goal</b>Turn an existing audio or video file into a MOC</div>
+      <div><b>Who</b>Customer with a saved recording</div>
+      <div><b>Starts at</b>Home → <span class="ui">Drop your recording here</span></div>
+    </div>
+    <h3>Steps</h3>
+    <div class="tbl"><table>
+      <tr><th></th><th>User does</th><th>AiX Track does</th></tr>
+      <tr><td class="n">1</td><td>Drops a file on the upload area or chooses one</td><td>Accepts common audio and video formats, including long meetings of several hours</td></tr>
+      <tr><td class="n">2</td><td>Sets meeting options (Journey 4) and confirms consent</td><td>Records consent before processing</td></tr>
+      <tr><td class="n">3</td><td>Waits on the progress screen</td><td>Uploads the file in parts with a progress bar, so large files and slow connections work</td></tr>
+      <tr><td class="n">4</td><td>—</td><td>Moves on to the balance check and processing (Journey 5)</td></tr>
+    </table></div>
+    <div class="outcome"><b>Outcome:</b> the file is received in full and processing starts.</div>
+    <div class="exc-box"><b>If something goes wrong</b>
+      <ul class="exc">
+        <li>Unsupported or damaged file: a clear error asks for another file.</li>
+        <li>Login changed during upload: the user is asked to log in again and retry.</li>
+        <li>Recording longer than the maximum allowed length: it is refused before any charge.</li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- ═══════════ 4 OPTIONS ═══════════ -->
+  <article class="flow" id="f4">
+    <div class="eyebrow">Journey 4</div>
+    <h2>Set meeting options</h2>
+    <div class="meta">
+      <div><b>Goal</b>Get a MOC shaped for this meeting</div>
+      <div><b>Who</b>Customer, before processing</div>
+      <div><b>Starts at</b>Options panel on Home</div>
+    </div>
+    <h3>Options</h3>
+    <div class="tbl"><table>
+      <tr><th>Option</th><th>What it changes</th></tr>
+      <tr><td>Language</td><td>Auto-detect, or a set language: English (India), Hindi, Hinglish, Gujarati, Marathi, Bengali, Kannada, Malayalam and others</td></tr>
+      <tr><td>Meeting type / format</td><td>For example Client Conversation, Board Conversation, Audit / Compliance, Client Advisory / Virtual CFO, Finance Review, HR / Recruitment. Sets the structure of the MOC</td></tr>
+      <tr><td>Speaker names</td><td>Labels who said what and names people where the recording makes it clear. Uses minutes at twice the standard rate</td></tr>
+      <tr><td>Project</td><td>Files the meeting under a client or engagement (Journey 10)</td></tr>
+      <tr><td>Tags and category</td><td>Makes the meeting easy to filter later in Records</td></tr>
+      <tr><td>Extra instructions</td><td>Quick choices such as "Focus on financial decisions", "Include all GST / tax points", "Highlight client commitments", "Formal board minutes style", or free text for this meeting only</td></tr>
+    </table></div>
+    <div class="outcome"><b>Outcome:</b> the MOC will follow the chosen format, language and focus. Saved defaults from Profile are filled in automatically.</div>
+  </article>
+
+  <!-- ═══════════ 5 CREDITS ═══════════ -->
+  <article class="flow" id="f5">
+    <div class="eyebrow">Journey 5</div>
+    <h2>Minutes, credits and buying a pack</h2>
+    <div class="meta">
+      <div><b>Goal</b>Know the cost and pay only for what is used</div>
+      <div><b>Who</b>Customer</div>
+      <div><b>Starts at</b>Automatically before processing, or the credits badge in the top bar</div>
+    </div>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+  A[Recording length<br/>after long silences removed] --> B[Free minutes used first]
+  B --> C{Still minutes to pay?}
+  C -- No --> F[Processed free]
+  C -- Yes --> D{Enough credits?}
+  D -- Yes --> G[Processed, credits deducted<br/>after the MOC is ready]
+  D -- No --> E[Pricing page<br/>Starter, Growth or Enterprise]
+  E --> P[Pay securely] --> Q[Credits added] --> G
+    </pre></div>
+    <h3>Steps</h3>
+    <div class="tbl"><table>
+      <tr><th></th><th>User does</th><th>AiX Track does</th></tr>
+      <tr><td class="n">1</td><td>Starts processing</td><td>Measures the recording after removing long silences, so the user does not pay for silence</td></tr>
+      <tr><td class="n">2</td><td>—</td><td>Uses free minutes first, then credits. Standard: 1 credit per minute. With speaker names: 2 credits per minute</td></tr>
+      <tr><td class="n">3</td><td>If short of credits: opens <span class="ui">Pricing</span> and picks a pack</td><td>Opens a secure payment window</td></tr>
+      <tr><td class="n">4</td><td>Pays</td><td>Confirms the payment and adds credits once. A payment is never credited twice</td></tr>
+      <tr><td class="n">5</td><td>—</td><td>Deducts credits only after the MOC is produced and shows the new balance</td></tr>
+    </table></div>
+    <div class="outcome"><b>Outcome:</b> the user sees the cost before any charge, and every credit added or used appears in their order and credit history.</div>
+    <div class="exc-box"><b>If something goes wrong</b>
+      <ul class="exc">
+        <li>Not enough balance: processing stops before anything is charged, with a link to buy credits.</li>
+        <li>Payment window closed or payment failed: no credits are added and nothing is charged by AiX Track. The user can try again.</li>
+        <li>Speaker naming fails for a recording: the MOC is still produced and only the standard rate is charged.</li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- ═══════════ 6 REVIEW ═══════════ -->
+  <article class="flow" id="f6">
+    <div class="eyebrow">Journey 6</div>
+    <h2>Processing and reviewing the MOC</h2>
+    <div class="meta">
+      <div><b>Goal</b>Get an accurate MOC that the user has checked</div>
+      <div><b>Who</b>Customer</div>
+      <div><b>Starts at</b>Progress screen, then the MOC view</div>
+    </div>
+    <h3>Steps</h3>
+    <div class="tbl"><table>
+      <tr><th></th><th>User does</th><th>AiX Track does</th></tr>
+      <tr><td class="n">1</td><td>Waits</td><td>Shows progress through: preparing audio → transcribing → writing the MOC</td></tr>
+      <tr><td class="n">2</td><td>—</td><td>Links the meeting to the user's earlier meetings and open actions, so follow-ups are recognised</td></tr>
+      <tr><td class="n">3</td><td>Reads the MOC draft</td><td>Shows the Executive Summary, Attendees, Agenda, Points Discussed, Agreed Directions / Decisions, Action Plan (owner, due date, priority), Information and Pending Tracker, and Next Meeting with proposed agenda</td></tr>
+      <tr><td class="n">4</td><td>Edits any section: adds an attendee, decision, agenda item or action item, corrects names and dates</td><td>Saves the changes</td></tr>
+      <tr><td class="n">5</td><td>Optional: <span class="ui">Regenerate</span> or re-run speaker names</td><td>Writes a fresh MOC from the same recording</td></tr>
+    </table></div>
+    <div class="outcome"><b>Outcome:</b> a reviewed MOC, saved in Records. The MOC is an AI-prepared draft: the user checks names, figures, dates and decisions before sharing.</div>
+    <div class="exc-box"><b>If something goes wrong</b>
+      <ul class="exc">
+        <li>The writing step fails after transcription: the transcript is saved as a draft so the user can regenerate without recording again.</li>
+        <li>Recording has no clear speech: the app says so instead of producing an empty MOC.</li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- ═══════════ 7 SHARE ═══════════ -->
+  <article class="flow" id="f7">
+    <div class="eyebrow">Journey 7</div>
+    <h2>Share and follow up</h2>
+    <div class="meta">
+      <div><b>Goal</b>Get the MOC and action items to the right people</div>
+      <div><b>Who</b>Customer; recipients do not need an account</div>
+      <div><b>Starts at</b>MOC view, from Home or Records</div>
+    </div>
+    <h3>Choices</h3>
+    <div class="tbl"><table>
+      <tr><th>User does</th><th>AiX Track does</th></tr>
+      <tr><td>Creates a share link</td><td>Makes a read-only link anyone with the link can open without logging in. The user can switch the link off at any time</td></tr>
+      <tr><td>Emails the MOC</td><td>Drafts an email with the MOC, which the user reviews and sends</td></tr>
+      <tr><td>Exports to Word</td><td>Downloads a formatted .docx with firm name and "Prepared by" from Profile</td></tr>
+      <tr><td>Adds an owner's email to an action item and sends it</td><td>Emails that person only their task, with due date and priority</td></tr>
+      <tr><td>Marks an action done</td><td>Updates it in the MOC and the Action tracker</td></tr>
+    </table></div>
+    <div class="outcome"><b>Outcome:</b> the MOC reaches attendees in the format they need, and each owner knows their tasks.</div>
+  </article>
+
+  <!-- ═══════════ 8 RECORDS ═══════════ -->
+  <article class="flow" id="f8">
+    <div class="eyebrow">Journey 8</div>
+    <h2>Find past meetings in Records</h2>
+    <div class="meta">
+      <div><b>Goal</b>Find and reuse any earlier MOC</div>
+      <div><b>Who</b>Customer</div>
+      <div><b>Starts at</b>Top bar → <span class="ui">History</span> / <span class="ui">Open in Records →</span></div>
+    </div>
+    <h3>Steps</h3>
+    <div class="tbl"><table>
+      <tr><th></th><th>User does</th><th>AiX Track does</th></tr>
+      <tr><td class="n">1</td><td>Opens Records</td><td>Lists every MOC, newest first</td></tr>
+      <tr><td class="n">2</td><td>Searches or filters by project, tag, language or person</td><td>Narrows the list</td></tr>
+      <tr><td class="n">3</td><td>Opens a MOC</td><td>Shows the MOC, the transcript and the recording for playback</td></tr>
+      <tr><td class="n">4</td><td>Edits, re-shares, exports, moves to a project, or deletes</td><td>Saves the change. Deleting removes the MOC and its recording</td></tr>
+    </table></div>
+    <div class="outcome"><b>Outcome:</b> any past meeting can be found in a few seconds and used again.</div>
+  </article>
+
+  <!-- ═══════════ 9 ACTIONS ═══════════ -->
+  <article class="flow" id="f9">
+    <div class="eyebrow">Journey 9</div>
+    <h2>Track action items</h2>
+    <div class="meta">
+      <div><b>Goal</b>See every open task across all meetings</div>
+      <div><b>Who</b>Customer</div>
+      <div><b>Starts at</b>Top bar → Actions</div>
+    </div>
+    <h3>Steps</h3>
+    <div class="tbl"><table>
+      <tr><th></th><th>User does</th><th>AiX Track does</th></tr>
+      <tr><td class="n">1</td><td>Opens Actions</td><td>Lists action items from all meetings</td></tr>
+      <tr><td class="n">2</td><td>Switches view <span class="ui">By Task</span> or <span class="ui">By Person</span>; filters Open / Done / All and by priority (High, Medium, Low)</td><td>Regroups and filters the list</td></tr>
+      <tr><td class="n">3</td><td>Marks items done or emails an owner</td><td>Updates the item everywhere it appears</td></tr>
+    </table></div>
+    <div class="outcome"><b>Outcome:</b> a single follow-up list, so nothing agreed in a meeting is missed.</div>
+  </article>
+
+  <!-- ═══════════ 10 PROJECTS ═══════════ -->
+  <article class="flow" id="f10">
+    <div class="eyebrow">Journey 10</div>
+    <h2>Organise meetings into projects</h2>
+    <div class="meta">
+      <div><b>Goal</b>Group meetings by client or engagement</div>
+      <div><b>Who</b>Customer</div>
+      <div><b>Starts at</b>Projects page</div>
+    </div>
+    <h3>Steps</h3>
+    <div class="tbl"><table>
+      <tr><th></th><th>User does</th><th>AiX Track does</th></tr>
+      <tr><td class="n">1</td><td>Clicks <span class="ui">+ New Project</span>, enters a project name, description and project context</td><td>Creates the project. The project context helps the AI understand every meeting in that project</td></tr>
+      <tr><td class="n">2</td><td>Assigns meetings, either while setting options or later from Records</td><td>Shows the meeting count on each project</td></tr>
+      <tr><td class="n">3</td><td>Edits, archives, restores or deletes a project</td><td>Archived projects are hidden from active lists but kept</td></tr>
+    </table></div>
+    <div class="outcome"><b>Outcome:</b> each client's meetings sit together, and new MOCs use that client's context.</div>
+  </article>
+
+  <!-- ═══════════ 11 PROFILE ═══════════ -->
+  <article class="flow" id="f11">
+    <div class="eyebrow">Journey 11</div>
+    <h2>Profile, defaults and Google Drive storage</h2>
+    <div class="meta">
+      <div><b>Goal</b>Set defaults once and choose where recordings are kept</div>
+      <div><b>Who</b>Customer</div>
+      <div><b>Starts at</b>Profile page</div>
+    </div>
+    <h3>Steps</h3>
+    <div class="tbl"><table>
+      <tr><th></th><th>User does</th><th>AiX Track does</th></tr>
+      <tr><td class="n">1</td><td>Sets Display Name, Firm Name, Prepared By, Service Line and Default MOC Format</td><td>Uses these on every new MOC and Word export</td></tr>
+      <tr><td class="n">2</td><td>Clicks <span class="ui">Connect Google Drive</span> and allows access on Google's screen</td><td>Creates an "AiX Track Recordings" folder in the user's Drive</td></tr>
+      <tr><td class="n">3</td><td>Continues using the app as normal</td><td>After each MOC is saved, moves the recording into the user's Drive and frees space on AiX Track. Playback still works from Records</td></tr>
+      <tr><td class="n">4</td><td>Optional: <span class="ui">Disconnect</span></td><td>Stops moving new recordings. Files already in Drive stay there</td></tr>
+      <tr><td class="n">5</td><td>Copies their referral link</td><td>Gives bonus credits to the friend and to the user once the friend joins</td></tr>
+      <tr><td class="n">6</td><td>Optional: <span class="ui">Delete My Account Permanently</span>, then confirms</td><td>Deletes the account and its meetings</td></tr>
+    </table></div>
+    <div class="outcome"><b>Outcome:</b> MOCs carry the firm's details automatically, and recordings stay in the customer's own Drive if they choose.</div>
+    <div class="exc-box"><b>If something goes wrong</b>
+      <ul class="exc">
+        <li>User declines Google's permission: nothing changes and recordings stay with AiX Track.</li>
+        <li>Drive is full or access was removed: recordings stay with AiX Track and Profile shows the problem until it is fixed.</li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- ═══════════ 12 ADMIN ═══════════ -->
+  <article class="flow" id="f12">
+    <div class="eyebrow">Journey 12</div>
+    <h2>Admin</h2>
+    <div class="meta">
+      <div><b>Goal</b>Run the service: users, credits, cost and MOC quality</div>
+      <div><b>Who</b>AiX Track admins only</div>
+      <div><b>Starts at</b>Admin pages (hidden from customers)</div>
+    </div>
+    <h3>Tasks</h3>
+    <div class="tbl"><table>
+      <tr><th>Admin does</th><th>AiX Track does</th></tr>
+      <tr><td>Changes a user's role or adjusts credits</td><td>Applies it and records the change in the credit history</td></tr>
+      <tr><td>Reviews usage and cost per user and per meeting</td><td>Shows minutes processed, cost and balances, and can email a usage report</td></tr>
+      <tr><td>Edits the master MOC instructions and activates a version</td><td>Uses the active version for all new MOCs. Older versions are kept</td></tr>
+      <tr><td>Opens the log for any MOC</td><td>Shows exactly what instructions were used, to explain a result</td></tr>
+      <tr><td>Checks orders, storage and service health</td><td>Lists payments, disk use and alerts</td></tr>
+    </table></div>
+    <div class="outcome"><b>Outcome:</b> the service runs within budget, and any MOC result can be explained.</div>
+  </article>
+
+  <!-- ═══════════ COMMON MESSAGES ═══════════ -->
+  <section id="errors">
+    <h2>Common messages and what the user should do</h2>
+    <div class="tbl" style="margin-top:12px"><table>
+      <tr><th>The user sees</th><th>Why</th><th>What to do</th></tr>
+      <tr><td>Not enough credits</td><td>Balance is less than the recording needs</td><td>Buy a pack from Pricing, then retry</td></tr>
+      <tr><td>Microphone access was blocked</td><td>Browser permission was refused</td><td>Allow the microphone from the lock icon and retry</td></tr>
+      <tr><td>Session mismatch, please log in again</td><td>Login changed during an upload</td><td>Log in and upload again</td></tr>
+      <tr><td>Consent required</td><td>Consent box was not ticked</td><td>Confirm consent to process the recording</td></tr>
+      <tr><td>Link not available</td><td>Share link was switched off or the MOC deleted</td><td>Ask the sender for a new link</td></tr>
+    </table></div>
+  </section>
+
+  <footer>AiX Track user flow · prepared 15 Oct 2026. MOCs are AI-prepared drafts and should be reviewed before sharing.</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({ startOnLoad: true, theme: dark ? 'dark' : 'neutral', securityLevel: 'strict', flowchart: { htmlLabels: true, curve: 'basis' } });
+</script>
+</body>
+</html>

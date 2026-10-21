@@ -86,4 +86,19 @@ test('Repeated actions are de-duplicated', () => {
   assert.strictEqual(out.action_items.length, 1);
 });
 
+test('Agreed action without execution evidence is shown as "Pending"', () => {
+  const out = run({ action_items: [{ task: 'Send September sales file', owner: 'Labh', owner_status: 'explicit', commitment_quote: 'I will send the September sales file by Friday' }] });
+  assert.strictEqual(out.action_items[0].status, 'Pending');
+});
+
+test('Workstream pairing stays a matter with its classification', () => {
+  const out = run({ matters_discussed: [{ item: 'Labh and Nirja to examine platform costs', classification: 'WORKSTREAM' }] });
+  assert.strictEqual(out.matters_discussed[0].classification, 'WORKSTREAM');
+});
+
+test('Summary saying "no decisions" while a decision is confirmed is flagged', () => {
+  const out = run({ summary: 'No decisions were taken in the meeting.', decision_log: [{ statement: 'File Haryana GST registration through the CA', status: 'confirmed', accepted_by: 'Rajnikant', acceptance_quote: 'Okay approved, we will file the Haryana GST registration through the CA' }] });
+  assert.ok(out.moc_quality.report.warnings.some(w => /reconcile/.test(w)));
+});
+
 console.log(`\n${pass} passed${process.exitCode ? ', some FAILED' : ''}`);

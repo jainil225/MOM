@@ -751,12 +751,11 @@ input.native::placeholder{color:var(--ink4)}
         <div class="ft-mins" id="free-tier-used"></div>
       </div>
 
-      <!-- Recording consent — a notice, not a gate. The tick box was being missed
-           after upload and blocked the Generate button, so consent is now given by
-           the act of recording or generating, and is still logged server-side. -->
+      <!-- Recording consent (Screen B) is asked in a dialog when Record or Generate is clicked,
+           so it cannot be missed on the page; each confirmation is logged on the server. -->
       <div class="consent-row consent-note" id="consent-row">
-        <span>By recording or generating minutes you confirm that everyone in the conversation knows it is being recorded and will be processed by AiX Track.
-          <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a></span>
+        <span>Before each recording or upload you'll confirm that every participant knows it is being recorded and processed by AI.
+          <a href="/usage-policy" target="_blank" rel="noopener">Usage Policy</a> · <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a></span>
       </div>
 
       <!-- Input Mode Tabs -->
@@ -1270,10 +1269,10 @@ input.native::placeholder{color:var(--ink4)}
   </main>
 
   <!-- RIGHT PANEL -->
-  <div class="right-panel" id="right-panel">
+  <div class="right-panel" id="right-panel" style="display:none">
 
-    <!-- Stats -->
-    <div class="right-card">
+    <!-- Stats (hidden) -->
+    <div class="right-card" style="display:none">
       <div class="right-card-title">⬡ This Session</div>
       <div class="stat-row">
         <span class="stat-label">MOCs today</span>
@@ -1285,8 +1284,8 @@ input.native::placeholder{color:var(--ink4)}
       </div>
     </div>
 
-    <!-- How it works -->
-    <div class="right-card">
+    <!-- How it works (hidden: steps already shown above the upload box) -->
+    <div class="right-card" style="display:none">
       <div class="right-card-title">How it works</div>
       <div style="display:flex;flex-direction:column;gap:10px">
         <div style="display:flex;align-items:flex-start;gap:10px">
@@ -1428,6 +1427,7 @@ function esc(str){ return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&l
 /* Theme: handled by /js/theme.js */
 
 /* ── Auth ── */
+const LOW_CREDIT_THRESHOLD = 20;  // red chip + alert email below this balance
 async function loadNavCredits() {
   try {
     const r = await fetch('/api/credits/balance', {credentials:'same-origin'});
@@ -1440,10 +1440,10 @@ async function loadNavCredits() {
     if(elStat) elStat.textContent = `${bal.toLocaleString('en-IN')} cr`;
     const bigEl = document.getElementById('stat-credits-big');
     if(bigEl) bigEl.textContent = bal.toLocaleString('en-IN');
-    const color = bal < 100 ? 'var(--rust)' : bal < 500 ? 'var(--gold)' : 'var(--sage)';
+    const color = bal < LOW_CREDIT_THRESHOLD ? 'var(--rust)' : bal < 50 ? 'var(--gold)' : 'var(--sage)';
     if(el){ el.style.color = color; el.style.borderColor = color; }
     // Fire low-credit alert email (server applies 24h cooldown)
-    if (bal < 100 && !d.is_privileged) {
+    if (bal < LOW_CREDIT_THRESHOLD && !d.is_privileged) {
       fetch('/api/credits/low-credit-alert', {
         method: 'POST', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' }
@@ -1461,12 +1461,12 @@ function refreshCreditsFromResponse(data) {
     const bal = data.credits_remaining;
     if (el) {
       el.textContent = `⬡ ${bal.toLocaleString('en-IN')} credits left`;
-      const color = bal < 100 ? 'var(--rust)' : bal < 500 ? 'var(--gold)' : 'var(--sage)';
+      const color = bal < LOW_CREDIT_THRESHOLD ? 'var(--rust)' : bal < 50 ? 'var(--gold)' : 'var(--sage)';
       el.style.color = color;
       el.style.borderColor = color;
     }
     if (elStat) elStat.textContent = `${bal.toLocaleString('en-IN')} cr`;
-    if (bal < 100) {
+    if (bal < LOW_CREDIT_THRESHOLD) {
       fetch('/api/credits/low-credit-alert', {
         method: 'POST', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' }
@@ -1569,6 +1569,7 @@ function renderActionTracker(actionItems) {
     container.innerHTML = '<div class="tracker-empty"><span class="tracker-empty-icon">✅</span>Generate a MOC to see today\'s action items here.</div>';
     if(countEl) countEl.textContent = '—';
     if(rightPanel) rightPanel.style.display = 'none';
+    const rp0 = document.getElementById('right-panel'); if(rp0) rp0.style.display = 'none';
     return;
   }
 
@@ -1576,6 +1577,7 @@ function renderActionTracker(actionItems) {
   const done = Object.values(actionDoneState).filter(Boolean).length;
   if(countEl) countEl.textContent = `${done}/${total}`;
   if(rightPanel) rightPanel.style.display = 'block';
+  const rp1 = document.getElementById('right-panel'); if(rp1) rp1.style.display = '';
 
   let html = '';
   let rightHtml = '';
@@ -1720,7 +1722,7 @@ const recServer = {
     this.seq = 0; this.sentIdx = 0; this.retry = null; this.busy = false; this.enabled = true;
     this.mime = mime || 'audio/webm';
     fetch('/api/recordings/start', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: this.id, mime_type: this.mime, consent_confirmed: true }) })
+      body: JSON.stringify({ id: this.id, mime_type: this.mime, consent_confirmed: true, recording_consent_id: recConsent?.id || '' }) })
       .then(r => { if (!r.ok) this.enabled = false; }).catch(() => { this.enabled = false; });
   },
   async flush() {
@@ -1771,10 +1773,91 @@ let useDiarization = false;
    upload and is still written to the consent log, so the record is unchanged. */
 function consentOk() { return true; }
 function consentChanged() { /* kept so any older handler call is harmless */ }
+
+/* ══ RECORDING CONSENT — Screen B (each recording / upload) and Screen C (participant notice) ══
+   The server refuses a recording or upload without a consent id created here, logs it with the
+   time, account and IP address, and ties it to the conversation that is produced. */
+let recConsent = null;   // { id, key } — key is 'recording' for a live recording, or the uploaded file
+const consentKeyFor = f => f ? [f.name, f.size, f.lastModified].join('|') : '';
+const PARTICIPANT_SCRIPT = 'This meeting is being recorded with AiX Track to prepare minutes and action items. The recording is processed by AI and shared only with the participants. If you do not agree, please tell me now. You can ask for your data to be deleted at notification.aix@gmail.com.';
+const INVITE_FOOTER = 'This meeting will be recorded and transcribed by AiX Track to prepare minutes. How your data is handled: track.aiextensive.com/privacy · Requests: notification.aix@gmail.com';
+
+function askRecordingConsent(forUpload) {
+  return new Promise(resolve => {
+    document.getElementById('rc-dlg')?.remove();
+    const d = document.createElement('div');
+    d.id = 'rc-dlg';
+    d.className = 'rc-dlg';
+    d.innerHTML = `
+      <div class="rc-box" role="dialog" aria-modal="true" aria-labelledby="rc-title">
+        <div class="rc-title" id="rc-title">Confirm participant consent</div>
+        <label class="rc-check"><input type="checkbox" id="rc-c1">
+          <span>I have told every participant that this conversation is being recorded and processed by AI to prepare minutes, and I have their agreement where the law requires it.</span></label>
+        <label class="rc-check"><input type="checkbox" id="rc-c2">
+          <span>This recording does not include content I am not permitted to share, such as material covered by a confidentiality duty, unless I am authorised to process it.</span></label>
+        <details class="rc-notice">
+          <summary>What to tell participants</summary>
+          <div class="rc-n-label">Read-out script (start of meeting)</div>
+          <div class="rc-n-text" id="rc-script"></div>
+          <button type="button" class="rc-copy" data-copy="rc-script">Copy</button>
+          <div class="rc-n-label">Invite or email footer</div>
+          <div class="rc-n-text" id="rc-footer"></div>
+          <button type="button" class="rc-copy" data-copy="rc-footer">Copy</button>
+        </details>
+        <div class="rc-log">Your confirmation is logged with the time, your account and IP address.</div>
+        <div class="rc-err" id="rc-err"></div>
+        <div class="rc-btns">
+          <button type="button" class="rc-cancel" id="rc-cancel">Cancel</button>
+          <button type="button" class="rc-go" id="rc-go" disabled>${forUpload ? 'Upload' : 'Start recording'}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(d);
+    d.querySelector('#rc-script').textContent = PARTICIPANT_SCRIPT;
+    d.querySelector('#rc-footer').textContent = INVITE_FOOTER;
+    const c1 = d.querySelector('#rc-c1'), c2 = d.querySelector('#rc-c2'), go = d.querySelector('#rc-go');
+    const sync = () => { go.disabled = !(c1.checked && c2.checked); };
+    c1.onchange = sync; c2.onchange = sync;
+    d.querySelectorAll('.rc-copy').forEach(b => b.onclick = async () => {
+      const t = d.querySelector('#' + b.dataset.copy).textContent;
+      try { await navigator.clipboard.writeText(t); b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy', 1500); } catch (_) {}
+    });
+    const done = v => { d.remove(); document.removeEventListener('keydown', esc); resolve(v); };
+    const esc = e => { if (e.key === 'Escape') done(null); };
+    document.addEventListener('keydown', esc);
+    d.querySelector('#rc-cancel').onclick = () => done(null);
+    d.addEventListener('click', e => { if (e.target === d) done(null); });
+    go.onclick = async () => {
+      go.disabled = true; go.textContent = 'Saving…';
+      try {
+        const r = await fetch('/api/consent/recording', { method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participants: c1.checked, content: c2.checked }) });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok || !j.consent_id) throw new Error(j.error || 'Could not save your confirmation.');
+        done(j.consent_id);
+      } catch (e) {
+        const er = d.querySelector('#rc-err'); er.textContent = e.message; er.style.display = 'block';
+        go.textContent = forUpload ? 'Upload' : 'Start recording'; sync();
+      }
+    };
+    setTimeout(() => c1.focus(), 50);
+  });
+}
+
+// Returns the consent id for what is about to be recorded or uploaded, asking when there is none yet
+async function ensureRecordingConsent(kind) {
+  const key = kind === 'recording' ? 'recording' : consentKeyFor(currentFile);
+  if (recConsent && recConsent.key === key) return recConsent.id;
+  const id = await askRecordingConsent(kind !== 'recording');
+  if (!id) return null;
+  recConsent = { id, key };
+  return id;
+}
 const maxAudioSec = () => (window.AIX_RATES.max_audio_hours || 10) * 3600;
 
 async function generateMOC(withDiarization) {
   if (!consentOk()) return;
+  // Screen B — an upload needs its own confirmation; a live recording reuses the one given when it started
+  if (!(await ensureRecordingConsent(inputMode === 'record' && recConsent?.key === 'recording' ? 'recording' : 'upload'))) return;
   useDiarization = !!withDiarization;
   if (useDiarization && inputMode === 'record' && currentFile && recordedSeconds > 0) {
     const a = await loadRecordingAllowance();
@@ -2064,6 +2147,8 @@ async function toggleRecording(){
 
 async function startRecording(){
   if (!consentOk()) return;
+  recConsent = null;                                      // a new recording needs its own consent
+  if (!(await ensureRecordingConsent('recording'))) return;
   currentFile = null; audioChunks = [];
   document.getElementById("rec-preview").style.display = "none";
   document.getElementById("error-box").style.display = "none";
@@ -2518,7 +2603,7 @@ async function handleProcess(){
         res = await fetch('/api/upload/complete', {
           method: 'POST', credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uploadId, originalName: currentFile.name, totalChunks, language, category, tags, project_id: projectId, moc_template: mocTemplate, additional_context: contextText, session_prompt: sessionPrompt, enable_diarization: useDiarization, consent_confirmed: true })
+          body: JSON.stringify({ uploadId, originalName: currentFile.name, totalChunks, language, category, tags, project_id: projectId, moc_template: mocTemplate, additional_context: contextText, session_prompt: sessionPrompt, enable_diarization: useDiarization, consent_confirmed: true, recording_consent_id: recConsent?.id || '' })
         });
       } finally { clearInterval(_progressTicker); }
       setProgress('Wrapping up…', 95);
@@ -2531,6 +2616,7 @@ async function handleProcess(){
         throw new Error('Unexpected server response. Please try again.');
       }
       if (!res.ok) {
+        if (data.error_type === 'consent_required') recConsent = null;
         if (data.error_type === 'session_mismatch') { stopEstimatedTimer(false); hideEstimatedTimer(); setPhase("phase-upload"); setStep(1); showError('Session changed during upload. Please log out, log back in, and try again.'); return; }
         if (data.action === 'purchase_credits' || data.error_type === 'free_tier_exhausted' || data.error_type === 'free_tier_insufficient') { stopEstimatedTimer(false); hideEstimatedTimer(); setPhase("phase-upload"); setStep(1); showInsufficientCreditsError(0, 0, 0, data.error); return; }
         if (data.action === 'purchase_credits' || data.error_type === 'free_tier_exhausted' || data.error_type === 'free_tier_insufficient') { stopEstimatedTimer(false); hideEstimatedTimer(); setPhase("phase-upload"); setStep(1); showInsufficientCreditsError(0, 0, 0, data.error); return; }
@@ -2551,6 +2637,7 @@ async function handleProcess(){
       if (sessionPrompt) fd.append('session_prompt', sessionPrompt);
       fd.append('enable_diarization', useDiarization ? 'true' : 'false');
       fd.append('consent_confirmed', 'true');
+      fd.append('recording_consent_id', recConsent?.id || '');
       const _dPhases = [
         { pct: 18, msg: 'Uploading recording…' },
         { pct: 28, msg: 'Converting audio…' },
@@ -2582,6 +2669,7 @@ async function handleProcess(){
         throw new Error('Unexpected server response. Please try again.');
       }
       if (!res.ok) {
+        if (data.error_type === 'consent_required') recConsent = null;
         if (data.action === 'purchase_credits' || data.error_type === 'free_tier_exhausted' || data.error_type === 'free_tier_insufficient') { stopEstimatedTimer(false); hideEstimatedTimer(); setPhase("phase-upload"); setStep(1); showInsufficientCreditsError(0, 0, 0, data.error); return; }
         if (data.action === 'refill_claude') { showCreditAlert('claude', data.error, data.draft_session_id, data.refill_url); stopEstimatedTimer(false); hideEstimatedTimer(); setPhase("phase-upload"); setStep(1); return; }
         if (data.action === 'refill_sarvam') { showCreditAlert('sarvam', data.error, null, data.refill_url); stopEstimatedTimer(false); hideEstimatedTimer(); setPhase("phase-upload"); setStep(1); return; }
@@ -2589,6 +2677,7 @@ async function handleProcess(){
       }
     }
 
+    recConsent = null;                                    // used — the next recording or upload asks again
     currentTranscript = data.transcript;
     currentMOM = data.mom;
     currentSessionId = data.session_id;
@@ -3362,7 +3451,7 @@ function downloadMOMPDF() {
 ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.25); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(245,158,11,0.4); }
 </style>
-</head><body><div class="header"><div class="header-ref">${refId} · ${ADV ? 'MINUTES OF MEETING' : 'MINUTES OF CONVERSATION'}</div><div class="header-title">${esc(m.meeting_title||'Conversation')}</div><div class="header-meta">${m.meeting_date||''}${m.meeting_time?' · '+m.meeting_time:''}${m.location?' · '+esc(m.location):''}</div></div><div class="gold-bar"></div>${ADV&&(m.client_name||m.subject)?`<div class="section"><table><tbody>${[['Client',m.client_name],['Subject',m.subject||m.meeting_title],['Present',arr(m.attendees).join(', ')]].map(([k,v])=>`<tr><th style="width:22%">${k}</th><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8">${esc(v||'Not recorded')}</td></tr>`).join('')}</tbody></table></div>`:''}${xsum.length?`<div class="section"><div class="section-label">Executive Summary</div>${xsum.map(x=>`<p style="font-size:13px;line-height:1.75;margin:0 0 9px">${esc(x)}</p>`).join('')}</div>`:(m.summary?`<div class="section"><div class="section-label">Executive Summary</div><div style="background:#F8F6F0;border-left:3px solid #B8912A;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.7">${esc(m.summary)}</div></div>`:'')}${arr(m.attendees).length?`<div class="section"><div class="section-label">Attendees (${arr(m.attendees).length})</div><div>${arr(m.attendees).map(a=>`<span class="chip">${esc(a)}</span>`).join('')}</div></div>`:''}${arr(m.agenda).length?`<div class="section"><div class="section-label">Agenda</div>${arr(m.agenda).map((a,i)=>`<div style="padding:4px 0;font-size:12px"><span style="font-family:monospace;color:#B8912A;margin-right:8px">${String(i+1).padStart(2,'0')}.</span>${esc(a)}</div>`).join('')}</div>`:''}${discussionRows?`<div class="section"><div class="section-label">${ADV?'3. Points Discussed':'Discussion Points'}</div>${discussionRows}</div>`:''}${arr(m.decisions).length?`<div class="section"><div class="section-label">${ADV?'4. Agreed Directions / Working Conclusions':'Decisions'}</div>${arr(m.decisions).map(d=>`<div style="display:flex;gap:8px;padding:5px 0;font-size:12px"><span style="color:#4A7C59;flex-shrink:0">✓</span><span>${esc(d)}</span></div>`).join('')}</div>`:''}${arr(m.action_items).length?`<div class="section"><div class="section-label">${ADV?'1. Action Plan':'Action Items'}</div><table><thead><tr><th>Task</th><th>${ADV?'Responsibility':'Owner'}</th><th>${ADV?'Timeline / Status':'Due Date'}</th><th>Priority</th></tr></thead><tbody>${actionRows}</tbody></table></div>`:''}${trk.length?`<div class="section"><div class="section-label">2. Information and Pending Tracker</div><table><thead><tr><th>Area</th><th>Requirement / Deliverable</th><th>Responsible</th><th>Status</th></tr></thead><tbody>${trk.map(r=>`<tr><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8">${esc(r.area||'')}</td><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8">${esc(r.requirement||'')}</td><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8">${esc(r.responsible||'')}</td><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8">${esc(r.status||'')}</td></tr>`).join('')}</tbody></table></div>`:''}${agd.length?`<div class="section"><div class="section-label">5. Proposed Agenda for Next Meeting</div>${agd.map((a,i)=>`<div style="padding:4px 0;font-size:12px"><span style="font-family:monospace;color:#B8912A;margin-right:8px">${String(i+1).padStart(2,'0')}.</span>${esc(a)}</div>`).join('')}</div>`:''}${m.next_meeting?`<div class="section"><div class="section-label">Next Conversation</div><div style="font-size:12px">${esc(m.next_meeting)}</div></div>`:''}<div class="footer"><span>AiX Track · AI-generated · Verify with organiser</span><span>${refId}</span></div></body></html>`);
+</head><body><div class="header"><div class="header-ref">${refId} · MINUTES OF CONVERSATION</div><div class="header-title">${esc(m.meeting_title||'Conversation')}</div><div class="header-meta">${m.meeting_date||''}${m.meeting_time?' · '+m.meeting_time:''}${m.location?' · '+esc(m.location):''}</div></div><div class="gold-bar"></div>${ADV&&(m.client_name||m.subject)?`<div class="section"><table><tbody>${[['Client',m.client_name],['Subject',m.subject||m.meeting_title],['Present',arr(m.attendees).join(', ')]].map(([k,v])=>`<tr><th style="width:22%">${k}</th><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8">${esc(v||'Not recorded')}</td></tr>`).join('')}</tbody></table></div>`:''}${xsum.length?`<div class="section"><div class="section-label">Executive Summary</div>${xsum.map(x=>`<p style="font-size:13px;line-height:1.75;margin:0 0 9px">${esc(x)}</p>`).join('')}</div>`:(m.summary?`<div class="section"><div class="section-label">Executive Summary</div><div style="background:#F8F6F0;border-left:3px solid #B8912A;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.7">${esc(m.summary)}</div></div>`:'')}${arr(m.attendees).length?`<div class="section"><div class="section-label">Attendees (${arr(m.attendees).length})</div><div>${arr(m.attendees).map(a=>`<span class="chip">${esc(a)}</span>`).join('')}</div></div>`:''}${arr(m.agenda).length?`<div class="section"><div class="section-label">Agenda</div>${arr(m.agenda).map((a,i)=>`<div style="padding:4px 0;font-size:12px"><span style="font-family:monospace;color:#B8912A;margin-right:8px">${String(i+1).padStart(2,'0')}.</span>${esc(a)}</div>`).join('')}</div>`:''}${discussionRows?`<div class="section"><div class="section-label">${ADV?'3. Points Discussed':'Discussion Points'}</div>${discussionRows}</div>`:''}${arr(m.decisions).length?`<div class="section"><div class="section-label">${ADV?'4. Agreed Directions / Working Conclusions':'Decisions'}</div>${arr(m.decisions).map(d=>`<div style="display:flex;gap:8px;padding:5px 0;font-size:12px"><span style="color:#4A7C59;flex-shrink:0">✓</span><span>${esc(d)}</span></div>`).join('')}</div>`:''}${arr(m.action_items).length?`<div class="section"><div class="section-label">${ADV?'1. Action Plan':'Action Items'}</div><table><thead><tr><th>Task</th><th>${ADV?'Responsibility':'Owner'}</th><th>${ADV?'Timeline / Status':'Due Date'}</th><th>Priority</th></tr></thead><tbody>${actionRows}</tbody></table></div>`:''}${trk.length?`<div class="section"><div class="section-label">2. Information and Pending Tracker</div><table><thead><tr><th>Area</th><th>Requirement / Deliverable</th><th>Responsible</th><th>Status</th></tr></thead><tbody>${trk.map(r=>`<tr><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8">${esc(r.area||'')}</td><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8">${esc(r.requirement||'')}</td><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8">${esc(r.responsible||'')}</td><td style="padding:8px 10px;font-size:12px;border:1px solid #E8E4D8">${esc(r.status||'')}</td></tr>`).join('')}</tbody></table></div>`:''}${agd.length?`<div class="section"><div class="section-label">5. Proposed Agenda for Next Meeting</div>${agd.map((a,i)=>`<div style="padding:4px 0;font-size:12px"><span style="font-family:monospace;color:#B8912A;margin-right:8px">${String(i+1).padStart(2,'0')}.</span>${esc(a)}</div>`).join('')}</div>`:''}${m.next_meeting?`<div class="section"><div class="section-label">Next Conversation</div><div style="font-size:12px">${esc(m.next_meeting)}</div></div>`:''}<div class="footer"><span>AiX Track · AI-generated · Verify with organiser</span><span>${refId}</span></div></body></html>`);
   printWin.document.close();
   setTimeout(() => { printWin.focus(); printWin.print(); }, 600);
 }
@@ -4318,6 +4407,25 @@ document.addEventListener('keydown', function(e) {
 <style>
 /* Consent is now a quiet notice, not a control — no checkbox to miss, and it
    must not read as something still waiting to be actioned. */
+.rc-dlg{position:fixed;inset:0;z-index:2000;background:rgba(8,14,30,0.62);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px}
+.rc-box{width:100%;max-width:520px;max-height:calc(100vh - 32px);overflow-y:auto;background:var(--card);color:var(--ink);border:1px solid var(--border-strong);border-radius:16px;box-shadow:0 18px 48px rgba(0,0,0,0.35);padding:22px;font-family:var(--sans)}
+.rc-title{font-family:var(--serif);font-size:20px;margin-bottom:12px}
+.rc-check{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;font-size:13.5px;line-height:1.55;color:var(--ink2);cursor:pointer}
+.rc-check:has(input:checked){border-color:var(--gold);background:var(--gold-tint)}
+.rc-check input{width:17px;height:17px;margin-top:2px;flex-shrink:0;accent-color:var(--gold);cursor:pointer}
+.rc-notice{margin:4px 0 10px;font-size:13px;color:var(--ink2)}
+.rc-notice summary{cursor:pointer;color:var(--gold);font-weight:600;padding:4px 0}
+.rc-n-label{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin:10px 0 4px}
+.rc-n-text{background:var(--paper2,rgba(0,0,0,0.03));border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:12.5px;line-height:1.6}
+.rc-copy{margin-top:6px;font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--ink2);cursor:pointer}
+.rc-log{font-size:11.5px;color:var(--ink3);margin:6px 0 2px}
+.rc-err{display:none;color:var(--rust);font-size:12.5px;margin-top:8px}
+.rc-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.rc-cancel,.rc-go{font-size:13.5px;font-weight:600;padding:10px 16px;border-radius:9px;cursor:pointer;font-family:var(--sans)}
+.rc-cancel{background:transparent;border:1px solid var(--border-strong);color:var(--ink2)}
+.rc-go{background:var(--gold);border:1px solid var(--gold);color:#0A0C12}
+.rc-go:disabled{opacity:.45;cursor:not-allowed}
+@media (max-width:600px){.rc-btns{flex-direction:column-reverse}.rc-cancel,.rc-go{width:100%}}
 .consent-note{align-items:center;background:transparent!important;border-style:dashed!important;
   border-color:var(--border)!important;font-size:12px;line-height:1.55;color:var(--ink3);cursor:default}
 .consent-note span{color:var(--ink3)}

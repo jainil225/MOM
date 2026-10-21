@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <script src="/js/theme.js"></script>
+<script src="/js/rates.js"></script>
 <title>Admin Dashboard · AiX Track</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -220,7 +221,7 @@ tr:hover td{background:var(--paper2)}
         <div class="margin-item-val green" id="mb-profit">—</div>
       </div>
     </div>
-    <div class="margin-note">* Revenue shown is from Razorpay orders in the DB. API cost is from api_usage_log. USD → INR at ₹84. Server cost (VPS ~₹1,600/mo) not included.</div>
+    <div class="margin-note">* Revenue shown is from Razorpay orders in the DB. API cost is from api_usage_log. USD → INR at <span data-fx>₹96</span>. Server cost (VPS ~₹1,600/mo) not included.</div>
   </div>
 
   <!-- Users table -->
@@ -322,7 +323,6 @@ tr:hover td{background:var(--paper2)}
 
 <script>
 let currentDays = 7;
-const USD_TO_INR = 84;
 
 async function setPeriod(days, btn) {
   currentDays = days;
@@ -371,7 +371,7 @@ async function loadKPIs() {
 
     // API cost
     const apiCostUsd = parseFloat(usageRes.totals?.grand_total_usd || 0);
-    const apiCostInr = apiCostUsd * USD_TO_INR;
+    const apiCostInr = apiCostUsd * AIX_FX();
     document.getElementById('kpi-cost-usd').textContent = '$' + apiCostUsd.toFixed(3);
     document.getElementById('kpi-cost-inr').textContent = '≈ ₹' + fmt(apiCostInr);
 
@@ -388,8 +388,8 @@ async function loadKPIs() {
 
     const sarvamCost = (usageRes.by_service || []).find(s => s.service === 'sarvam');
     const claudeCost = (usageRes.by_service || []).find(s => s.service === 'claude');
-    const sarvamInr  = parseFloat(sarvamCost?.total_cost_usd || 0) * USD_TO_INR;
-    const claudeInr  = parseFloat(claudeCost?.total_cost_usd || 0) * USD_TO_INR;
+    const sarvamInr  = parseFloat(sarvamCost?.total_cost_usd || 0) * AIX_FX();
+    const claudeInr  = parseFloat(claudeCost?.total_cost_usd || 0) * AIX_FX();
     document.getElementById('mb-sarvam').textContent = '₹' + fmt(sarvamInr);
     document.getElementById('mb-claude').textContent = '₹' + fmt(claudeInr);
     document.getElementById('mb-api-total').textContent = '₹' + fmt(apiCostInr);
@@ -517,7 +517,7 @@ async function loadSessions() {
     tbody.innerHTML = sessions.map(s => {
       const dur   = s.duration_seconds ? Math.round(s.duration_seconds / 60) + 'm' : '—';
       const cost  = parseFloat(s.total_cost || 0);
-      const costInr = cost * USD_TO_INR;
+      const costInr = cost * AIX_FX();
       const creditsUsed = Math.round((s.duration_seconds || 0) / 60 * 2 + 8);
       const dateStr = s.created_at ? new Date(s.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}) : '—';
       return `<tr>
@@ -547,7 +547,7 @@ async function loadApiUsage() {
     const svcColor = { sarvam:'#7C3AED', claude:'#B8912A', openai:'#10B981' };
     tbody.innerHTML = services.map(s => {
       const costUsd = parseFloat(s.total_cost_usd || 0);
-      const costInr = costUsd * USD_TO_INR;
+      const costInr = costUsd * AIX_FX();
       const unitLabel = s.service === 'sarvam' ? 'sec' : 'tokens';
       return `<tr>
         <td><span style="font-family:var(--mono);font-size:12px;font-weight:700;color:${svcColor[s.service]||'var(--ink2)'}">${s.service.toUpperCase()}</span></td>

@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <script src="/js/theme.js"></script>
+<script src="/js/rates.js"></script>
 <title>Cost Intelligence · MOC Tool</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -242,15 +243,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 
   <div class="page-eyebrow">Cost Intelligence</div>
   <h1 class="page-title">What you pay, what you earn, <em>what to do about it</em></h1>
-  <p class="page-sub">Live actuals from api_usage_log + static rate card from COST constants · ₹84/USD · 1 credit = ₹1</p>
+  <p class="page-sub">Live actuals from api_usage_log + rate card below · <span data-fx>₹96</span>/USD · 1 credit = ₹1</p>
 
   <div class="pricing-note">
     <strong>Rate sources:</strong>
-    Sarvam saarika:v2.5 — $0.0002/sec (₹1.008/min) ·
-    Claude Haiku 4.5 (default) — $0.25/MTok input · $1.25/MTok output ·
-    ChatGPT GPT-4o (custom prompt) — $5/MTok input · $15/MTok output ·
-    Both used for MOC generation — Claude is default, ChatGPT activates when custom instructions are filled ·
-    Pricing from server.js COST constants. Verify against provider dashboards before financial decisions.
+    Sarvam saarika:v2.5 / saaras:v4 (speakers) — ₹0.49/min · ₹0.59/min with speakers ·
+    ChatGPT GPT-4o writes the meeting brief — $2.50/MTok input · $10/MTok output ·
+    Claude Sonnet 5.5 writes every MOC — $2/MTok input · $10/MTok output ·
+    GPT-4o-mini scans topics on long transcripts — $0.15/$0.60 per MTok ·
+    Published rates checked 16 Oct 2026 (sarvam.ai/api-pricing, platform.claude.com, developers.openai.com). Verify before financial decisions.
   </div>
 
   <!-- ── KPI TOP LEDGER ── -->
@@ -289,47 +290,45 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
       <div class="rate-card-header">
         <div class="rate-card-name">
           <span class="svc-dot dot-sarvam"></span>
-          Sarvam AI — saarika:v2.5
+          Sarvam AI — speech to text
         </div>
-        <span class="rate-badge active">Active</span>
+        <span class="rate-badge active">Every conversation</span>
       </div>
-      <div class="rate-row"><span class="rate-key">Per second</span><span class="rate-val">$0.000200<small>₹0.01680</small></span></div>
-      <div class="rate-row"><span class="rate-key">Per minute</span><span class="rate-val">$0.0120<small>₹1.008</small></span></div>
-      <div class="rate-row"><span class="rate-key">Per hour</span><span class="rate-val">$0.720<small>₹60.48</small></span></div>
-      <div class="rate-row"><span class="rate-key">Hindi accuracy</span><span class="rate-val" style="color:var(--sage)">✓ Best in India</span></div>
-      <div class="rate-row"><span class="rate-key">Hard chunk limit</span><span class="rate-val" style="color:var(--rust)">30 sec/call</span></div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--ink3);padding:6px 0 8px;letter-spacing:0.06em">saarika:v2.5 standard · saaras:v4 with speakers · billed by audio length</div>
+      <div class="rate-row"><span class="rate-key">Per minute</span><span class="rate-val">₹0.49<small>₹0.59 with speakers</small></span></div>
+      <div class="rate-row"><span class="rate-key">Per hour</span><span class="rate-val">₹29.40<small>₹35.40 with speakers</small></span></div>
+      <div class="rate-row"><span class="rate-key">Cost share (1 hr)</span><span class="rate-val" style="color:var(--gold)">~55% · largest single cost</span></div>
+      <div class="rate-row"><span class="rate-key">Regenerate MOC</span><span class="rate-val" style="color:var(--sage)">not used — saved transcript</span></div>
     </div>
 
     <div class="rate-card">
       <div class="rate-card-header">
         <div class="rate-card-name">
           <span class="svc-dot dot-claude"></span>
-          AI Engine — Claude Haiku 4.5
+          Claude Sonnet 5.5 — writes the MOC
         </div>
-        <span class="rate-badge active">Default</span>
+        <span class="rate-badge active">Every conversation</span>
       </div>
-      <div style="font-family:var(--mono);font-size:9px;color:var(--ink3);padding:6px 0 8px;letter-spacing:0.06em">Used when no custom prompt is filled</div>
-      <div class="rate-row"><span class="rate-key">Input tokens</span><span class="rate-val">$0.25 / MTok<small>₹21 / MTok</small></span></div>
-      <div class="rate-row"><span class="rate-key">Output tokens</span><span class="rate-val">$1.25 / MTok<small>₹105 / MTok</small></span></div>
-      <div class="rate-row"><span class="rate-key">Per MOC (30 min avg)</span><span class="rate-val">~$0.006<small>₹~0.50</small></span></div>
-      <div class="rate-row"><span class="rate-key">Cost share vs Sarvam</span><span class="rate-val" style="color:var(--sage)">~2%</span></div>
-      <div class="rate-row"><span class="rate-key">Verdict</span><span class="rate-val" style="color:var(--sage)">Low cost · keep as default</span></div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--ink3);padding:6px 0 8px;letter-spacing:0.06em">Master prompt + rules are cached; transcript and brief are sent each time</div>
+      <div class="rate-row"><span class="rate-key">Input tokens</span><span class="rate-val">$2.00 / MTok<small>cache hit $0.10 / MTok</small></span></div>
+      <div class="rate-row"><span class="rate-key">Output tokens</span><span class="rate-val">$10.00 / MTok<small>includes reasoning</small></span></div>
+      <div class="rate-row"><span class="rate-key">Per 1-hr MOC</span><span class="rate-val">~$0.17–0.24<small>₹16–23 at ₹96/USD</small></span></div>
+      <div class="rate-row"><span class="rate-key">Tokens (1 hr)</span><span class="rate-val">29k–42k in · 10k–15k out<small>Hindi/Gujarati at the high end</small></span></div>
     </div>
 
     <div class="rate-card">
       <div class="rate-card-header">
         <div class="rate-card-name">
           <span class="svc-dot dot-openai"></span>
-          AI Engine — ChatGPT GPT-4o
+          ChatGPT GPT-4o — meeting brief
         </div>
-        <span class="rate-badge active">Custom Prompt</span>
+        <span class="rate-badge active">Every conversation</span>
       </div>
-      <div style="font-family:var(--mono);font-size:9px;color:var(--ink3);padding:6px 0 8px;letter-spacing:0.06em">Activates when user fills custom instructions box</div>
-      <div class="rate-row"><span class="rate-key">Input tokens</span><span class="rate-val">$5.00 / MTok<small>₹420 / MTok</small></span></div>
-      <div class="rate-row"><span class="rate-key">Output tokens</span><span class="rate-val">$15.00 / MTok<small>₹1,260 / MTok</small></span></div>
-      <div class="rate-row"><span class="rate-key">Per MOC (30 min avg)</span><span class="rate-val">~$0.095<small>₹~7.98</small></span></div>
-      <div class="rate-row"><span class="rate-key">vs Haiku</span><span class="rate-val" style="color:var(--gold)">20× but higher intelligence</span></div>
-      <div class="rate-row"><span class="rate-key">Verdict</span><span class="rate-val" style="color:var(--sage)">Use for complex / priority conversations</span></div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--ink3);padding:6px 0 8px;letter-spacing:0.06em">Reads up to ~24k tokens and writes the brief Claude follows</div>
+      <div class="rate-row"><span class="rate-key">Input tokens</span><span class="rate-val">$2.50 / MTok</span></div>
+      <div class="rate-row"><span class="rate-key">Output tokens</span><span class="rate-val">$10.00 / MTok</span></div>
+      <div class="rate-row"><span class="rate-key">Per 1-hr brief</span><span class="rate-val">~$0.06–0.08<small>₹6–7.50 at ₹96/USD</small></span></div>
+      <div class="rate-row"><span class="rate-key">+ GPT-4o-mini scan</span><span class="rate-val">~₹0.40<small>long transcripts only</small></span></div>
     </div>
 
   </div>
@@ -395,35 +394,35 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
             <input type="range" id="c-slider" min="1" max="120" value="30" step="1">
           </div>
           <div class="calc-field">
-            <label>Input tokens (est.)</label>
-            <input type="number" id="c-in-tok" value="10000" min="0">
+            <label>Claude input tokens (auto from duration)</label>
+            <input type="number" id="c-in-tok" value="23000" min="0">
           </div>
           <div class="calc-field">
-            <label>Output tokens (est.)</label>
-            <input type="number" id="c-out-tok" value="3000" min="0">
+            <label>Claude output tokens (auto from duration)</label>
+            <input type="number" id="c-out-tok" value="8200" min="0">
           </div>
         </div>
 
-        <!-- AI toggle -->
+        <!-- Transcription mode -->
         <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center">
-          <span style="font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:0.08em;text-transform:uppercase">AI Engine:</span>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:0.08em;text-transform:uppercase">Transcription:</span>
           <button onclick="setAI(this,'claude')" id="ai-btn-claude"
             style="font-family:var(--mono);font-size:10px;font-weight:600;padding:4px 10px;border-radius:5px;border:1px solid var(--gold);background:var(--gold-tint);color:var(--gold);cursor:pointer">
-            Claude (default)
+            Standard
           </button>
           <button onclick="setAI(this,'gpt4o')" id="ai-btn-gpt4o"
             style="font-family:var(--mono);font-size:10px;font-weight:600;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--ink3);cursor:pointer">
-            ChatGPT GPT-4o
+            With speakers
           </button>
         </div>
 
         <table class="breakdown-table">
           <tr>
-            <td class="lbl"><span class="svc-dot dot-sarvam"></span>Sarvam transcription</td>
+            <td class="lbl"><span class="svc-dot dot-sarvam"></span><span id="c-sar-label">Sarvam transcription</span></td>
             <td class="cost"><span id="c-sarvam-usd">$0.360</span><small id="c-sarvam-inr">₹30.24</small></td>
           </tr>
           <tr>
-            <td class="lbl"><span id="c-ai-label"><span class="svc-dot dot-claude"></span>Claude Haiku (MOC)</span></td>
+            <td class="lbl"><span id="c-ai-label"><span class="svc-dot dot-claude"></span>AI — GPT-4o brief + Claude MOC</span></td>
             <td class="cost"><span id="c-claude-usd">$0.00625</span><small id="c-claude-inr">₹0.53</small></td>
           </tr>
           <tr>
@@ -590,9 +589,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 const urlParams   = new URLSearchParams(window.location.search);
 const adminSecret = urlParams.get('secret') || '';
 function authHeaders(){ return { 'x-admin-secret': adminSecret }; }
-const USD_INR = 84;
 function fmt$(v,d=4){ return '$'+parseFloat(v||0).toFixed(d); }
-function fmtINR(v){ return '₹'+parseFloat((parseFloat(v||0)*USD_INR)).toFixed(2); }
+function fmtINR(v){ return '₹'+parseFloat((parseFloat(v||0)*AIX_FX())).toFixed(2); }
 function fmtI(v){ return '₹'+parseFloat(v||0).toFixed(2); }
 function fmtNum(v){ return Number(parseInt(v||0)).toLocaleString('en-IN'); }
 function fmtDate(d){ if(!d) return '—'; return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }
@@ -630,7 +628,7 @@ function renderKPIs(data){
 
   const lifetimeUsd = parseFloat(m.actual_cost_usd || 0);
   document.getElementById('k-lifetime').textContent = fmt$(lifetimeUsd, 2);
-  document.getElementById('k-lifetime-inr').textContent = '₹'+parseFloat(lifetimeUsd*USD_INR).toFixed(2);
+  document.getElementById('k-lifetime-inr').textContent = '₹'+parseFloat(lifetimeUsd*AIX_FX()).toFixed(2);
 
   document.getElementById('k-avg-cost').textContent = fmt$(avg.cost_usd || 0, 4);
   document.getElementById('k-avg-dur').textContent = avg.duration_sec ? fmtDur(avg.duration_sec) + ' avg duration' : '—';
@@ -667,7 +665,7 @@ function renderMargin(m){
 function renderServices(rows){
   if (!rows || !rows.length){ document.getElementById('svc-tbody').innerHTML = '<tr><td colspan="8" class="no-data">No usage recorded yet</td></tr>'; return; }
   const total = rows.reduce((s,r) => s + parseFloat(r.total_cost_usd||0), 0);
-  document.getElementById('svc-meta').textContent = `Total: ${fmt$(total,4)} · ₹${(total*USD_INR).toFixed(2)}`;
+  document.getElementById('svc-meta').textContent = `Total: ${fmt$(total,4)} · ₹${(total*AIX_FX()).toFixed(2)}`;
   document.getElementById('svc-tbody').innerHTML = rows.map(r => {
     const costUsd = parseFloat(r.total_cost_usd||0);
     const pct     = total > 0 ? (costUsd/total*100).toFixed(1) : '0.0';
@@ -681,7 +679,7 @@ function renderServices(rows){
       <td class="right mono">${fmtNum(r.meetings)}</td>
       <td class="right mono">${unitLbl}</td>
       <td class="right mono" style="color:var(--rust)">${fmt$(costUsd,4)}</td>
-      <td class="right mono">${fmtI(costUsd*USD_INR)}</td>
+      <td class="right mono">${fmtI(costUsd*AIX_FX())}</td>
       <td class="right mono">${fmt$(parseFloat(r.avg_cost_usd||0),6)}</td>
       <td style="font-size:11px;color:var(--ink3)">${fmtDate(r.last_seen)}</td>
     </tr>`;
@@ -696,7 +694,7 @@ function renderDailyChart(rows){
   const maxCost = Math.max(...rows.map(r => parseFloat(r.cost_usd||0)), 0.000001);
   let totalMeetings = 0, totalCost = 0;
   rows.forEach(r => { totalMeetings += parseInt(r.meetings||0); totalCost += parseFloat(r.cost_usd||0); });
-  document.getElementById('trend-meta').textContent = `${fmtNum(totalMeetings)} conversations · ₹${(totalCost*USD_INR).toFixed(2)} total`;
+  document.getElementById('trend-meta').textContent = `${fmtNum(totalMeetings)} conversations · ₹${(totalCost*AIX_FX()).toFixed(2)} total`;
 
   document.getElementById('bar-chart').innerHTML = rows.map(r => {
     const sarUsd  = parseFloat(r.sarvam_usd||0);
@@ -705,7 +703,7 @@ function renderDailyChart(rows){
     const sarH    = Math.max(2, Math.round((sarUsd / maxCost) * 62));
     const aiH     = Math.max(totUsd > 0 ? 1 : 0, Math.round((aiUsd / maxCost) * 62));
     const dayLabel = new Date(r.day).toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
-    return `<div class="bar-day" title="${dayLabel}: ₹${(totUsd*USD_INR).toFixed(2)} · ${r.meetings} conversations">
+    return `<div class="bar-day" title="${dayLabel}: ₹${(totUsd*AIX_FX()).toFixed(2)} · ${r.meetings} conversations">
       <div class="bar-seg-wrap">
         <div class="bar-seg ai" style="height:${aiH}px"></div>
         <div class="bar-seg sarvam" style="height:${sarH}px"></div>
@@ -718,7 +716,7 @@ function renderDailyChart(rows){
 function renderUsers(rows){
   if (!rows || !rows.length){ document.getElementById('users-tbody').innerHTML = '<tr><td colspan="5" class="no-data">No data</td></tr>'; return; }
   document.getElementById('users-tbody').innerHTML = rows.slice(0,15).map(r => {
-    const costInr = parseFloat(r.total_cost_usd||0) * USD_INR;
+    const costInr = parseFloat(r.total_cost_usd||0) * AIX_FX();
     const audioMin = (parseFloat(r.audio_seconds||0)/60).toFixed(1);
     return `<tr>
       <td><span style="font-family:var(--mono);font-size:10px">${r.user_email || '—'}</span></td>
@@ -734,9 +732,9 @@ function renderSessions(rows){
   if (!rows || !rows.length){ document.getElementById('sess-tbody').innerHTML = '<tr><td colspan="8" class="no-data">No session data</td></tr>'; return; }
   document.getElementById('sess-meta').textContent = `${rows.length} sessions loaded`;
   document.getElementById('sess-tbody').innerHTML = rows.slice(0,100).map(r => {
-    const sarInr   = parseFloat(r.sarvam_cost_usd||0) * USD_INR;
-    const aiInr    = parseFloat(r.ai_cost_usd||0) * USD_INR;
-    const totInr   = parseFloat(r.total_cost_usd||0) * USD_INR;
+    const sarInr   = parseFloat(r.sarvam_cost_usd||0) * AIX_FX();
+    const aiInr    = parseFloat(r.ai_cost_usd||0) * AIX_FX();
+    const totInr   = parseFloat(r.total_cost_usd||0) * AIX_FX();
     const durSec   = parseFloat(r.duration_seconds||0);
     const durMin   = durSec > 0 ? durSec/60 : 0;
     const perMin   = durMin > 0 ? (totInr/durMin).toFixed(3) : '—';
@@ -755,66 +753,72 @@ function renderSessions(rows){
   }).join('');
 }
 
-/* ── Calculator ── */
-const SARVAM_PS = 0.000200;
-const CL_IN     = 0.00000025;
-const CL_OUT    = 0.00000125;
-const OAI_IN    = 0.000005;
-const OAI_OUT   = 0.000015;
-const CR_PM     = 2;
-const CR_MOC    = 8;
+/* ── Calculator — models the real pipeline: Sarvam → GPT-4o brief → Claude MOC ── */
+const SARVAM_INR_PM      = 0.49;          // ₹/min, standard
+const SARVAM_DIAR_INR_PM = 0.59;          // ₹/min, with speakers
+const CL_IN   = 0.000002,   CL_OUT  = 0.00001;    // Claude Sonnet 5.5 $/token
+const OAI_IN  = 0.0000025,  OAI_OUT = 0.00001;    // GPT-4o $/token
+// Token estimates per meeting (English/Hinglish; Hindi/Gujarati run ~1.5x on input)
+const estClaudeIn  = min => Math.round(17000 + 200 * min);
+const estClaudeOut = min => Math.round(4000 + 140 * min);
+const estBriefIn   = min => Math.min(24000, Math.round(5600 + 200 * min));
+const BRIEF_OUT    = 1800;
+const crPerMin = spk => spk ? ((window.AIX_RATES && window.AIX_RATES.diarization_per_min) || 2)
+                            : ((window.AIX_RATES && window.AIX_RATES.standard_per_min) || 1);
 
 let volCount = 10;
-let activeAI = 'claude'; // 'claude' or 'gpt4o'
+let activeAI = 'claude'; // 'claude' = standard transcription, 'gpt4o' = with speakers (ids kept from the old toggle)
+let tokManual = false;
 
 function setAI(btn, ai){
   activeAI = ai;
   const btnC = document.getElementById('ai-btn-claude');
   const btnG = document.getElementById('ai-btn-gpt4o');
-  const gold = 'font-family:var(--mono);font-size:10px;font-weight:600;padding:4px 10px;border-radius:5px;cursor:pointer;';
-  btnC.style.cssText = gold + (ai==='claude'
-    ? 'border:1px solid var(--gold);background:var(--gold-tint);color:var(--gold)'
-    : 'border:1px solid var(--border);background:transparent;color:var(--ink3)');
-  btnG.style.cssText = gold + (ai==='gpt4o'
-    ? 'border:1px solid var(--c-openai);background:rgba(16,185,129,0.10);color:var(--c-openai)'
-    : 'border:1px solid var(--border);background:transparent;color:var(--ink3)');
-  const lbl = document.getElementById('c-ai-label');
-  if(lbl) lbl.innerHTML = ai==='gpt4o'
-    ? '<span class="svc-dot dot-openai"></span>ChatGPT GPT-4o (MOC)'
-    : '<span class="svc-dot dot-claude"></span>Claude Haiku (MOC)';
+  const base = 'font-family:var(--mono);font-size:10px;font-weight:600;padding:4px 10px;border-radius:5px;cursor:pointer;';
+  const on   = 'border:1px solid var(--gold);background:var(--gold-tint);color:var(--gold)';
+  const off  = 'border:1px solid var(--border);background:transparent;color:var(--ink3)';
+  btnC.style.cssText = base + (ai === 'claude' ? on : off);
+  btnG.style.cssText = base + (ai === 'gpt4o'  ? on : off);
+  document.getElementById('c-sar-label').textContent = ai === 'gpt4o' ? 'Sarvam transcription + speakers' : 'Sarvam transcription';
   calcUpdate();
 }
 
+function meetingCost(dur, inTok, outTok, spk){
+  const fx     = AIX_FX();
+  const sarInr = dur * (spk ? SARVAM_DIAR_INR_PM : SARVAM_INR_PM);
+  const aiUsd  = inTok * CL_IN + outTok * CL_OUT + estBriefIn(dur) * OAI_IN + BRIEF_OUT * OAI_OUT;
+  const sarUsd = sarInr / fx;
+  const totUsd = sarUsd + aiUsd;
+  const cr     = Math.ceil(dur) * crPerMin(spk);
+  return { fx, sarUsd, aiUsd, totUsd, costInr: totUsd * fx, cr, revInr: cr };
+}
+
 function calcUpdate(){
-  const dur    = parseFloat(document.getElementById('c-slider').value);
+  const dur = parseFloat(document.getElementById('c-slider').value);
+  if (!tokManual) {
+    document.getElementById('c-in-tok').value  = estClaudeIn(dur);
+    document.getElementById('c-out-tok').value = estClaudeOut(dur);
+  }
   const inTok  = parseFloat(document.getElementById('c-in-tok').value)  || 0;
   const outTok = parseFloat(document.getElementById('c-out-tok').value) || 0;
 
   document.getElementById('c-dur-big').textContent = dur;
   document.getElementById('c-dur-lbl').textContent = dur + ' min';
 
-  const sarUsd   = dur * 60 * SARVAM_PS;
-  const aiIn     = activeAI === 'gpt4o' ? OAI_IN  : CL_IN;
-  const aiOut    = activeAI === 'gpt4o' ? OAI_OUT : CL_OUT;
-  const claUsd   = inTok * aiIn + outTok * aiOut;
-  const totUsd   = sarUsd + claUsd;
-  const sarPct   = totUsd > 0 ? (sarUsd/totUsd*100).toFixed(0) : 0;
+  const c = meetingCost(dur, inTok, outTok, activeAI === 'gpt4o');
+  const sarPct    = c.totUsd > 0 ? (c.sarUsd / c.totUsd * 100).toFixed(0) : 0;
+  const profitInr = c.revInr - c.costInr;
+  const margin    = c.revInr > 0 ? (profitInr / c.revInr * 100).toFixed(1) : 0;
 
-  const cr       = Math.ceil(dur) * CR_PM + CR_MOC;
-  const revInr   = cr;
-  const costInr  = totUsd * USD_INR;
-  const profitInr= revInr - costInr;
-  const margin   = revInr > 0 ? (profitInr/revInr*100).toFixed(1) : 0;
-
-  document.getElementById('c-sarvam-usd').textContent = fmt$(sarUsd,4);
-  document.getElementById('c-sarvam-inr').textContent = '₹'+(sarUsd*USD_INR).toFixed(2);
-  document.getElementById('c-claude-usd').textContent = fmt$(claUsd,6);
-  document.getElementById('c-claude-inr').textContent = '₹'+(claUsd*USD_INR).toFixed(3);
-  document.getElementById('c-sar-pct').textContent    = sarPct+'%';
-  document.getElementById('c-total-usd').textContent  = fmt$(totUsd,5);
-  document.getElementById('c-total-inr').textContent  = '₹'+costInr.toFixed(3);
-  document.getElementById('c-credits').textContent    = cr;
-  document.getElementById('c-rev-inr').textContent    = '₹'+revInr.toFixed(0);
+  document.getElementById('c-sarvam-usd').textContent = fmt$(c.sarUsd, 4);
+  document.getElementById('c-sarvam-inr').textContent = '₹' + (c.sarUsd * c.fx).toFixed(2);
+  document.getElementById('c-claude-usd').textContent = fmt$(c.aiUsd, 4);
+  document.getElementById('c-claude-inr').textContent = '₹' + (c.aiUsd * c.fx).toFixed(2);
+  document.getElementById('c-sar-pct').textContent    = sarPct + '%';
+  document.getElementById('c-total-usd').textContent  = fmt$(c.totUsd, 4);
+  document.getElementById('c-total-inr').textContent  = '₹' + c.costInr.toFixed(2);
+  document.getElementById('c-credits').textContent    = c.cr;
+  document.getElementById('c-rev-inr').textContent    = '₹' + c.revInr.toFixed(0);
   document.getElementById('c-profit-inr').textContent = (profitInr >= 0 ? '₹' : '–₹') + Math.abs(profitInr).toFixed(2);
   document.getElementById('c-margin-pct').textContent = margin + '% margin';
 
@@ -827,22 +831,17 @@ function calcUpdate(){
 }
 
 function renderVol(dur, inTok, outTok, n){
-  const sarUsd  = dur * 60 * SARVAM_PS;
-  const claUsd  = inTok * CL_IN + outTok * CL_OUT;
-  const totUsd  = sarUsd + claUsd;
-  const cr      = Math.ceil(dur) * CR_PM + CR_MOC;
-  const costInr = totUsd * USD_INR;
-  const revInr  = cr;
-  const profInr = revInr - costInr;
+  const c = meetingCost(dur, inTok, outTok, activeAI === 'gpt4o');
+  const profInr = c.revInr - c.costInr;
 
   document.getElementById('vol-cells').innerHTML = `
     <div style="background:var(--rust-tint);border-radius:8px;padding:10px;text-align:center">
       <div style="font-family:var(--mono);font-size:9px;color:var(--ink3);text-transform:uppercase;margin-bottom:3px">Cost ×${n}</div>
-      <div style="font-family:var(--serif);font-size:1.1rem;color:var(--rust)">₹${(costInr*n).toFixed(0)}</div>
+      <div style="font-family:var(--serif);font-size:1.1rem;color:var(--rust)">₹${(c.costInr*n).toFixed(0)}</div>
     </div>
     <div style="background:var(--sage-tint);border-radius:8px;padding:10px;text-align:center">
       <div style="font-family:var(--mono);font-size:9px;color:var(--ink3);text-transform:uppercase;margin-bottom:3px">Revenue ×${n}</div>
-      <div style="font-family:var(--serif);font-size:1.1rem;color:var(--sage)">₹${(revInr*n).toFixed(0)}</div>
+      <div style="font-family:var(--serif);font-size:1.1rem;color:var(--sage)">₹${(c.revInr*n).toFixed(0)}</div>
     </div>
     <div style="background:var(--gold-tint);border-radius:8px;padding:10px;text-align:center">
       <div style="font-family:var(--mono);font-size:9px;color:var(--ink3);text-transform:uppercase;margin-bottom:3px">Profit ×${n}</div>
@@ -861,8 +860,9 @@ function setVol(btn, n){
 }
 
 document.getElementById('c-slider').addEventListener('input', calcUpdate);
-document.getElementById('c-in-tok').addEventListener('input', calcUpdate);
-document.getElementById('c-out-tok').addEventListener('input', calcUpdate);
+document.getElementById('c-in-tok').addEventListener('input', () => { tokManual = true; calcUpdate(); });
+document.getElementById('c-out-tok').addEventListener('input', () => { tokManual = true; calcUpdate(); });
+document.addEventListener('aix-rates', calcUpdate);   // re-run once the server's exchange rate and credit rates arrive
 calcUpdate();
 
 /* ── Boot ── */

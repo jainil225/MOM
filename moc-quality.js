@@ -111,7 +111,7 @@ function applyQualityGates(mom, transcript) {
     .map(m => ({
       item: str(m.item),
       raised_by: str(m.raised_by),
-      classification: ['PROPOSAL', 'OPINION', 'OPEN_QUESTION', 'FACT_REPORTED'].includes(m.classification) ? m.classification : 'PROPOSAL',
+      classification: ['PROPOSAL', 'OPINION', 'OPEN_QUESTION', 'WORKSTREAM', 'FACT_REPORTED'].includes(m.classification) ? m.classification : 'PROPOSAL',
       views: str(m.views),
       status: str(m.status) || 'For future consideration — not approved',
       topic: str(m.topic),
@@ -171,9 +171,11 @@ function applyQualityGates(mom, transcript) {
     a.evidence = found(quote) ? 'found' : 'not_found';
     if (a.evidence !== 'found') {
       a.requires_confirmation = true;
-      if (!a.status || a.status === 'Not started') a.status = 'Pending confirmation';
+      if (!a.status || /^(not started|pending|status not established)$/i.test(a.status)) a.status = 'Pending confirmation';
       report.actions.requires_confirmation++;
     }
+    // An agreed next step is open until someone reports it done
+    if (!str(a.status) || /^status not established$/i.test(a.status)) a.status = 'Pending';
 
     // Owner: only when the meeting named one
     if (a.owner_status === 'not_agreed' || !str(a.owner) || /^(not assigned|tbd|—|-)$/i.test(str(a.owner))) {
@@ -230,6 +232,11 @@ function applyQualityGates(mom, transcript) {
   if (!report.decisions.confirmed && scan.some(t => APPROVAL_RE.test(t) && !/not\s+(\w+\s+)?(agreed|approved|confirmed|finali[sz]ed)/i.test(t))) {
     report.warnings.push('Summary uses "agreed/approved" wording but no decision is confirmed by transcript evidence.');
   }
+  const summaryText = [str(mom.summary), ...arr(mom.executive_summary).map(str)];
+  const saysNone = summaryText.some(t => /\bno (formal |final )?decisions? (was|were)\b/i.test(t));
+  if (saysNone && report.decisions.confirmed) {
+    report.warnings.push('Summary says no decisions were made, but the decision log has confirmed decisions; reconcile before circulation.');
+  }
   if (report.decisions.demoted.length) report.warnings.push(`${report.decisions.demoted.length} decision(s) moved to "requires confirmation".`);
   if (report.actions.moved_to_matters.length) report.warnings.push(`${report.actions.moved_to_matters.length} suggested item(s) moved from actions to matters for future consideration.`);
 
@@ -237,6 +244,8 @@ function applyQualityGates(mom, transcript) {
     version: GATE_VERSION,
     decision_log: mom.decision_log,
     matters_discussed: mom.matters_discussed,
+    // Directions the discussion converged on — shown as working conclusions, not formal approvals
+    working_conclusions: arr(mom.working_conclusions).map(str).filter(Boolean),
     key_figures: mom.key_figures,
     report,
   };

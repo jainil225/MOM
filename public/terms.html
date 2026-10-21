@@ -5,256 +5,291 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <script src="/js/theme.js"></script>
 <title>Terms of Use · AiX Track</title>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<meta name="description" content="AiX Track Terms of Use (version 2.0) — Your agreement with us."/>
+<link rel="icon" href="/aix-logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;1,700&family=Roboto+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --ink:#0F1524;--ink2:#4A5468;--ink3:#8A93A8;--ink4:#B8BFCC;
-  --paper:#FAF8F3;--paper2:#F4F0E6;--card:#FFFFFF;
-  --border:#E8E4D8;--border-strong:#D4CFC0;
-  --navy:#0F1B3D;--navy-h:#1F2D57;
-  --gold:#B8912A;--gold-h:#C89A3D;
-  --gold-tint:rgba(184,145,42,0.10);--gold-tint-strong:rgba(184,145,42,0.22);
-  --sage:#4A7C59;--rust:#A0472E;
-  --shadow-1:0 1px 2px rgba(15,21,36,0.04),0 2px 6px rgba(15,21,36,0.03);
-  --shadow-2:0 4px 20px rgba(15,21,36,0.06);
-  --serif:'Roboto',Georgia,serif;
-  --sans:'Roboto',-apple-system,sans-serif;
-  --mono:'Roboto Mono',monospace;
+  --ink:#18120C;--ink2:#4A4238;--ink3:#857C70;--line:rgba(24,18,12,0.10);--line2:rgba(24,18,12,0.16);
+  --paper:#F0EDE6;--paper2:#E8E4DA;--card:#FFFFFF;--soft:#FAF8F4;
+  --navy:#18182C;--navy2:#2C2A44;--accent:#E0621A;--accent-h:#C8540E;--accent-t:rgba(224,98,26,0.09);--accent-t2:rgba(224,98,26,0.20);
+  --green:#1A9A5A;--green-t:rgba(26,154,90,0.10);--red:#C03030;--red-t:rgba(192,48,48,0.08);
+  --sans:'Roboto',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--mono:'Roboto Mono',ui-monospace,monospace;
+  --sh1:0 1px 2px rgba(24,18,12,0.05),0 4px 14px rgba(24,18,12,0.05);--sh2:0 12px 40px rgba(24,24,44,0.14);
+  --nav-h:64px;
 }
 [data-theme="dark"]{
-  --ink:#F5F1E6;--ink2:#B8B0A0;--ink3:#6B6455;--ink4:#3D3830;
-  --paper:#0C0D10;--paper2:#141519;--card:#161820;
-  --border:#25272F;--border-strong:#333540;
-  --navy:#4A5B8C;--gold:#D4A94A;
-  --gold-tint:rgba(212,169,74,0.10);--gold-tint-strong:rgba(212,169,74,0.20);
+  --ink:#F3EEE4;--ink2:#C2B9AA;--ink3:#8A8273;--line:rgba(255,255,255,0.09);--line2:rgba(255,255,255,0.16);
+  --paper:#0E0F14;--paper2:#16171E;--card:#17181F;--soft:#1C1D25;
+  --accent-t:rgba(240,128,60,0.12);--accent-t2:rgba(240,128,60,0.26);--green-t:rgba(46,184,112,0.14);--red-t:rgba(230,80,80,0.12);
+  --sh1:0 1px 2px rgba(0,0,0,0.3),0 6px 18px rgba(0,0,0,0.25);
 }
-body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.7;font-size:15px;transition:background .3s,color .3s}
-a{color:var(--gold);text-decoration:none}
-a:hover{text-decoration:underline}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--nav-h) + 20px)}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);font-size:15.5px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.ic{flex-shrink:0;display:block}
 
-.top-bar{
-  position:sticky;top:0;z-index:100;
-  background:var(--card);border-bottom:1px solid var(--border);
-  padding:14px 2rem;display:flex;align-items:center;justify-content:space-between;
-  box-shadow:var(--shadow-1);
-}
-.top-bar-left{display:flex;align-items:center;gap:14px}
-.back-btn{
-  display:flex;align-items:center;gap:6px;
-  font-family:var(--mono);font-size:11px;font-weight:500;
-  color:var(--ink3);letter-spacing:0.06em;text-transform:uppercase;
-  background:none;border:1px solid var(--border);border-radius:6px;
-  padding:6px 12px;cursor:pointer;transition:all .15s;
-}
-.back-btn:hover{color:var(--gold);border-color:var(--gold)}
-.brand{font-family:var(--serif);font-size:20px;color:var(--ink);font-style:italic}
-.brand em{color:var(--gold)}
-.theme-toggle{
-  background:var(--card);border:1px solid var(--border);border-radius:999px;
-  padding:6px 12px;font-size:11px;font-family:var(--mono);font-weight:500;
-  color:var(--ink2);cursor:pointer;display:flex;align-items:center;gap:6px;
-  transition:all .2s;letter-spacing:.02em;text-transform:uppercase;
-}
-.theme-toggle:hover{border-color:var(--gold);color:var(--gold)}
+/* progress + nav */
+.progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),#F5903F);z-index:60;transition:width .1s linear}
+.nav{position:sticky;top:0;z-index:50;height:var(--nav-h);display:flex;align-items:center;gap:16px;padding:0 24px;
+  background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);font-weight:700;font-size:17px;white-space:nowrap}
+.brand:hover{text-decoration:none}
+.brand img{width:32px;height:32px;border-radius:8px;box-shadow:var(--sh1)}
+.brand em{font-style:italic;color:var(--accent);font-weight:700}
+.tabs{display:flex;gap:4px;margin:0 auto;background:var(--paper2);padding:4px;border-radius:999px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:7px 16px;border-radius:999px;font-size:13.5px;font-weight:500;color:var(--ink2);white-space:nowrap}
+.tab:hover{color:var(--ink);text-decoration:none}
+.tab.on{background:var(--card);color:var(--accent);box-shadow:var(--sh1)}
+.nav-actions{display:flex;gap:8px}
+.icon-btn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:10px;border:1px solid var(--line2);
+  background:var(--card);color:var(--ink2);font:500 13px var(--sans);cursor:pointer}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
 
-.page{max-width:760px;margin:0 auto;padding:3rem 2rem 5rem}
+/* hero */
+.hero{position:relative;overflow:hidden;color:#fff;background:radial-gradient(1200px 400px at 85% -10%,rgba(224,98,26,0.55),transparent 60%),
+  radial-gradient(700px 380px at -5% 120%,rgba(70,80,180,0.45),transparent 60%),linear-gradient(160deg,#141426 0%,#1E1D36 100%);
+  padding:64px 24px 112px}
+.hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.045) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(255,255,255,0.045) 1px,transparent 1px);background-size:44px 44px;mask-image:linear-gradient(180deg,#000 30%,transparent)}
+.hero-in{position:relative;max-width:1120px;margin:0 auto}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font:600 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;
+  color:#FFB27A;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.14);padding:6px 12px;border-radius:999px}
+.eyebrow::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(224,98,26,0.25)}
+.hero h1{font-size:clamp(36px,5.4vw,58px);line-height:1.05;letter-spacing:-.025em;font-weight:700;margin:18px 0 6px}
+.hero h1 em{font-style:italic;color:#F5903F}
+.kicker{font-size:17px;color:rgba(255,255,255,0.72);margin-bottom:22px}
+.summary{max-width:760px;font-size:16.5px;line-height:1.7;color:rgba(255,255,255,0.9);background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.12);border-left:3px solid var(--accent);border-radius:14px;padding:16px 20px}
+.summary b{color:#FFB27A;font-weight:600;margin-right:4px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.chip{font:500 12px var(--mono);color:rgba(255,255,255,0.78);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);padding:6px 11px;border-radius:8px}
 
-.page-eyebrow{
-  font-family:var(--mono);font-size:10px;font-weight:600;
-  color:var(--gold);letter-spacing:.18em;text-transform:uppercase;
-  margin-bottom:12px;
-}
-.page-title{
-  font-family:var(--serif);font-size:42px;font-weight:400;
-  line-height:1.1;letter-spacing:-.02em;color:var(--ink);margin-bottom:8px;
-}
-.page-title em{color:var(--gold);font-style:italic}
-.page-meta{font-size:13px;color:var(--ink3);margin-bottom:2.5rem;font-family:var(--mono)}
-.divider{height:1px;background:var(--border);margin:2.5rem 0}
+/* facts */
+.facts{position:relative;z-index:2;max-width:1120px;margin:-72px auto 0;padding:0 24px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.fact{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--sh2);display:flex;gap:13px;align-items:flex-start}
+.fact-ic{width:40px;height:40px;border-radius:11px;background:var(--accent-t);color:var(--accent);display:grid;place-items:center;flex-shrink:0}
+.fact b{display:block;font-size:14.5px;line-height:1.35;color:var(--ink)}
+.fact span{display:block;font-size:12.5px;line-height:1.45;color:var(--ink3);margin-top:3px}
 
-.toc{
-  background:var(--paper2);border:1px solid var(--border);
-  border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:2.5rem;
-}
-.toc-title{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--ink3);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px}
-.toc ol{padding-left:1.25rem}
-.toc li{margin-bottom:4px}
-.toc a{color:var(--ink2);font-size:13px}
-.toc a:hover{color:var(--gold)}
+/* layout */
+.wrap{max-width:1120px;margin:40px auto 0;padding:0 24px;display:grid;grid-template-columns:250px minmax(0,1fr);gap:40px;align-items:start}
+main{min-width:0}
+.toc{position:sticky;top:calc(var(--nav-h) + 24px);max-height:calc(100vh - var(--nav-h) - 48px);overflow-y:auto}
+.toc-h{font:600 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);margin:0 0 10px 12px}
+.toc ol{list-style:none;border-left:2px solid var(--line)}
+.toc a{display:flex;gap:10px;padding:7px 12px;margin-left:-2px;border-left:2px solid transparent;font-size:13.5px;line-height:1.4;color:var(--ink2)}
+.toc a:hover{color:var(--ink);text-decoration:none}
+.toc a .n{font:500 11px var(--mono);color:var(--ink3);padding-top:2px}
+.toc a.on{border-left-color:var(--accent);color:var(--accent);font-weight:500}
+.toc a.on .n{color:var(--accent)}
+.toc-m{display:none}
 
-section{margin-bottom:2.5rem}
-section h2{
-  font-family:var(--serif);font-size:22px;font-weight:400;
-  color:var(--ink);margin-bottom:10px;padding-bottom:8px;
-  border-bottom:1px solid var(--border);
-}
-section h2 .num{font-family:var(--mono);font-size:12px;color:var(--gold);margin-right:8px}
-section p{color:var(--ink2);margin-bottom:10px;font-size:14px;line-height:1.75}
-section ul{color:var(--ink2);font-size:14px;padding-left:1.25rem;margin-bottom:10px}
-section ul li{margin-bottom:6px;line-height:1.65}
-section strong{color:var(--ink);font-weight:600}
+/* sections */
+.sec{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px 30px;margin-bottom:16px;box-shadow:var(--sh1)}
+.sec-h{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.num{font:600 13px var(--mono);color:var(--accent);background:var(--accent-t);border:1px solid var(--accent-t2);width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex-shrink:0}
+.sec h2{font-size:21px;line-height:1.3;letter-spacing:-.01em;font-weight:700}
+.sec p{color:var(--ink2);margin-bottom:12px}
+.sec p:last-child{margin-bottom:0}
+.sec strong{color:var(--ink);font-weight:600}
+.clause{display:block}
+.cl{display:inline-block;font:600 11.5px var(--mono);color:var(--accent);background:var(--accent-t);border-radius:6px;padding:1px 7px;margin-right:8px;vertical-align:1px}
+.sec ul{list-style:none;margin:6px 0 14px}
+.sec ul li{position:relative;padding-left:22px;color:var(--ink2);margin-bottom:8px}
+.sec ul li::before{content:"";position:absolute;left:4px;top:.72em;width:7px;height:7px;border-radius:50%;background:var(--accent);opacity:.75}
+.rule-h{display:inline-flex;align-items:center;gap:6px;font:600 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:7px;margin:4px 0 8px}
+.rule-h.do{color:var(--green);background:var(--green-t)}
+.rule-h.dont{color:var(--red);background:var(--red-t)}
+.sec ul.do li::before,.sec ul.dont li::before{width:auto;height:auto;background:none;opacity:1;top:0;left:0;font-weight:700}
+.sec ul.do li::before{content:"✓";color:var(--green)}
+.sec ul.dont li::before{content:"✕";color:var(--red)}
+.tbl{overflow-x:auto;margin:6px 0 14px;border:1px solid var(--line);border-radius:12px}
+.tbl table{width:100%;border-collapse:collapse;font-size:14px;min-width:560px}
+.tbl th{background:var(--soft);color:var(--ink);font-weight:600;text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);font-size:13px}
+.tbl td{color:var(--ink2);padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.55}
+.tbl tr:last-child td{border-bottom:none}
+.tbl td:first-child{color:var(--ink);font-weight:500}
+.ph{background:#FFF1A8;color:#6B4E00;border-radius:4px;padding:0 4px}
+[data-theme="dark"] .ph{background:rgba(255,214,0,0.18);color:#FFE38A}
 
-.highlight-box{
-  background:var(--gold-tint);border:1px solid var(--gold-tint-strong);
-  border-radius:8px;padding:14px 16px;margin-bottom:1.5rem;
-  font-size:13px;color:var(--ink2);line-height:1.6;
-}
-.highlight-box strong{color:var(--gold)}
+/* contact + footer */
+.contact{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border-radius:18px;padding:26px 30px;margin:24px 0 16px}
+.contact h3{font-size:19px;margin-bottom:4px}
+.contact p{color:rgba(255,255,255,0.72);font-size:14px}
+.contact .btn{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;padding:12px 18px;border-radius:11px;font-weight:600;font-size:14px;white-space:nowrap}
+.contact .btn:hover{background:var(--accent-h);text-decoration:none}
+.foot{max-width:1120px;margin:48px auto 0;padding:28px 24px 48px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:16px 28px;justify-content:space-between;font-size:13px;color:var(--ink3)}
+.foot nav{display:flex;flex-wrap:wrap;gap:6px 18px}
+.foot a{color:var(--ink2)}
+.to-top{position:fixed;right:22px;bottom:22px;width:44px;height:44px;border-radius:50%;border:1px solid var(--line2);background:var(--card);color:var(--ink2);
+  box-shadow:var(--sh2);display:grid;place-items:center;cursor:pointer;opacity:0;pointer-events:none;transform:translateY(8px);transition:all .2s}
+.to-top.show{opacity:1;pointer-events:auto;transform:none}
+.to-top:hover{color:var(--accent);border-color:var(--accent)}
 
-.footer-note{
-  margin-top:3rem;padding:1.5rem;
-  background:var(--paper2);border-radius:10px;border:1px solid var(--border);
-  font-size:12px;color:var(--ink3);text-align:center;font-family:var(--mono);
-  line-height:1.6;
+@media (max-width:980px){
+  .facts{grid-template-columns:repeat(2,1fr)}
+  .wrap{grid-template-columns:minmax(0,1fr);gap:0}
+  .toc{display:none}
+  .toc-m{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:16px;box-shadow:var(--sh1)}
+  .toc-m summary{list-style:none;display:flex;align-items:center;gap:10px;padding:14px 18px;font-weight:600;font-size:14.5px;cursor:pointer}
+  .toc-m summary::-webkit-details-marker{display:none}
+  .toc-m summary::after{content:"▾";margin-left:auto;color:var(--ink3)}
+  .toc-m[open] summary::after{content:"▴"}
+  .toc-m ol{list-style:none;padding:0 10px 12px}
+  .toc-m a{display:flex;gap:10px;padding:8px;border-radius:8px;font-size:14px;color:var(--ink2)}
+  .toc-m a .n{font:500 11px var(--mono);color:var(--accent);padding-top:3px}
+}
+@media (max-width:640px){
+  body{font-size:15px}
+  .nav{padding:0 14px;gap:10px;height:auto;min-height:var(--nav-h);flex-wrap:wrap;padding-top:10px;padding-bottom:10px}
+  .brand span{display:none}
+  .tabs{order:3;width:100%;margin:0}
+  .tab{flex:1;text-align:center;padding:7px 10px;font-size:13px}
+  .nav-actions{margin-left:auto}
+  .icon-btn .lbl{display:none}
+  .hero{padding:40px 16px 96px}
+  .facts{padding:0 16px;gap:10px;grid-template-columns:1fr 1fr;margin-top:-64px}
+  .fact{padding:14px;flex-direction:column;gap:10px}
+  .wrap{padding:0 16px;margin-top:28px}
+  .sec{padding:22px 18px;border-radius:16px}
+  .sec h2{font-size:18.5px}
+  .num{width:36px;height:36px;font-size:12px}
+  .contact{grid-template-columns:1fr;padding:22px 20px}
+  .foot{padding:24px 16px 40px}
+}
+@media print{
+  .nav,.progress,.toc,.toc-m,.to-top,.contact .btn,.foot nav{display:none!important}
+  body{background:#fff;color:#000;font-size:11pt}
+  .hero{background:none!important;color:#000;padding:0 0 12px}.hero::before{display:none}
+  .eyebrow,.chip,.summary{color:#000;background:none;border-color:#ccc}.hero h1 em{color:#000}.kicker{color:#333}
+  .facts{margin:12px 0;padding:0;grid-template-columns:repeat(4,1fr)}.fact{box-shadow:none;border-color:#ccc}
+  .wrap{display:block;margin:0;padding:0}.sec{box-shadow:none;border:none;padding:12px 0;break-inside:avoid-page}
+  .contact{background:none;color:#000;border:1px solid #ccc}.contact p{color:#333}
+  .ph{background:#eee;color:#000}
 }
 </style>
-<link rel="stylesheet" href="/css/theme-dark.css">
-<link rel="stylesheet" href="/css/aix-uniform.css">
 </head>
 <body>
+<div class="progress" aria-hidden="true"></div>
 
-<div class="top-bar">
-  <div class="top-bar-left">
-    <button class="back-btn" onclick="goBack()">← Back</button>
-    <span class="brand">AiX <em>Track</em></span>
+<header class="nav">
+  <a class="brand" href="/"><img src="/aix-logo.png" alt="AiX"><span>AiX <em>Track</em></span></a>
+  <nav class="tabs" aria-label="Policies"><a class="tab on" href="/terms">Terms of Use</a><a class="tab" href="/usage-policy">Usage Policy</a><a class="tab" href="/privacy">Privacy Policy</a></nav>
+  <div class="nav-actions">
+    <button class="icon-btn" onclick="toggleTheme()" title="Switch theme" aria-label="Switch theme"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg></button>
+    <button class="icon-btn" onclick="goBack()"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg><span class="lbl">Back</span></button>
   </div>
-  <button class="theme-toggle" onclick="toggleTheme()">
-    <span id="theme-icon">◐</span>
-    <span id="theme-label">DARK</span>
-  </button>
+</header>
+
+<section class="hero">
+  <div class="hero-in">
+    <span class="eyebrow">Legal · Version 2.0</span>
+    <h1>Terms of <em>Use</em></h1>
+    <p class="kicker">Your agreement with us</p>
+    <div class="summary"><b>In short</b>AiX Track prepares draft minutes from your recordings. You own your content and must review the minutes before you rely on them. Tell everyone that the conversation is being recorded. Purchased credits do not expire, and unused purchased credits can be refunded as set out in section 6.</div>
+    <div class="chips">
+      <span class="chip">Effective <span class="ph">[effective date]</span></span>
+      <span class="chip">Version 2.0</span>
+      <span class="chip">RMP AI Private Limited</span>
+      
+    </div>
+  </div>
+</section>
+
+<div class="facts"><div class="fact"><div class="fact-ic"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></div><div><b>You own your content</b><span>Recordings, transcripts and minutes stay yours</span></div></div><div class="fact"><div class="fact-ic"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9.5c-.5-1-1.6-1.5-3-1.5-1.7 0-3 .9-3 2s1.3 1.7 3 2 3 .9 3 2-1.3 2-3 2c-1.4 0-2.5-.5-3-1.5M12 6v12"/></svg></div><div><b>Credits never expire</b><span>Purchased credits stay in your account</span></div></div><div class="fact"><div class="fact-ic"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></div><div><b>30-day refunds</b><span>On unused purchased credits</span></div></div><div class="fact"><div class="fact-ic"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div><div><b>Review before use</b><span>AI minutes are drafts, not advice</span></div></div></div>
+
+<div class="wrap">
+  <aside class="toc" aria-label="Contents">
+    <div class="toc-h">On this page</div>
+    <ol><li><a href="#s1"><span class="n">01</span><span>Who we are and acceptance</span></a></li><li><a href="#s2"><span class="n">02</span><span>The Service</span></a></li><li><a href="#s3"><span class="n">03</span><span>Your account</span></a></li><li><a href="#s4"><span class="n">04</span><span>Recording consent and your content</span></a></li><li><a href="#s5"><span class="n">05</span><span>Ownership and licence</span></a></li><li><a href="#s6"><span class="n">06</span><span>Credits, prices, taxes and refunds</span></a></li><li><a href="#s7"><span class="n">07</span><span>Usage Policy</span></a></li><li><a href="#s8"><span class="n">08</span><span>Confidentiality</span></a></li><li><a href="#s9"><span class="n">09</span><span>AI output and your responsibility</span></a></li><li><a href="#s10"><span class="n">10</span><span>Indemnity</span></a></li><li><a href="#s11"><span class="n">11</span><span>Limitation of liability</span></a></li><li><a href="#s12"><span class="n">12</span><span>Suspension and closure</span></a></li><li><a href="#s13"><span class="n">13</span><span>Changes</span></a></li><li><a href="#s14"><span class="n">14</span><span>Governing law and disputes</span></a></li><li><a href="#s15"><span class="n">15</span><span>General</span></a></li><li><a href="#s16"><span class="n">16</span><span>Contact</span></a></li></ol>
+  </aside>
+  <main>
+    <details class="toc-m"><summary><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> On this page</summary><ol><li><a href="#s1"><span class="n">01</span><span>Who we are and acceptance</span></a></li><li><a href="#s2"><span class="n">02</span><span>The Service</span></a></li><li><a href="#s3"><span class="n">03</span><span>Your account</span></a></li><li><a href="#s4"><span class="n">04</span><span>Recording consent and your content</span></a></li><li><a href="#s5"><span class="n">05</span><span>Ownership and licence</span></a></li><li><a href="#s6"><span class="n">06</span><span>Credits, prices, taxes and refunds</span></a></li><li><a href="#s7"><span class="n">07</span><span>Usage Policy</span></a></li><li><a href="#s8"><span class="n">08</span><span>Confidentiality</span></a></li><li><a href="#s9"><span class="n">09</span><span>AI output and your responsibility</span></a></li><li><a href="#s10"><span class="n">10</span><span>Indemnity</span></a></li><li><a href="#s11"><span class="n">11</span><span>Limitation of liability</span></a></li><li><a href="#s12"><span class="n">12</span><span>Suspension and closure</span></a></li><li><a href="#s13"><span class="n">13</span><span>Changes</span></a></li><li><a href="#s14"><span class="n">14</span><span>Governing law and disputes</span></a></li><li><a href="#s15"><span class="n">15</span><span>General</span></a></li><li><a href="#s16"><span class="n">16</span><span>Contact</span></a></li></ol></details>
+    <section class="sec" id="s1"><div class="sec-h"><span class="num">01</span><h2>Who we are and acceptance</h2></div><p class="clause"><span class="cl">1.1</span>AiX Track ("the Service") is provided by RMP AI Private Limited, a company incorporated in India (CIN U72900GJ2022PTC133157), with its registered office at B-1110, Ratnaakar Nine Square, Opp. ITC Narmada, Keshavbaug, Satellite, Ahmedabad 380015, Gujarat, India, which operates under the brand names AI Extensive, AiX and EcomBi ("AiExtensive", "we", "us", "our"). GSTIN: 24AALCR9718G1Z1.</p>
+    <p class="clause"><span class="cl">1.2</span>These Terms, the <a href="/usage-policy">Usage Policy</a> and the <a href="/privacy">Privacy Policy</a> form one agreement between you and us. You accept them by ticking the consent box at sign-up. We record the version you accepted and when.</p>
+    <p class="clause"><span class="cl">1.3</span>If you use the Service for an organisation, you confirm you are authorised to bind it, and "you" includes that organisation.</p>
+    <p class="clause"><span class="cl">1.4</span>You must be 18 or older.</p></section>
+<section class="sec" id="s2"><div class="sec-h"><span class="num">02</span><h2>The Service</h2></div><p class="clause"><span class="cl">2.1</span>The Service records or receives audio and video of conversations, transcribes them, and prepares Minutes of Conversation (MOC), decisions and action items, using third-party AI and speech providers listed in the <a href="/privacy#s3">Privacy Policy</a>.</p>
+    <p class="clause"><span class="cl">2.2</span>Current limits: up to 10 hours per recording and 2 GB per upload. We may change limits with notice in the app.</p>
+    <p class="clause"><span class="cl">2.3</span>We aim for high availability but do not guarantee uninterrupted service. We may improve, change or remove features. If a change materially reduces what paid credits buy, we will give at least 15 days' notice.</p></section>
+<section class="sec" id="s3"><div class="sec-h"><span class="num">03</span><h2>Your account</h2></div><p class="clause"><span class="cl">3.1</span>You sign in with Google or a one-time email code. You are responsible for activity under your account and for keeping your email account secure.</p>
+    <p class="clause"><span class="cl">3.2</span>Report suspected unauthorised use straight away to <a href="mailto:notification.aix@gmail.com">notification.aix@gmail.com</a>.</p>
+    <p class="clause"><span class="cl">3.3</span>Accounts are for named individuals. Do not share login access, including within your organisation.</p></section>
+<section class="sec" id="s4"><div class="sec-h"><span class="num">04</span><h2>Recording consent and your content</h2></div><p class="clause"><span class="cl">4.1</span>Before each recording or upload, you must tell every participant that it is being recorded and processed by AI, and get their agreement where the law requires it. You confirm this each time, and we log the confirmation.</p>
+    <p class="clause"><span class="cl">4.2</span>You must have the right to upload all content, including content subject to confidentiality, professional privilege or sector regulation.</p>
+    <p class="clause"><span class="cl">4.3</span><strong>Roles.</strong> You decide what is recorded, why, and who receives the minutes. For personal data of participants, you act as the Data Fiduciary and we process that data on your behalf as a Data Processor. Business customers may request our Data Processing Addendum.</p></section>
+<section class="sec" id="s5"><div class="sec-h"><span class="num">05</span><h2>Ownership and licence</h2></div><p class="clause"><span class="cl">5.1</span>You own your recordings, transcripts, minutes and action items ("Your Content").</p>
+    <p class="clause"><span class="cl">5.2</span>You grant us a limited licence to store and process Your Content only to provide, secure and support the Service for you. We do not use Your Content to train AI models, and our providers do not use it for that either.</p>
+    <p class="clause"><span class="cl">5.3</span>The Service, software, design and branding belong to us and our licensors. If you send us feedback, we may use it freely without obligation to you.</p></section>
+<section class="sec" id="s6"><div class="sec-h"><span class="num">06</span><h2>Credits, prices, taxes and refunds</h2></div><p class="clause"><span class="cl">6.1</span>The Service runs on prepaid credits. Current rates are shown on the Credits page before you pay (at present 1 credit per minute for standard minutes and 2 credits per minute with speaker-wise transcripts). Long silences are not charged.</p>
+    <p class="clause"><span class="cl">6.2</span>Listed prices are exclusive of GST. GST at the applicable rate is added to the listed price and shown separately before you pay. A GST tax invoice is issued for every purchase. Business users can add a GSTIN before payment.</p>
+    <p class="clause"><span class="cl">6.3</span>Purchased credits do not expire. Free, joining and referral credits are promotional. They have no cash value and may be changed or withdrawn.</p>
+    <p class="clause"><span class="cl">6.4</span><strong>Refunds.</strong> Unused purchased credits are refundable (a) on request within 30 days of purchase, or (b) when you close your account. If processing fails because of a fault on our side, the credits used are restored automatically. Duplicate or failed charges are refunded in full. Refunds are made to the original payment method through Razorpay, normally within 7–10 working days. Consumed and promotional credits are not refundable.</p>
+    <p class="clause"><span class="cl">6.5</span>Payments are processed by Razorpay. We do not receive or store card, UPI or bank details.</p></section>
+<section class="sec" id="s7"><div class="sec-h"><span class="num">07</span><h2>Usage Policy</h2></div><p>You must follow the Usage Policy at <a href="/usage-policy">track.aiextensive.com/usage-policy</a>. It forms part of these Terms.</p></section>
+<section class="sec" id="s8"><div class="sec-h"><span class="num">08</span><h2>Confidentiality</h2></div><p>We treat Your Content as confidential. Our staff access it only when you ask for support, or when needed to investigate a security, legal or Usage Policy issue, and every access is logged.</p></section>
+<section class="sec" id="s9"><div class="sec-h"><span class="num">09</span><h2>AI output and your responsibility</h2></div><p class="clause"><span class="cl">9.1</span>Transcripts and minutes are generated by AI and may contain errors, omissions or wrong speaker labels.</p>
+    <p class="clause"><span class="cl">9.2</span>You must review and correct output before you share or rely on it, especially for legal, financial, regulatory, board or employment purposes. Output is not professional advice.</p></section>
+<section class="sec" id="s10"><div class="sec-h"><span class="num">10</span><h2>Indemnity</h2></div><p>You will indemnify us against third-party claims, penalties and reasonable costs arising from: (a) recording or uploading without the required notice or consent; (b) content you had no right to upload; or (c) your breach of the Usage Policy.</p></section>
+<section class="sec" id="s11"><div class="sec-h"><span class="num">11</span><h2>Limitation of liability</h2></div><p class="clause"><span class="cl">11.1</span>The Service is provided "as is". To the extent the law allows, we are not liable for indirect or consequential loss, or loss of profit, data, goodwill or opportunity.</p>
+    <p class="clause"><span class="cl">11.2</span>To the extent the law allows, our total liability is limited to the greater of fees you paid in the 12 months before the claim or INR 10,000.</p>
+    <p class="clause"><span class="cl">11.3</span>Nothing limits liability that cannot be limited by law, or your obligations under section 10.</p></section>
+<section class="sec" id="s12"><div class="sec-h"><span class="num">12</span><h2>Suspension and closure</h2></div><p class="clause"><span class="cl">12.1</span>You may close your account at any time from Profile. Unused purchased credits are refunded under section 6.4.</p>
+    <p class="clause"><span class="cl">12.2</span>We may suspend or close an account for breach of these Terms or the Usage Policy, with notice where practical. We may act immediately for unlawful use or a security risk. You can appeal to <a href="mailto:notification.aix@gmail.com">notification.aix@gmail.com</a> within 15 days.</p>
+    <p class="clause"><span class="cl">12.3</span>On closure, Your Content is deleted as described in the <a href="/privacy#s6">Privacy Policy</a>.</p></section>
+<section class="sec" id="s13"><div class="sec-h"><span class="num">13</span><h2>Changes</h2></div><p>We will notify you of material changes by email and in the app at least 15 days before they take effect, and ask you to accept them again. If you do not agree, you may close your account and receive a refund of unused purchased credits.</p></section>
+<section class="sec" id="s14"><div class="sec-h"><span class="num">14</span><h2>Governing law and disputes</h2></div><p class="clause"><span class="cl">14.1</span>These Terms are governed by the laws of India.</p>
+    <p class="clause"><span class="cl">14.2</span>The parties will first try to resolve any dispute through good-faith discussion for 30 days. After that, the courts of Ahmedabad, Gujarat have exclusive jurisdiction. <span class="ph">[Optional for business accounts: disputes go to arbitration by a sole arbitrator under the Arbitration and Conciliation Act, 1996, seated in Ahmedabad, in English.]</span></p></section>
+<section class="sec" id="s15"><div class="sec-h"><span class="num">15</span><h2>General</h2></div><p>Neither party is liable for delay caused by events beyond its reasonable control. If any clause is found invalid, the rest remains in force. These documents are the entire agreement on this subject. You may not transfer this agreement without our consent. We may transfer it to a group company or a successor. Notices to you go to your account email, and notices to us go to <a href="mailto:notification.aix@gmail.com">notification.aix@gmail.com</a>.</p></section>
+<section class="sec" id="s16"><div class="sec-h"><span class="num">16</span><h2>Contact</h2></div><p>RMP AI Private Limited · CIN U72900GJ2022PTC133157 · GSTIN 24AALCR9718G1Z1<br>
+      B-1110, Ratnaakar Nine Square, Opp. ITC Narmada, Keshavbaug, Satellite, Ahmedabad 380015, Gujarat, India<br>
+      <a href="mailto:notification.aix@gmail.com">notification.aix@gmail.com</a> · <a href="https://aiextensive.com" target="_blank" rel="noopener">aiextensive.com</a></p></section>
+
+    <div class="contact">
+      <div>
+        <h3>Questions about this policy?</h3>
+        <p>Write to us — we acknowledge within 48 hours and resolve requests within 30 days.</p>
+      </div>
+      <a class="btn" href="mailto:notification.aix@gmail.com"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg> notification.aix@gmail.com</a>
+    </div>
+  </main>
 </div>
 
-<div class="page">
+<footer class="foot">
+  <div>AiX Track is provided by RMP AI Private Limited · CIN U72900GJ2022PTC133157<br>
+    B-1110, Ratnaakar Nine Square, Satellite, Ahmedabad 380015, Gujarat, India</div>
+  <nav>
+    <a href="/usage-policy">Usage Policy</a> · <a href="/privacy">Privacy Policy</a>
+    · <a href="/terms/v1">Terms v1 (archived)</a> · <a href="/privacy/v1">Privacy v1 (archived)</a>
+    · <a href="#" onclick="window.print();return false">Print / save as PDF</a>
+  </nav>
+</footer>
 
-  <div class="page-eyebrow">Legal · AiX Track</div>
-  <h1 class="page-title">Terms of <em>Use</em></h1>
-  <div class="page-meta">Effective date: 2 October 2026 &nbsp;·&nbsp; AiExtensive</div>
-
-  <div class="highlight-box">
-    <strong>In short:</strong> AiX Track prepares draft minutes from your recordings. You own your content and you remain responsible for checking the minutes before you rely on them. Tell everyone in a conversation that it is being recorded. Credits are prepaid and do not expire.
-  </div>
-
-  <div class="toc">
-    <div class="toc-title">Contents</div>
-    <ol>
-      <li><a href="#s1">Acceptance of terms</a></li>
-      <li><a href="#s2">The Service</a></li>
-      <li><a href="#s3">Your account</a></li>
-      <li><a href="#s4">Recording consent and your content</a></li>
-      <li><a href="#s5">Credits, prices and payments</a></li>
-      <li><a href="#s6">Acceptable use</a></li>
-      <li><a href="#s7">Intellectual property</a></li>
-      <li><a href="#s8">AI output and limitation of liability</a></li>
-      <li><a href="#s9">Suspension and closing your account</a></li>
-      <li><a href="#s10">Changes</a></li>
-      <li><a href="#s11">Governing law</a></li>
-      <li><a href="#s12">Contact</a></li>
-    </ol>
-  </div>
-
-  <section id="s1">
-    <h2><span class="num">01</span>Acceptance of terms</h2>
-    <p>AiX Track ("the Service") is operated by AiExtensive ("we", "us", "our"). By creating an account or using the Service, you agree to these Terms of Use and our <a href="/privacy">Privacy Policy</a>. If you use the Service for an organisation, you confirm that you are allowed to accept these terms on its behalf.</p>
-  </section>
-
-  <section id="s2">
-    <h2><span class="num">02</span>The Service</h2>
-    <p>AiX Track records or receives audio and video of conversations, transcribes them and prepares Minutes of Conversation (MOC) with decisions and action items. It uses third-party AI and speech providers, listed in the Privacy Policy.</p>
-    <ul>
-      <li>A single recording or upload can be up to <strong>10 hours</strong> long. Uploaded files can be up to 2 GB.</li>
-      <li>We work to keep the Service available but do not guarantee uninterrupted access. Planned maintenance or provider outages may cause short interruptions.</li>
-      <li>We may improve, change or remove features. For a significant change that affects paid credits, we will give notice.</li>
-    </ul>
-  </section>
-
-  <section id="s3">
-    <h2><span class="num">03</span>Your account</h2>
-    <p>You sign in with Google or a one-time email code. Keep access to your email account secure. You are responsible for activity under your account. Tell us straight away at <a href="mailto:notification@aiextensive.com">notification@aiextensive.com</a> if you suspect unauthorised use. You must be at least 18 years old to use the Service.</p>
-  </section>
-
-  <section id="s4">
-    <h2><span class="num">04</span>Recording consent and your content</h2>
-    <ul>
-      <li>Before recording or uploading a conversation, you must inform every participant that it is being recorded and processed to prepare minutes. You must have their agreement where the law requires it. The Service asks you to confirm this each time.</li>
-      <li>Upload only content you have the right to use. Do not upload content that is unlawful or that breaches a confidentiality duty you owe to others.</li>
-      <li>You own your recordings, transcripts and minutes. You allow us to store and process them only to provide the Service to you.</li>
-    </ul>
-  </section>
-
-  <section id="s5">
-    <h2><span class="num">05</span>Credits, prices and payments</h2>
-    <ul>
-      <li>The Service runs on prepaid credits. Current rates are shown on the <a href="/pricing">Credits page</a>: for example, a set number of credits per minute of audio for standard minutes, and a higher number with speaker-wise transcripts.</li>
-      <li>The full amount payable is shown before you pay.</li>
-      <li>Purchased credits do not expire. Free trial, joining and referral credits are promotional. They have no cash value and may be changed or withdrawn.</li>
-      <li>Credits are checked before processing and deducted for the audio actually processed. Long silences are not charged.</li>
-      <li>Payments are processed by Razorpay. For a payment problem, such as a duplicate charge, contact us with the Razorpay payment ID.</li>
-    </ul>
-  </section>
-
-  <section id="s6">
-    <h2><span class="num">06</span>Acceptable use</h2>
-    <p>You agree not to:</p>
-    <ul>
-      <li>record people without telling them, or use the Service for surveillance, harassment or any unlawful purpose;</li>
-      <li>try to access other users' data, get around credit checks or rate limits, or disrupt or overload the Service;</li>
-      <li>copy, resell or reverse-engineer the Service, or use it to build a competing product;</li>
-      <li>share your account with people outside your organisation.</li>
-    </ul>
-  </section>
-
-  <section id="s7">
-    <h2><span class="num">07</span>Intellectual property</h2>
-    <p>The Service, its software, design and branding belong to us and our licensors. Apart from your own content, nothing in these terms transfers ownership to you.</p>
-  </section>
-
-  <section id="s8">
-    <h2><span class="num">08</span>AI output and limitation of liability</h2>
-    <ul>
-      <li>Transcripts and minutes are produced by AI and can contain errors, omissions or wrong speaker labels. Review and correct them before you share or rely on them, especially for legal, financial, regulatory or board purposes.</li>
-      <li>The Service is provided "as is". To the extent the law allows, we are not liable for indirect or consequential loss, or for loss of profit, data or opportunity.</li>
-      <li>To the extent the law allows, our total liability for any claim is limited to the amount you paid us in the 3 months before the claim.</li>
-    </ul>
-  </section>
-
-  <section id="s9">
-    <h2><span class="num">09</span>Suspension and closing your account</h2>
-    <p>You can close your account at any time from your Profile page. We may suspend or close an account that breaches these terms, after notice where practical. When an account is closed, its conversations and recordings are deleted as described in the Privacy Policy. If you have unused paid credits, contact us before closing your account.</p>
-  </section>
-
-  <section id="s10">
-    <h2><span class="num">10</span>Changes</h2>
-    <p>We may update these terms. We will change the effective date above. For significant changes, we will tell you by email or in the app. Continuing to use the Service after a change means you accept the updated terms.</p>
-  </section>
-
-  <section id="s11">
-    <h2><span class="num">11</span>Governing law</h2>
-    <p>These terms are governed by the laws of India. Any disputes are subject to the exclusive jurisdiction of the courts of Ahmedabad, Gujarat, India.</p>
-  </section>
-
-  <section id="s12">
-    <h2><span class="num">12</span>Contact</h2>
-    <ul>
-      <li>Email: <a href="mailto:notification@aiextensive.com">notification@aiextensive.com</a></li>
-      <li>Website: <a href="https://aiextensive.com" target="_blank" rel="noopener">aiextensive.com</a></li>
-      <li>Address: AiExtensive, Ahmedabad, Gujarat, India</li>
-    </ul>
-  </section>
-
-  <div class="footer-note">
-    AiX Track is operated by AiExtensive &nbsp;·&nbsp; Last updated October 2026<br>
-    <a href="/privacy">Privacy Policy</a>
-  </div>
-
-</div>
-
+<button class="to-top" aria-label="Back to top"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
 <script>
-/* Theme: handled by /js/theme.js */
-/* Back: previous page on this site if there is one, otherwise home (opened in a new tab has no history) */
+(function(){
+  var bar=document.querySelector('.progress'), top=document.querySelector('.to-top');
+  var links=[].slice.call(document.querySelectorAll('.toc a')), secs=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
+  function onScroll(){
+    var h=document.documentElement, max=h.scrollHeight-h.clientHeight;
+    bar.style.width=(max>0?(h.scrollTop/max*100):0)+'%';
+    top.classList.toggle('show',h.scrollTop>600);
+    var cur=0; for(var i=0;i<secs.length;i++){ if(secs[i] && secs[i].getBoundingClientRect().top<140) cur=i; }
+    links.forEach(function(a,i){ a.classList.toggle('on',i===cur); });
+  }
+  window.addEventListener('scroll',onScroll,{passive:true}); onScroll();
+  top.addEventListener('click',function(){ window.scrollTo({top:0,behavior:'smooth'}); });
+  document.querySelectorAll('.toc-m a').forEach(function(a){ a.addEventListener('click',function(){ a.closest('details').open=false; }); });
+})();
+/* Back: previous page on this site if there is one, otherwise home */
 function goBack(){
-  var fromHere = document.referrer && document.referrer.indexOf(location.origin) === 0;
-  if (fromHere && history.length > 1) history.back(); else location.href = '/';
+  var fromHere=document.referrer && document.referrer.indexOf(location.origin)===0;
+  if(fromHere && history.length>1) history.back(); else location.href='/';
 }
 </script>
 </body>

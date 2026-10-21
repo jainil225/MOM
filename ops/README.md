@@ -58,7 +58,7 @@ Add these lines:
 
 ## 5. What sends an email, and to whom
 
-Alerts go to `OPS_ALERT_EMAILS` in `.env` (comma-separated). If that isn't set, they go to `BALANCE_ALERT_EMAILS`, then to carajanikant@gmail.com.
+Alerts go to `OPS_ALERT_EMAILS` in `.env` (comma-separated). If that isn't set, they go to `BALANCE_ALERT_EMAILS`, then to carajnikant@gmail.com.
 
 | Alert | Sent by | When |
 |---|---|---|

@@ -282,6 +282,10 @@ body{
 
 /* ── SESSION ── */
 .session-table{width:100%}
+.pv-note{background:rgba(24,18,12,0.03);border:1px solid rgba(24,18,12,0.08);border-radius:8px;padding:9px 11px;font-size:12.5px;line-height:1.6;color:var(--ink2)}
+[data-theme="dark"] .pv-note{background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08)}
+.btn-secondary-sm{margin-top:6px;font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid rgba(24,18,12,0.14);background:transparent;color:var(--ink2);cursor:pointer;font-family:inherit}
+.btn-secondary-sm:hover{border-color:var(--gold);color:var(--gold)}
 .session-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(24,18,12,0.08)}
 .session-row:last-child{border-bottom:none}
 .session-key{font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:0.06em;text-transform:uppercase}
@@ -639,10 +643,54 @@ body{
         </div>
       </div>
 
+      <div class="card" id="privacy">
+        <div class="card-head"><div class="card-icon">🛡</div><div class="card-title">Privacy &amp; <em>Consent</em></div></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:14px">
+            Your rights under the DPDP Act. See the <a href="/privacy#s8" target="_blank" rel="noopener" style="color:var(--gold)">Privacy Policy</a>,
+            <a href="/terms" target="_blank" rel="noopener" style="color:var(--gold)">Terms of Use</a> and
+            <a href="/usage-policy" target="_blank" rel="noopener" style="color:var(--gold)">Usage Policy</a>.
+          </p>
+          <div class="session-table">
+            <div class="session-row"><span class="session-key">Policies accepted</span><span class="session-val" id="pv-version">—</span></div>
+            <div class="session-row"><span class="session-key">Accepted on</span><span class="session-val" id="pv-when">—</span></div>
+            <div class="session-row"><span class="session-key">Recording consents logged</span><span class="session-val" id="pv-recs">—</span></div>
+          </div>
+          <div class="divider"></div>
+
+          <div class="form-label" style="margin-bottom:6px">Download my data</div>
+          <p class="form-hint" style="margin-bottom:10px">Your conversations, minutes, credit history and consent records as one file.</p>
+          <button class="btn-primary" onclick="location.href='/api/user/export'"><span>Download my data (JSON)</span></button>
+          <div class="divider"></div>
+
+          <div class="form-label" style="margin-bottom:6px">Nominee</div>
+          <p class="form-hint" style="margin-bottom:10px">A person who may exercise these rights for you if you die or become incapacitated.</p>
+          <div class="form-field"><label class="form-label">Name</label><input class="form-input" type="text" id="nom-name" maxlength="120" placeholder="Full name"></div>
+          <div class="form-field"><label class="form-label">Email</label><input class="form-input" type="email" id="nom-email" maxlength="254" placeholder="name@example.com"></div>
+          <div class="form-field"><label class="form-label">Relationship</label><input class="form-input" type="text" id="nom-rel" maxlength="80" placeholder="e.g. Spouse, Partner, Colleague"></div>
+          <button class="btn-primary" id="nom-save" onclick="saveNominee()"><span>Save nominee</span></button>
+          <div class="divider"></div>
+
+          <div class="form-label" style="margin-bottom:6px">Tell participants</div>
+          <p class="form-hint" style="margin-bottom:6px">Read this out at the start of a recorded meeting:</p>
+          <div class="pv-note" id="pv-script">This meeting is being recorded with AiX Track to prepare minutes and action items. The recording is processed by AI and shared only with the participants. If you do not agree, please tell me now. You can ask for your data to be deleted at notification.aix@gmail.com.</div>
+          <button class="btn-secondary-sm" onclick="copyText('pv-script',this)">Copy</button>
+          <p class="form-hint" style="margin:12px 0 6px">Add this to meeting invites or emails:</p>
+          <div class="pv-note" id="pv-footer">This meeting will be recorded and transcribed by AiX Track to prepare minutes. How your data is handled: track.aiextensive.com/privacy · Requests: notification.aix@gmail.com</div>
+          <button class="btn-secondary-sm" onclick="copyText('pv-footer',this)">Copy</button>
+          <div class="divider"></div>
+
+          <div class="form-label" style="margin-bottom:6px">Withdraw consent</div>
+          <p class="form-hint" style="margin-bottom:10px">Stops further processing. Work already done is not affected. You will be asked to accept the policies again before you can use AiX Track, or you can close your account below.</p>
+          <button class="btn-danger" onclick="confirmWithdraw()">Withdraw consent</button>
+          <p class="form-hint" style="margin-top:12px">Questions or a complaint for the Grievance Officer: <a href="mailto:notification.aix@gmail.com" style="color:var(--gold)">notification.aix@gmail.com</a>. We acknowledge within 48 hours and resolve within 30 days.</p>
+        </div>
+      </div>
+
       <div class="card danger">
         <div class="card-head"><div class="card-icon">⚠️</div><div class="card-title">Danger Zone</div></div>
         <div class="card-body">
-          <p style="font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:20px">Permanently deletes your account, all MOC records, transcripts, action items and usage data. <strong style="color:var(--rust)">This cannot be undone.</strong></p>
+          <p style="font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:20px">Permanently deletes your account, all MOC records, transcripts, action items and usage data. Invoices and consent records are kept as the law requires. Unused <strong>purchased</strong> credits are refunded to your original payment method. <strong style="color:var(--rust)">This cannot be undone.</strong></p>
           <button class="btn-danger" onclick="confirmDeleteAccount()">🗑 Delete My Account Permanently</button>
         </div>
       </div>
@@ -906,6 +954,45 @@ async function loadPurchaseHistory(){
   }catch(e){body.innerHTML=`<div style="color:var(--rust);font-size:12px;padding:1rem 0">Could not load purchase history.</div>`;}
 }
 init();loadPurchaseHistory();
+/* ── Privacy & Consent (Profile → Privacy) ── */
+async function loadPrivacy(){
+  try{
+    const r=await fetch('/api/consent/status',{credentials:'same-origin'});if(!r.ok)return;
+    const d=await r.json();const recs=d.records||[];
+    const acc=recs.find(x=>!x.withdrawn_at&&(x.consent_type==='reconsent'||x.consent_type==='signup_terms'));
+    const fmt=t=>t?new Date(t).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+    document.getElementById('pv-version').textContent=d.ok?('Version '+d.version):'Not accepted';
+    document.getElementById('pv-when').textContent=acc?fmt(acc.created_at)+(acc.auth_method?' · '+(acc.auth_method==='google'?'Google':'Email code'):''):'—';
+    document.getElementById('pv-recs').textContent=String(recs.filter(x=>x.consent_type==='recording').length);
+    const n=d.nominee||{};
+    document.getElementById('nom-name').value=n.nominee_name||'';
+    document.getElementById('nom-email').value=n.nominee_email||'';
+    document.getElementById('nom-rel').value=n.nominee_relation||'';
+  }catch(_){}
+}
+async function saveNominee(){
+  const btn=document.getElementById('nom-save');btn.disabled=true;
+  try{
+    const r=await fetch('/api/user/nominee',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:document.getElementById('nom-name').value,email:document.getElementById('nom-email').value,relation:document.getElementById('nom-rel').value})});
+    const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Could not save');
+    showToast(d.cleared?'Nominee removed':'Nominee saved',d.cleared?'No nominee is recorded.':'Your nominee has been recorded.','success');
+  }catch(e){showToast('Save failed',e.message,'error');}
+  finally{btn.disabled=false;}
+}
+function copyText(id,btn){const t=document.getElementById(id).textContent;navigator.clipboard?.writeText(t).then(()=>{btn.textContent='Copied';setTimeout(()=>btn.textContent='Copy',1500);}).catch(()=>{});}
+function confirmWithdraw(){showConfirm('🛡','Withdraw consent?','AiX Track will stop processing your data. To use it again you will need to accept the policies again. Conversations already processed are not affected.','Withdraw',doWithdraw);}
+async function doWithdraw(){
+  try{
+    const r=await fetch('/api/consent/withdraw',{method:'POST',credentials:'same-origin'});
+    const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Could not withdraw');
+    showToast('Consent withdrawn','You will now be asked to accept the policies again.','success',2500);
+    setTimeout(()=>location.href='/consent',2500);
+  }catch(e){showToast('Withdraw failed',e.message,'error');}
+}
+loadPrivacy();
+// Links to /profile.html#privacy open the Security tab at the Privacy card
+if(location.hash==='#privacy'){const b=document.querySelector("[onclick=\"switchTab('security',this)\"]");if(b){switchTab('security',b);setTimeout(()=>document.getElementById('privacy')?.scrollIntoView({behavior:'smooth'}),150);}}
 /* ── Sign out — server accepts POST only ── */
 async function signOut(){
   try { await fetch('/auth/logout', { method: 'POST', credentials: 'same-origin' }); }

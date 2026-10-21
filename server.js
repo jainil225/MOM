@@ -85,20 +85,101 @@
     };
   }
 
-  // ─── Recording consent — the user confirms everyone knows the conversation is recorded ──
+  // ════════════════════════════════════════════════════════════════════════════
+  //  CONSENT — User Consent Policy Pack v2.0
+  //  Screen A (sign-up), B (each recording / upload), D (re-consent after a change).
+  //  Every acceptance writes one row to consent_records, which cannot be edited or
+  //  deleted (a database trigger enforces it); only withdrawn_at, and the conversation
+  //  a recording consent belongs to, can be filled in once.
+  // ════════════════════════════════════════════════════════════════════════════
+  const POLICY_VERSION  = '2.0';
+  const POLICY_VERSIONS = { terms: POLICY_VERSION, privacy: POLICY_VERSION, usage: POLICY_VERSION };
+  // Shown on the re-consent screen — set POLICY_EFFECTIVE_DATE / POLICY_CHANGE_SUMMARY in .env
+  const POLICY_EFFECTIVE_DATE  = process.env.POLICY_EFFECTIVE_DATE || '';
+  const POLICY_CHANGE_SUMMARY  = process.env.POLICY_CHANGE_SUMMARY ||
+    'New Terms of Use, Privacy Policy and Usage Policy (version 2.0): you now confirm participant consent before each recording, ' +
+    'transcript text may be processed by AI providers outside India, unused purchased credits can be refunded, and your rights under the DPDP Act are set out.';
+  // The exact wording shown to the user. The hash of what was shown is stored with each record.
+  const CONSENT_TEXT = {
+    signup_terms:           'I have read and agree to the Terms of Use, Usage Policy and Privacy Policy (version 2.0). I confirm I am 18 or older.',
+    signup_processing:      'I consent to AiX Track processing my account details and the conversations I upload, as described in the Privacy Policy, including sending transcript text to AI providers that may process it outside India.',
+    recording_participants: 'I have told every participant that this conversation is being recorded and processed by AI to prepare minutes, and I have their agreement where the law requires it.',
+    recording_content:      'This recording does not include content I am not permitted to share, such as material covered by a confidentiality duty, unless I am authorised to process it.',
+    reconsent:              'I agree to the updated Terms of Use, Usage Policy and Privacy Policy.',
+  };
+  // consent_type → the statements ticked together on that screen
+  const CONSENT_SCREENS = {
+    signup_terms:      ['signup_terms'],
+    signup_processing: ['signup_processing'],
+    recording:         ['recording_participants', 'recording_content'],
+    reconsent:         ['reconsent', 'signup_processing'],
+  };
+  const consentHash = type => crypto.createHash('sha256')
+    .update(CONSENT_SCREENS[type].map(k => CONSENT_TEXT[k]).join('\n'), 'utf8').digest('hex');
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  async function logConsent(req, email, type, { conversationId = null, authMethod = null } = {}) {
+    const id = crypto.randomUUID();
+    const u  = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    await pool.query(
+      `INSERT INTO consent_records (consent_id, user_email, user_id, consent_type, policy_versions, conversation_id,
+                                    checkbox_text_hash, ip_address, user_agent, auth_method)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [id, email, u.rows[0]?.id || null, type, type === 'recording' ? null : JSON.stringify(POLICY_VERSIONS),
+       conversationId, consentHash(type), req.ip || '', String(req.get('user-agent') || '').slice(0, 300), authMethod]);
+    return id;
+  }
+
+  // Current-version acceptance: both sign-up boxes, or the re-consent screen — and not withdrawn
+  async function hasCurrentConsent(email) {
+    const r = await pool.query(
+      `SELECT DISTINCT consent_type FROM consent_records
+        WHERE user_email = $1 AND withdrawn_at IS NULL AND policy_versions->>'terms' = $2
+          AND consent_type IN ('signup_terms','signup_processing','reconsent')`, [email, POLICY_VERSION]);
+    const t = new Set(r.rows.map(x => x.consent_type));
+    return t.has('reconsent') || (t.has('signup_terms') && t.has('signup_processing'));
+  }
+
+  // Screen A — logged once per policy version, on the login that carried both ticks
+  async function logSignupConsent(req, email, authMethod) {
+    try {
+      if (await hasCurrentConsent(email)) return;
+      await logConsent(req, email, 'signup_terms', { authMethod });
+      await logConsent(req, email, 'signup_processing', { authMethod });
+    } catch (err) { console.error('[consent] sign-up log failed:', err.message); }
+  }
+  const signupConsentGiven = b => b?.consent_terms === true && b?.consent_processing === true;
+  const SIGNUP_CONSENT_REQUIRED = {
+    error: 'Please tick both boxes to agree to the Terms of Use, Usage Policy and Privacy Policy and to consent to processing.',
+    error_type: 'consent_required',
+  };
+
+  // Screen B — the upload or recording must carry a consent id the user created for it
   const CONSENT_REQUIRED = {
-    error: 'Please confirm that everyone in this conversation knows it is being recorded and processed, then try again.',
+    error: 'Please confirm participant consent for this recording, then try again.',
     error_type: 'consent_required',
   };
   async function recordConsent(req, kind, context = '') {
-    const v = req.body?.consent_confirmed;
-    if (!(v === true || v === 'true')) return false;
+    const id = String(req.body?.recording_consent_id || '');
+    if (!UUID_RE.test(id)) return false;
     try {
-      await pool.query(
-        'INSERT INTO consent_log (user_email, kind, context, ip, user_agent) VALUES ($1, $2, $3, $4, $5)',
-        [req.session.user.email, kind, String(context || '').slice(0, 300), req.ip || '', String(req.get('user-agent') || '').slice(0, 300)]);
-    } catch (err) { console.error('[consent] log failed:', err.message); }
+      const r = await pool.query(
+        `SELECT consent_id FROM consent_records
+          WHERE consent_id = $1 AND user_email = $2 AND consent_type = 'recording' AND withdrawn_at IS NULL
+            AND conversation_id IS NULL AND created_at > NOW() - INTERVAL '24 hours'`, [id, req.session.user.email]);
+      if (!r.rows.length) return false;
+    } catch (err) { console.error('[consent] recording check failed:', err.message); return false; }
+    req.recordingConsentId = id;
+    console.log(`[consent] ${kind} · ${req.session.user.email} · ${id}${context ? ' · ' + String(context).slice(0, 80) : ''}`);
     return true;
+  }
+  // Ties the recording consent to the conversation it produced (allowed once by the trigger)
+  async function linkRecordingConsent(req, sessionId) {
+    if (!req.recordingConsentId || !sessionId) return;
+    try {
+      await pool.query('UPDATE consent_records SET conversation_id = $1 WHERE consent_id = $2 AND conversation_id IS NULL',
+        [sessionId, req.recordingConsentId]);
+    } catch (err) { console.error('[consent] link failed:', err.message); }
   }
 
   // ─── In-memory low-credit alert cooldown (24h per user, resets on restart) ────
@@ -189,6 +270,18 @@
   // A 10-hour live recording sends one piece every 5 seconds (720 per hour)
   app.use('/api/recordings',      rateLimit({ name: 'recordings',  max: 1500, windowMs: HOUR, by: 'user' }));
   app.use('/api/',                rateLimit({ name: 'api',         max: 600,  windowMs: MIN }));
+
+  // Screen D for app pages that are also served straight from /public: a signed-in user who has
+  // not accepted the current policies is sent to /consent first, then back to the page
+  const CONSENT_GATED_PAGE_RE = /^\/(index\.html|history(\.html)?|actions(\.html)?|projects(\.html)?|profile\.html|logging(\.html)?|pricing(\.html)?)?$/;
+  app.use(async (req, res, next) => {
+    if (req.method !== 'GET' || !req.session?.user || req.session.consentVersion === POLICY_VERSION
+        || !CONSENT_GATED_PAGE_RE.test(req.path)) return next();
+    try {
+      if (await hasCurrentConsent(req.session.user.email)) { req.session.consentVersion = POLICY_VERSION; return next(); }
+    } catch (err) { console.error('[consent] page check failed — allowing:', err.message); return next(); }
+    res.redirect('/consent?next=' + encodeURIComponent(req.originalUrl));
+  });
 
   app.use(express.static(path.join(__dirname, 'public')));
 
@@ -512,6 +605,51 @@
     `);
     await pool.query('CREATE INDEX IF NOT EXISTS consent_log_user_idx ON consent_log (user_email, created_at DESC)');
 
+    // ── Consent records (policy pack v2.0) — one row per acceptance, kept as evidence ──
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS consent_records (
+        consent_id         UUID PRIMARY KEY,
+        user_email         TEXT NOT NULL,
+        user_id            INTEGER,
+        consent_type       TEXT NOT NULL,        -- signup_terms | signup_processing | recording | reconsent
+        policy_versions    JSONB,                -- {"terms":"2.0","privacy":"2.0","usage":"2.0"} for A and D
+        conversation_id    INTEGER,              -- the conversation a recording consent produced
+        checkbox_text_hash TEXT NOT NULL,        -- SHA-256 of the exact text shown
+        created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        ip_address         TEXT,
+        user_agent         TEXT,
+        auth_method        TEXT,                 -- google | email_otp (sign-up only)
+        withdrawn_at       TIMESTAMPTZ
+      )
+    `);
+    await pool.query('CREATE INDEX IF NOT EXISTS consent_records_user_idx ON consent_records (user_email, created_at DESC)');
+    // Append-only: no deletes; an update may only set withdrawn_at or conversation_id, once each
+    try {
+      await pool.query(`
+        CREATE OR REPLACE FUNCTION consent_records_guard() RETURNS trigger AS $$
+        BEGIN
+          IF TG_OP = 'DELETE' THEN RAISE EXCEPTION 'consent records cannot be deleted'; END IF;
+          IF NEW.consent_id IS DISTINCT FROM OLD.consent_id OR NEW.user_email IS DISTINCT FROM OLD.user_email
+             OR NEW.user_id IS DISTINCT FROM OLD.user_id OR NEW.consent_type IS DISTINCT FROM OLD.consent_type
+             OR NEW.policy_versions IS DISTINCT FROM OLD.policy_versions OR NEW.checkbox_text_hash IS DISTINCT FROM OLD.checkbox_text_hash
+             OR NEW.created_at IS DISTINCT FROM OLD.created_at OR NEW.ip_address IS DISTINCT FROM OLD.ip_address
+             OR NEW.user_agent IS DISTINCT FROM OLD.user_agent OR NEW.auth_method IS DISTINCT FROM OLD.auth_method
+             OR (OLD.conversation_id IS NOT NULL AND NEW.conversation_id IS DISTINCT FROM OLD.conversation_id)
+             OR (OLD.withdrawn_at IS NOT NULL AND NEW.withdrawn_at IS DISTINCT FROM OLD.withdrawn_at) THEN
+            RAISE EXCEPTION 'consent records are append-only';
+          END IF;
+          RETURN NEW;
+        END $$ LANGUAGE plpgsql`);
+      await pool.query('DROP TRIGGER IF EXISTS consent_records_guard ON consent_records');
+      await pool.query(`CREATE TRIGGER consent_records_guard BEFORE UPDATE OR DELETE ON consent_records
+                        FOR EACH ROW EXECUTE FUNCTION consent_records_guard()`);
+    } catch (err) { console.error('[db] consent_records guard trigger not installed:', err.message); }
+
+    // Nominee who may exercise the user's data rights (DPDP Act)
+    for (const col of ['nominee_name TEXT', 'nominee_email TEXT', 'nominee_relation TEXT', 'nominee_set_at TIMESTAMPTZ']) {
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS ${col}`);
+    }
+
     // Owner accounts: unlimited credits (admin role is never charged)
     if (UNLIMITED_EMAILS.length) {
       const up = await pool.query(
@@ -548,6 +686,14 @@
   // Credits charged per minute — change in .env to re-price without code changes
   const CREDIT_RATE_STANDARD    = Math.max(1, parseInt(process.env.CREDITS_PER_MIN_STANDARD)    || 1);
   const CREDIT_RATE_DIARIZATION = Math.max(1, parseInt(process.env.CREDITS_PER_MIN_DIARIZATION) || 2);
+  // Rebuilding a MOC from the saved transcript (no new transcription) — may be fractional
+  const CREDIT_RATE_REGENERATE  = Math.max(0, parseFloat(process.env.CREDITS_PER_MIN_REGENERATE ?? '0.5') || 0);
+
+  // Credits for one regeneration: the rate per started minute, rounded up to a whole credit
+  function regenerateCredits(durationSeconds) {
+    const mins = Math.max(1, Math.ceil((Number(durationSeconds) || 0) / 60));
+    return Math.ceil(mins * CREDIT_RATE_REGENERATE);
+  }
 
   // Billing rule: free-trial minutes are used first; any remainder is charged in
   // credits at CREDIT_RATE_STANDARD or CREDIT_RATE_DIARIZATION per minute, rounded up per minute.
@@ -610,13 +756,13 @@
     .split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 
   // Bonuses — all three are read from .env, so the amounts can be changed and
-  // the app restarted without a code change. Defaults are 30 credits each.
-  //   JOINING_BONUS_CREDITS   — granted once, to every new account
-  //   REFERRAL_FRIEND_BONUS   — granted to the friend who signs up on an invite link
-  //   REFERRAL_REWARD_CREDITS — granted to the referrer, once the friend's first MOC is made
-  const JOINING_BONUS_CREDITS   = Math.max(0, parseInt(process.env.JOINING_BONUS_CREDITS   ?? '30') || 0);
+  // the app restarted without a code change.
+  //   JOINING_BONUS_CREDITS   — granted once, to every new account (default 86)
+  //   REFERRAL_FRIEND_BONUS   — granted to the friend who signs up on an invite link (default 30)
+  //   REFERRAL_REWARD_CREDITS — granted to the referrer, once the friend's first MOC is made (default 86)
+  const JOINING_BONUS_CREDITS   = Math.max(0, parseInt(process.env.JOINING_BONUS_CREDITS   ?? '86') || 0);
   const REFERRAL_FRIEND_BONUS   = Math.max(0, parseInt(process.env.REFERRAL_FRIEND_BONUS   ?? '30') || 0);
-  const REFERRAL_REWARD_CREDITS = Math.max(0, parseInt(process.env.REFERRAL_REWARD_CREDITS ?? '30') || 0);
+  const REFERRAL_REWARD_CREDITS = Math.max(0, parseInt(process.env.REFERRAL_REWARD_CREDITS ?? '86') || 0);
 
   async function logCredit(email, delta, balanceAfter, note, referenceId = '') {
     try {
@@ -817,7 +963,35 @@
       DRIVE_SWEEP_MINUTES * 60 * 1000).unref();
   }
 
-  function requireAuth(req, res, next) {
+  // Reachable before the current policies are accepted: the consent screen itself,
+  // downloading your data, closing your account and signing out
+  const CONSENT_EXEMPT_RE = /^\/(api\/consent\/|api\/user\/account$|api\/user\/export$|api\/me$|auth\/)/;
+
+  async function requireAuth(req, res, next) {
+    if (!req.session?.user) {
+      if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Not authenticated' });
+      return res.redirect('/login.html');
+    }
+    // Screen D — signed-in users must accept the current policy version before using the app
+    if (req.session.consentVersion === POLICY_VERSION || CONSENT_EXEMPT_RE.test(req.path)) return next();
+    try {
+      if (await hasCurrentConsent(req.session.user.email)) {
+        req.session.consentVersion = POLICY_VERSION;
+        return next();
+      }
+    } catch (err) {
+      console.error('[consent] status check failed — allowing the request:', err.message);
+      return next();
+    }
+    if (req.path.startsWith('/api/')) {
+      return res.status(428).json({
+        error: 'Our Terms of Use, Usage Policy and Privacy Policy have been updated. Please review and accept them to continue.',
+        error_type: 'reconsent_required', redirect: '/consent' });
+    }
+    return res.redirect('/consent');
+  }
+  // Signed in, whether or not the current policies are accepted — used by the consent routes
+  function requireLogin(req, res, next) {
     if (req.session?.user) return next();
     if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Not authenticated' });
     res.redirect('/login.html');
@@ -857,7 +1031,13 @@
       } catch (err) { done(err); }
     });
 
+    // Screen A on the Google route: the login page sends ?consent=1 only when both boxes are
+    // ticked. It travels in a short-lived cookie because signing in replaces the session.
+    const GOOGLE_CONSENT_COOKIE = 'aix_signup_consent';
     app.get('/auth/google', (req, res, next) => {
+      if (req.query.consent !== '1') return res.redirect('/login.html?error=consent');
+      res.cookie(GOOGLE_CONSENT_COOKIE, POLICY_VERSION, { maxAge: 15 * 60 * 1000, httpOnly: true, sameSite: 'lax', path: '/',
+                                                         secure: process.env.NODE_ENV === 'production' });
       // Save the originating domain so we can redirect back after OAuth
       req.session.returnHost = req.headers.host || '';
       req.session.save(() => next());
@@ -867,6 +1047,11 @@
       passport.authenticate('google', { failureRedirect: '/login.html?error=google' }),
       async (req, res) => {
         req.session.user = { email: req.user.email, id: req.user.id, name: req.user.name };
+        if (readCookie(req, GOOGLE_CONSENT_COOKIE) === POLICY_VERSION) {
+          await logSignupConsent(req, req.user.email, 'google');
+          res.clearCookie(GOOGLE_CONSENT_COOKIE, { path: '/' });
+        }
+        // Without the cookie (e.g. it expired), the user meets the re-consent screen instead
         if (req.user._isNew) await applyReferralOnSignup(req, res, req.user.email);
         req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
         await req.session.save();
@@ -1091,6 +1276,8 @@
     const email = String(req.body.email || '').trim();
     if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
       return res.status(400).json({ error: 'Enter a valid email address.' });
+    // Screen A — both sign-up boxes must be ticked; the browser rule is checked again here
+    if (!signupConsentGiven(req.body)) return res.status(400).json(SIGNUP_CONSENT_REQUIRED);
 
     // Per-address limit on top of the per-network limit (stops code-bombing one inbox)
     if (hitRateLimit(`otp-email|${otpKey(email)}`, 5, 60 * 60 * 1000))
@@ -1128,6 +1315,7 @@
     const email = String(req.body.email || '').trim();
     const otp   = String(req.body.otp || '').trim();
     if (!email || !/^\d{6}$/.test(otp)) return res.status(400).json({ error: 'Enter the 6-digit code from the email.' });
+    if (!signupConsentGiven(req.body)) return res.status(400).json(SIGNUP_CONSENT_REQUIRED);
     let record;
     try {
       // Count the attempt first, atomically, so parallel guesses cannot skip the limit
@@ -1155,6 +1343,7 @@
     await pool.query('DELETE FROM auth_otps WHERE email = $1', [otpKey(email)]).catch(() => {});
     const user = await findOrCreateUser(email);
     req.session.user = { email: user.email, id: user.id, name: user.name };
+    await logSignupConsent(req, user.email, 'email_otp');
     if (user._isNew) await applyReferralOnSignup(req, res, user.email);
     // Always 30 days (remember by default — rolling sessions keep this alive)
     req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
@@ -1454,18 +1643,21 @@
   //  API USAGE LOGGING — cost tracking for Sarvam + Claude + OpenAI
   // ════════════════════════════════════════════════════════════════════════════
 
-  // Pricing constants (verify against current provider pricing pages)
+  // Exchange rate for every ₹ figure in the usage and cost reports — set USD_INR in .env (Oct 2026 ≈ ₹96).
+  const USD_INR_RATE = parseFloat(process.env.USD_INR) || 96;
+
+  // Pricing constants — published rates checked 16 Oct 2026; verify against the provider pages when they change.
   const COST = {
-    // Sarvam AI (docs.sarvam.ai pricing): Speech to Text ₹30/hr; with Diarization ₹45/hr; billed per second.
-    // Stored in USD at ₹84 = $1 to match the rest of the usage log.
-    sarvam_per_second:             30 / 3600 / 84,
-    sarvam_diarization_per_second: 45 / 3600 / 84,
+    // Sarvam AI (sarvam.ai/api-pricing, pay as you go): Speech to Text ₹0.49/min (₹29.40/hr);
+    // Batch with diarization ₹0.59/min (₹35.40/hr); billed by audio duration. Stored in USD like the rest of the log.
+    sarvam_per_second:             (parseFloat(process.env.SARVAM_INR_PER_MIN)      || 0.49) / 60 / USD_INR_RATE,
+    sarvam_diarization_per_second: (parseFloat(process.env.SARVAM_DIAR_INR_PER_MIN) || 0.59) / 60 / USD_INR_RATE,
     // Anthropic claude-sonnet-5-5 (MOC generation) — $2/MTok input, $10/MTok output
     claude_input_per_token:  0.000002,
     claude_output_per_token: 0.00001,
-    // OpenAI GPT-4o — /MTok input, 5/MTok output
-    openai_input_per_token:  0.000005,
-    openai_output_per_token: 0.000015,
+    // OpenAI GPT-4o (prompt composer) — $2.50/MTok input, $10/MTok output
+    openai_input_per_token:  0.0000025,
+    openai_output_per_token: 0.00001,
   };
 
   async function logUsage({ service, userEmail, sessionId, detail, units, unitType, costUsd }) {
@@ -1855,8 +2047,8 @@ SPEAKER IDENTIFICATION: Many transcripts do not label speakers. You MUST attempt
     ],
     "action_items": [
       { "task": "Clear, specific task description, no longer than two lines",
-        "owner": "The person or side the meeting named — otherwise 'Not agreed'",
-        "owner_status": "explicit / not_agreed",
+        "owner": "The person or side the meeting named, or the side whose work it clearly is from the discussion — otherwise 'Not agreed'",
+        "owner_status": "explicit / contextual / not_agreed",
         "due_date": "DD/MM/YYYY only when an exact date was agreed — otherwise TBD",
         "due_status": "agreed / not_agreed",
         "priority": "High / Medium / Low only when a participant stated the priority or urgency — otherwise empty string",
@@ -1869,7 +2061,7 @@ SPEAKER IDENTIFICATION: Many transcripts do not label speakers. You MUST attempt
     "matters_discussed": [
       { "item": "A proposal, option, idea, suggestion or open question raised but NOT approved or committed to — stated neutrally",
         "raised_by": "Who raised it, when clear",
-        "classification": "PROPOSAL / OPINION / OPEN_QUESTION",
+        "classification": "PROPOSAL / OPINION / OPEN_QUESTION / WORKSTREAM",
         "views": "Differing views expressed, attributed by name, without implying endorsement",
         "status": "For future consideration / Requires decision / Under examination",
         "topic": "The discussion topic this belongs to" }
@@ -1956,10 +2148,11 @@ APPROVAL GATE — decision_log
 - If nothing was decided, return an empty decision_log. That is a correct, valuable result.
 
 ACTION GATE — action_items
-- Create an action only for an EXPLICIT_ACTION: a person or side clearly committed to, or was clearly assigned, a piece of work. Copy those words verbatim (transcript language and script) into commitment_quote. An action without a commitment quote is removed by the application.
-- A topic, an analysis someone suggested, a "we could look at", or a people-pairing for future examination is NOT an action. Record it in matters_discussed. Example: "Two participant pairs were identified to examine platform-related and fabric-to-delivery matters. Detailed deliverables, scope and completion dates remain to be decided."
-- There is no expected number of actions. A discussion meeting may correctly have none.
-- Never fabricate an owner, a due date, a priority or a completion criterion. owner "Not agreed" and owner_status "not_agreed" when no person or side was named. due_date "TBD" and due_status "not_agreed" unless an exact date was agreed. priority empty and priority_source "none" unless a participant stated urgency. acceptance_criteria empty unless stated, with its own verbatim quote.
+- Create an action for every EXPLICIT_ACTION and every AGREED NEXT STEP. An agreed next step is work the discussion clearly left with someone, even without the words "I will": data or documents one side said it will send, share, clear or provide; a document, plan, policy or Excel the advising side said it will prepare or update ("I will make it my way", "we will write it below"); a meeting, call or kick-off to be fixed; homework to be brought; an account to be opened; a person to be met. Copy the transcript words that show it verbatim (transcript language and script) into commitment_quote. An action without a commitment quote is removed by the application.
+- Read the whole meeting for next steps, including the closing minutes, where most of them are usually settled. A one- to two-hour working meeting normally produces several actions; do not leave the action register thin when the discussion settled next steps.
+- An idea only floated ("we could", "one option is", "companies usually"), a practice someone described from their own firm, an opinion, or a workstream with no settled deliverable is NOT an action. Record it in matters_discussed (classification WORKSTREAM for a pairing or workstream, without deliverables, scope or dates).
+- Owner: a named person when one was named (owner_status "explicit"). Otherwise the side whose work it clearly is from the discussion — "Client", the advising firm's name, or "Joint" (owner_status "contextual"): the side that holds the data or documents, or the side that said it will prepare the deliverable. Use "Not agreed" only when the discussion really does not show whose work it is. Never guess a named individual.
+- due_date "TBD" and due_status "not_agreed" unless an exact date was agreed. priority empty and priority_source "none" unless a participant stated urgency. acceptance_criteria empty unless stated, with its own verbatim quote.
 - Consolidate genuinely repeated statements of the same commitment into one action. Keep task text short and outcome-focused.
 
 FIGURES AND CAUSES
@@ -1976,11 +2169,11 @@ RELEVANCE
 Mapping rules for the application schema:
 - decision_log: as set out in the APPROVAL GATE. Do not also return a "decisions" field — the application builds it from decision_log.
 - action_items: as set out in the ACTION GATE.
-  - owner: the person named for the work, or the side the meeting named — "Client", the advising firm's name when the project details give it, or "Joint" when both were named; otherwise "Not agreed". Never guess a named individual.
+  - owner: as set out in the ACTION GATE — a named person, or the side ("Client", the advising firm's name when the project details give it, or "Joint"); "Not agreed" only when the discussion does not show whose work it is. Never guess a named individual.
   - due_date: DD/MM/YYYY only when an exact date was agreed or an agreed relative date resolves unambiguously against the reference date; otherwise "TBD".
   - priority: High, Medium or Low only when stated (treat Critical as High); otherwise empty.
   - task: the outcome-focused action. Do not append a "Done when" criterion.
-- matters_discussed: every material PROPOSAL, OPINION and OPEN_QUESTION that is not a confirmed decision or explicit action — targets discussed, options raised, suggested analyses, differing views — written neutrally, without implying endorsement.
+- matters_discussed: the material PROPOSALS, OPINIONS and OPEN_QUESTIONS that are not a decision or an action and that the business may need to act on later — targets discussed, options raised, suggested analyses, differing views — written neutrally, without implying endorsement. Keep it to the points that matter (normally no more than ten); leave out general market chat, anecdotes and practices a participant only described from their own firm, which belong in the topic discussion if anywhere.
 - discussion_points: one entry per material topic — this is the body of the MOC and the section a reader relies on, so it carries the detail that the flat schema has no other place for.
   - Work through the transcript in order and give every material topic its own entry. Do not merge unrelated topics, and do not stop early: a one-hour meeting normally yields several topics, not two or three.
   - Build "details" from section 4 of the master instruction — context and key discussion, evidence/figures/status reported, decision, action, open point, and risk/issue/blocker/dependency — written as prose under short labels, including only the labels the record actually supports.
@@ -1991,7 +2184,7 @@ Mapping rules for the application schema:
   - Then, in this order, add these entries when the material exists (unresolved questions themselves go in matters_discussed, not here):
     - topic "Risks, issues, blockers and dependencies", relevance "secondary" — each item with its type, description, impact, and the response only if one was agreed. Do not repeat a point already made in a topic entry; refer to the topic instead.
     - topic "Recommendations", relevance "internal" — only recommendations that follow from what was discussed, each with its reason, labelled as suggestions for internal review. Never introduce outside advice, market data or regulatory requirements that the meeting did not raise.
-    - topic "Confirmation required", relevance "secondary" — each material ambiguity as a precise question, limited to points that could change responsibility, deadline, decision status, money, scope, risk or execution.
+    - topic "Confirmation required", relevance "secondary" — each material ambiguity as a precise question, limited to points that could change responsibility, deadline, decision status, money, scope, risk or execution — normally no more than five, the most important first.
 - Coverage: the meeting brief lists the topics found across the whole recording. Every topic in it that the transcript supports gets its own entry in discussion_points, including strategy, execution-review and carry-forward items — not only the topics that sound like decisions. Before finishing, scan the whole transcript once more for any theme without an entry.
 - Speech-to-text often mishears names of clients, firms and products. When the project details or the brief give the correct name, use it everywhere. Write about the client's own business from the client's point of view; do not treat the client's own name as a separate third-party engagement.
 - Write the business meaning in polished prose, as a senior professional would minute it. Do not transcribe noise.
@@ -2038,6 +2231,7 @@ INDIAN MULTILINGUAL MEETINGS
         "responsible": "Client / the advising firm / a named person — whichever the record supports",
         "status": "Plain-language status: Pending, Pending client confirmation, In progress, Awaiting PMS data, Priority implementation" }
     ],
+    "working_conclusions": ["Each direction the discussion clearly converged on, as one short forward-looking line — e.g. 'Settle the PMS platform first; project profitability reporting builds on it.'"],
     "next_agenda": ["Each item proposed or implied for the next meeting, as a short directive line"]`,
 
       extraRules: `
@@ -2053,11 +2247,14 @@ This meeting is minuted as professional advisory minutes. Apply everything above
   - timeline: add this field to every action item — the plain-language timing actually used in the meeting, such as "At the earliest", "Pending client review", "Before next strategy review", "After PMS data". Use "Not agreed" when no timing was stated. This is what the reader relies on, so it must be faithful to the record.
 - pending_tracker: documents, data, access or confirmations the record shows are actually awaited, including items carried forward from earlier meetings where the record mentions them. Do not turn a suggestion into a pending requirement. Do not repeat an item that is already an action — the tracker is for inputs awaited, the action plan for work committed.
 - decision_log: the APPROVAL GATE applies in full. Write confirmed decisions as forward-looking directions that can be acted on; a direction that was only proposed or favoured belongs in matters_discussed.
-- next_agenda: the proposed agenda for the next meeting, drawn only from what was deferred, left open or explicitly scheduled. There is no expected number of items.
+- next_agenda: see the rule at the end of this section. There is no expected number of items.
 - Where a numeric target, investment figure or compliance position was discussed but not confirmed, say plainly that it remains to be validated. Do not present it as settled.
 - Advice given by the advising firm is part of the record. Where the advisor recommended a course of action — products to focus on, a collaboration, a method, a sequence of steps — write each piece of advice in the relevant theme with its specifics (names, numbers, programmes, grades, sequence). Mark it as advice, not as a decision or an action, unless the client accepted it in words that pass the approval gate.
 - Responsible parties: use the project details to learn who the advising firm is and who the client is. Write "Client", the advising firm's name, or "Joint" in the owner and responsible fields when the meeting named that side for the work. Use "Not agreed" when it did not.
-- Every action item also carries "status": one of Not started, In progress, Awaiting input, Pending confirmation, Blocked, Deferred, Completed — taken from the record; use Not started for a newly agreed action.`,
+- Every action item also carries "status": one of Pending, In progress, Awaiting input, Pending client review, Blocked, Deferred, Completed — taken from the record. Use "Pending" when the meeting agreed the next step but said nothing more.
+- timeline: give the timing in the words the meeting used or the context clearly sets — "Before Diwali", "Next week", "Before the next meeting", "At the earliest", "After September data", "On the 15th, 12:00". Write "Not agreed" only when nothing in the discussion indicates timing.
+- working_conclusions: four to ten short lines stating the directions the discussion clearly converged on — the sequence of priorities, what must come first, how an area will be approached — written as forward-looking working conclusions in the style of a senior advisor. A working conclusion records the shared direction of discussion; it is not a formal approval, so do not put amounts, investments or commitments that were not accepted into it. Leave it empty when the meeting reached no common direction.
+- next_agenda: items participants proposed for the next meeting, plus items the meeting explicitly carried forward ("remaining agenda", "we will discuss again", pending reviews). Do not invent new topics; leave it empty when none was discussed.`,
     },
   };
 
@@ -3029,6 +3226,7 @@ ${transcript}`;
           'en', tags || '', category || '', savedFilePathC || ''
         ]);
         const stub = stubRes.rows[0];
+        await linkRecordingConsent(req, stub.id);
         offloadToDriveInBackground(stub.id, req.session.user.email);
         await fileSessionIntoProject(stub.id, req.session.user.email, req.body?.project_id);
         return res.json({
@@ -3080,6 +3278,7 @@ ${transcript}`;
 
       const saved = dbResult.rows[0];
       await saveMocQuality(saved.id, mom);
+      await linkRecordingConsent(req, saved.id);
       // Recording moves to the customer's Drive in the background, if connected
       offloadToDriveInBackground(saved.id, req.session.user.email);
       await fileSessionIntoProject(saved.id, req.session.user.email, req.body?.project_id);
@@ -3200,6 +3399,7 @@ ${transcript}`;
             'en', tags || '', category || '', savedFilePathC || ''
           ]);
           const partialIdC = partialRes.rows[0]?.id;
+          await linkRecordingConsent(req, partialIdC);
           offloadToDriveInBackground(partialIdC, req.session.user.email);
           await fileSessionIntoProject(partialIdC, req.session.user.email, req.body?.project_id);
           console.warn(`[chunk-upload] AI failed — transcript saved as draft #${partialIdC}`);
@@ -3524,6 +3724,7 @@ ${transcript}`;
 
       const saved = dbResult.rows[0];
       await saveMocQuality(saved.id, mom);
+      await linkRecordingConsent(req, saved.id);
       // Recording moves to the customer's Drive in the background, if connected
       offloadToDriveInBackground(saved.id, req.session.user.email);
       await fileSessionIntoProject(saved.id, req.session.user.email, req.body?.project_id);
@@ -3659,6 +3860,7 @@ ${transcript}`;
             'en', tags || '', category || '', savedFilePath || ''
           ]);
           const partialId = partialResult.rows[0]?.id;
+          await linkRecordingConsent(req, partialId);
           offloadToDriveInBackground(partialId, req.session.user.email);
           await fileSessionIntoProject(partialId, req.session.user.email, req.body?.project_id);
           console.warn(`[transcribe] AI failed — transcript saved as draft session #${partialId}`);
@@ -3834,7 +4036,8 @@ ${transcript}`;
 
       const attHtml = att.map(a => li(esc(a))).join('');
       const agHtml  = ag.map((a, i) => li(`${i + 1}. ${esc(a)}`)).join('');
-      const decHtml = dec.map(d => li(`✓ ${esc(d)}`)).join('');
+      const wc = ADV && m.moc_quality && typeof m.moc_quality === 'object' ? safeArr(m.moc_quality.working_conclusions) : [];
+      const decHtml = [...dec, ...wc].map(d => li(`✓ ${esc(d)}`)).join('');
 
       const dpHtml = dp.map(d => `
             <div style="margin:0 0 10px;padding:12px 14px;background:${EM.panel};border-radius:10px;border-left:3px solid ${EM.orange}">
@@ -3899,7 +4102,7 @@ ${transcript}`;
 
       const html = emailLayout({
         width:     680,
-        eyebrow:   `${ADV ? 'Minutes of Meeting' : 'Minutes of Conversation'}${lh.firm_name ? ' · ' + esc(lh.firm_name) : ''} · ${esc(refId)}`,
+        eyebrow:   `Minutes of Conversation${lh.firm_name ? ' · ' + esc(lh.firm_name) : ''} · ${esc(refId)}`,
         title:     esc(m.meeting_title || 'Conversation'),
         subtitle:  `${meta}${meta ? ' · ' : ''}Saved ${esc(new Date(m.created_at).toLocaleString('en-IN'))}`,
         preheader: m.summary ? String(m.summary).slice(0, 140) : '',
@@ -3933,7 +4136,7 @@ ${transcript}`;
         to:      toOthers ? recipients.join(', ') : userEmail,
         ...(copyMe ? { cc: userEmail } : {}),
         ...(toOthers ? { replyTo: userEmail } : {}),
-        subject: `${ADV ? 'MOM' : 'MOC'}: ${ADV && m.client_name ? m.client_name + ' · ' : ''}${m.meeting_title || 'Conversation'} · ${refId}`,
+        subject: `MOC: ${ADV && m.client_name ? m.client_name + ' · ' : ''}${m.meeting_title || 'Conversation'} · ${refId}`,
         html
       });
 
@@ -4046,11 +4249,36 @@ ${transcript}`;
         return res.status(503).json({ error: 'AI engine is not configured on this server. Please contact the administrator.' });
       }
 
+      // ── Charge check: CREDIT_RATE_REGENERATE per minute of the recording (owner accounts are free) ──
+      const email = req.session.user.email;
+      const ft = await checkFreeTier(email);
+      const regenCredits = ft.isPrivileged ? 0 : regenerateCredits(m.duration_seconds);
+      const balance = parseInt(user?.credits || 0);
+      if (regenCredits > balance) {
+        return res.status(403).json({
+          error: `Regenerating this ${Math.max(1, Math.ceil((Number(m.duration_seconds) || 0) / 60))}-minute MOC needs ${regenCredits} credits (${CREDIT_RATE_REGENERATE} cr/min), but your balance is ${balance}. Please buy credits and try again.`,
+          error_type: 'insufficient_credits', credits_needed: regenCredits, credits_available: balance, action: 'purchase_credits'
+        });
+      }
+
       const notes = String(req.body?.additional_notes || '').trim().slice(0, 4000);
-      console.log(`[regenerate] MOC #${momId} — full pipeline on stored transcript…`);
+      console.log(`[regenerate] MOC #${momId} — full pipeline on stored transcript (${regenCredits} credits)…`);
       const { mom } = await regenerateSessionMoc({ m, user, notes, editedMom: req.body?.edited_mom, transcript: m.transcript, template: req.body?.moc_template });
+
+      // Charged only after the new MOC is saved, so a failed run costs nothing
+      let newBalance = balance;
+      if (regenCredits > 0) {
+        const upd = await pool.query(
+          `UPDATE users SET credits = GREATEST(0, credits - $1), credits_used = credits_used + $1 WHERE email = $2 RETURNING credits`,
+          [regenCredits, email]);
+        newBalance = upd.rows[0]?.credits || 0;
+        await pool.query(
+          `INSERT INTO credits_log (user_email, type, credits_delta, balance_after, reference_id, note) VALUES ($1,'usage',$2,$3,$4,$5)`,
+          [email, -regenCredits, newBalance, String(momId), `Session #${momId}: MOC regenerated (${CREDIT_RATE_REGENERATE} cr/min)`]);
+        await pool.query('UPDATE mom_sessions SET credits_deducted = COALESCE(credits_deducted,0) + $1 WHERE id = $2', [regenCredits, momId]);
+      }
       console.log(`[regenerate] MOC #${momId} regenerated and saved ✓`);
-      res.json({ success: true, mom });
+      res.json({ success: true, mom, credits_deducted: regenCredits, credits_remaining: newBalance });
     } catch (err) {
       sendRegenError(res, 'regenerate', err);
     }
@@ -4765,6 +4993,30 @@ ${transcript}`;
   app.delete('/api/user/account', requireAuth, async (req, res) => {
     const email = req.session.user.email;
     try {
+      // Terms §6.4 / §12.1 — unused purchased credits are refunded on closure. The refund is
+      // made by hand through Razorpay, so the team is emailed what was bought and what is left.
+      try {
+        const [u, paid] = await Promise.all([
+          pool.query('SELECT credits FROM users WHERE email = $1', [email]),
+          pool.query(`SELECT plan, credits, amount_inr, paid_at, razorpay_payment_id FROM credit_orders
+                       WHERE user_email = $1 AND status = 'paid' ORDER BY paid_at DESC`, [email]),
+        ]);
+        const balance = parseInt(u.rows[0]?.credits || 0);
+        if (paid.rows.length && balance > 0 && transporter && !DEV_MODE) {
+          const rows = paid.rows.map(o => `<li>${o.plan || '—'} · ${o.credits} credits · ₹${Number(o.amount_inr || 0).toFixed(2)} · ` +
+            `${o.paid_at ? new Date(o.paid_at).toISOString().slice(0, 10) : '—'} · ${String(o.razorpay_payment_id || '').replace(/[<>&]/g, '')}</li>`).join('');
+          await transporter.sendMail({
+            from: '"AiX Track" <notification@aiextensive.com>', to: balanceAlertRecipients(),
+            subject: `Refund review — account closed: ${email}`,
+            html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;max-width:560px">
+              <p><b>${email.replace(/[<>&]/g, '')}</b> closed their AiX Track account with a balance of <b>${balance} credits</b>.</p>
+              <p>Under Terms §6.4 unused <i>purchased</i> credits are refundable (promotional credits are not). Paid orders:</p>
+              <ul>${rows}</ul><p>Work out the purchased share of the balance and refund it through Razorpay to the original payment method.</p></div>`,
+          });
+          console.log(`[account] Refund review emailed for ${email} (${balance} credits left)`);
+        }
+      } catch (err) { console.error('[account] refund review email failed:', err.message); }
+
       // Conversations, recordings and transcripts are removed. Payment orders,
       // the credit ledger and consent records are kept for tax and audit purposes.
       const files = await pool.query(
@@ -4796,8 +5048,117 @@ ${transcript}`;
   });
 
   // ════════════════════════════════════════════════════════════════════════════
+  //  CONSENT API — Screens A, B and D, withdrawal, nomination, data download
+  // ════════════════════════════════════════════════════════════════════════════
+
+  // The exact wording and version, so every screen shows the text whose hash is stored
+  app.get('/api/consent/texts', (req, res) => {
+    res.json({ version: POLICY_VERSION, versions: POLICY_VERSIONS, effective_date: POLICY_EFFECTIVE_DATE,
+               change_summary: POLICY_CHANGE_SUMMARY, texts: CONSENT_TEXT });
+  });
+
+  app.get('/api/consent/status', requireLogin, async (req, res) => {
+    const email = req.session.user.email;
+    try {
+      const [ok, recs, u] = await Promise.all([
+        hasCurrentConsent(email),
+        pool.query(`SELECT consent_id, consent_type, policy_versions, conversation_id, created_at, auth_method, withdrawn_at
+                      FROM consent_records WHERE user_email = $1 ORDER BY created_at DESC LIMIT 100`, [email]),
+        pool.query('SELECT nominee_name, nominee_email, nominee_relation, nominee_set_at FROM users WHERE email = $1', [email]),
+      ]);
+      if (ok) req.session.consentVersion = POLICY_VERSION;
+      res.json({ ok, version: POLICY_VERSION, records: recs.rows, nominee: u.rows[0] || null });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+  });
+
+  // Screen D — accept the updated policies (both boxes)
+  app.post('/api/consent/reconsent', requireLogin, async (req, res) => {
+    if (!(req.body?.agree === true && req.body?.processing === true))
+      return res.status(400).json({ error: 'Please tick both boxes to accept the updated policies.', error_type: 'consent_required' });
+    try {
+      const id = await logConsent(req, req.session.user.email, 'reconsent');
+      req.session.consentVersion = POLICY_VERSION;
+      res.json({ success: true, consent_id: id, version: POLICY_VERSION });
+    } catch (err) { console.error('[consent] reconsent failed:', err.message); res.status(500).json({ error: 'Could not record your acceptance. Please try again.' }); }
+  });
+
+  // Screen B — one consent per recording or upload; the id travels with the upload
+  app.post('/api/consent/recording', requireAuth, async (req, res) => {
+    if (!(req.body?.participants === true && req.body?.content === true))
+      return res.status(400).json(CONSENT_REQUIRED);
+    try {
+      const id = await logConsent(req, req.session.user.email, 'recording');
+      res.json({ success: true, consent_id: id });
+    } catch (err) { console.error('[consent] recording consent failed:', err.message); res.status(500).json({ error: 'Could not record your confirmation. Please try again.' }); }
+  });
+
+  // Withdraw consent (Profile → Privacy). Stops further use until accepted again; past processing is unaffected.
+  app.post('/api/consent/withdraw', requireLogin, async (req, res) => {
+    const email = req.session.user.email;
+    try {
+      const r = await pool.query(
+        `UPDATE consent_records SET withdrawn_at = NOW()
+          WHERE user_email = $1 AND withdrawn_at IS NULL AND consent_type IN ('signup_terms','signup_processing','reconsent')`, [email]);
+      delete req.session.consentVersion;
+      console.log(`[consent] ${email} withdrew consent (${r.rowCount} record(s))`);
+      res.json({ success: true, withdrawn: r.rowCount });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+  });
+
+  // Nominee who may exercise the user's rights on death or incapacity
+  app.post('/api/user/nominee', requireAuth, async (req, res) => {
+    const clean = (v, n) => String(v ?? '').trim().slice(0, n);
+    const name = clean(req.body?.name, 120), email = clean(req.body?.email, 254), relation = clean(req.body?.relation, 80);
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Enter a valid email for the nominee.' });
+    if (!name && (email || relation)) return res.status(400).json({ error: 'Enter the nominee\'s name.' });
+    try {
+      await pool.query(
+        `UPDATE users SET nominee_name = $1, nominee_email = $2, nominee_relation = $3,
+                          nominee_set_at = CASE WHEN $1 = '' THEN NULL ELSE NOW() END WHERE email = $4`,
+        [name, email, relation, req.session.user.email]);
+      res.json({ success: true, cleared: !name });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+  });
+
+  // Right of access — everything held about the account, as one JSON file
+  app.get('/api/user/export', requireLogin, async (req, res) => {
+    const email = req.session.user.email;
+    try {
+      const q = (sql) => pool.query(sql, [email]).then(r => r.rows).catch(() => []);
+      const [user] = await q(`SELECT email, name, created_at, last_login, credits, credits_used, firm_name, firm_service_line,
+                                     prepared_by, nominee_name, nominee_email, nominee_relation, nominee_set_at
+                                FROM users WHERE email = $1`);
+      const data = {
+        exported_at: new Date().toISOString(),
+        note: 'Your AiX Track data. Recordings themselves are not included; download each one from Records.',
+        account: user || null,
+        conversations: await q(`SELECT id, created_at, file_name, duration_seconds, meeting_title, meeting_date, meeting_time,
+                                       attendees, agenda, discussion_points, decisions, action_items, next_meeting, summary,
+                                       transcript, language, tags, category, moc_template, client_name, subject, executive_summary,
+                                       pending_tracker, next_agenda, moc_quality, project_id
+                                  FROM mom_sessions WHERE user_email = $1 ORDER BY created_at`),
+        projects:      await q('SELECT * FROM projects WHERE user_email = $1 ORDER BY id'),
+        credits:       await q('SELECT type, credits_delta, balance_after, reference_id, note, created_at FROM credits_log WHERE user_email = $1 ORDER BY created_at'),
+        consents:      await q(`SELECT consent_id, consent_type, policy_versions, conversation_id, created_at, ip_address,
+                                       user_agent, auth_method, withdrawn_at FROM consent_records WHERE user_email = $1 ORDER BY created_at`),
+      };
+      const stamp = new Date().toISOString().slice(0, 10);
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="aix-track-my-data-${stamp}.json"`);
+      res.send(JSON.stringify(data, null, 2));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+  });
+
+  // ════════════════════════════════════════════════════════════════════════════
   //  PAGE ROUTES
   // ════════════════════════════════════════════════════════════════════════════
+
+  // Screen D — signed in, but the current policies are not yet accepted
+  app.get('/consent', requireLogin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'consent.html')));
+  app.get('/usage-policy', (req, res) => res.sendFile(path.join(__dirname, 'public', 'usage-policy.html')));
+  // Version 1 (2 October 2026), kept as evidence of what earlier users accepted
+  app.get('/terms/v1',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'terms-v1.html')));
+  app.get('/privacy/v1', (req, res) => res.sendFile(path.join(__dirname, 'public', 'privacy-v1.html')));
 
   app.get('/',       requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
   app.get('/history',requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'history.html')));
@@ -4918,7 +5279,7 @@ ${transcript}`;
          LEFT JOIN (
            SELECT user_email,
                   SUM(cost_usd)              AS actual_cost_usd,
-                  SUM(cost_usd) * 84         AS actual_cost_inr,
+                  SUM(cost_usd) * ${Number(USD_INR_RATE)} AS actual_cost_inr,
                   COUNT(DISTINCT session_id) AS total_meetings
            FROM api_usage_log
            WHERE user_email IS NOT NULL
@@ -4926,7 +5287,7 @@ ${transcript}`;
          ) ul ON ul.user_email = u.email
          ORDER BY u.created_at DESC LIMIT 200`
       );
-      res.json({ users: rows.rows, credit_to_usd: 1/84 });
+      res.json({ users: rows.rows, credit_to_usd: 1 / USD_INR_RATE });
     } catch (err) { res.status(500).json({ error: err.message }); }
   });
 
@@ -5056,10 +5417,10 @@ ${transcript}`;
   });
 
   // ── Credits balance ── (includes USD equivalent + actual API cost for reconciliation) ──
-  // 1 credit = ₹1 = ~$0.0119 USD (based on ₹84/USD).
+  // 1 credit = ₹1, converted to USD at USD_INR_RATE.
   // credits_used = deducted credits (only when paid balance existed).
   // actual_cost_usd = real Sarvam + Claude API spend (always tracked).
-  const CREDIT_TO_USD = 1 / 84;  // ₹1 per credit ÷ ₹84 per USD
+  const CREDIT_TO_USD = 1 / USD_INR_RATE;  // ₹1 per credit ÷ ₹ per USD
 
   app.get('/api/credits/balance', requireAuth, async (req, res) => {
     try {
@@ -5092,7 +5453,7 @@ ${transcript}`;
         credits_value_usd:  parseFloat((credits * CREDIT_TO_USD).toFixed(4)),
         credits_used_usd:   parseFloat((creditsUsed * CREDIT_TO_USD).toFixed(4)),
         actual_cost_usd:    parseFloat(actualCostUsd.toFixed(4)),
-        actual_cost_inr:    parseFloat((actualCostUsd * 84).toFixed(2)),
+        actual_cost_inr:    parseFloat((actualCostUsd * USD_INR_RATE).toFixed(2)),
         free_minutes_used:  parseFloat(freeMinUsed.toFixed(2)),
         total_minutes_used: parseFloat((totalSeconds / 60).toFixed(2)),
         is_privileged:      isPrivileged,
@@ -5308,8 +5669,9 @@ ${transcript}`;
                MIN(created_at)              AS first_call,
                MAX(created_at)              AS last_call
         FROM api_usage_log
+        WHERE created_at >= $1
         GROUP BY service ORDER BY total_cost_usd DESC
-      `);
+      `, [since]);
 
       const daily = await pool.query(`
         SELECT DATE(created_at) AS day,
@@ -5344,12 +5706,14 @@ ${transcript}`;
         GROUP BY month, service ORDER BY month DESC, service LIMIT 60
       `);
 
+      // Totals follow the selected period (Today / 7d / 30d / 90d / All time), like the conversation count
       const totals = await pool.query(`
-        SELECT SUM(cost_usd)::NUMERIC(12,4) AS grand_total_usd,
+        SELECT COALESCE(SUM(cost_usd), 0)::NUMERIC(12,4) AS grand_total_usd,
                COUNT(*) AS total_calls,
                MIN(created_at) AS since
         FROM api_usage_log
-      `);
+        WHERE created_at >= $1
+      `, [since]);
 
       const meetings = await pool.query(`SELECT COUNT(*) AS total FROM mom_sessions WHERE created_at >= $1`, [since]);
       const totalSessions = parseInt(meetings.rows[0]?.total || 0);
@@ -5375,7 +5739,7 @@ ${transcript}`;
   // ════════════════════════════════════════════════════════════════════════════
   app.get('/api/admin/cost-intelligence', requireAdmin, async (req, res) => {
     try {
-      const USD_INR     = 84;
+      const USD_INR     = USD_INR_RATE;
       const CR_TRANS_PM = 2;   // credits per minute of transcription
       const CR_MOM      = 8;   // credits per MOC generation
       const CR_TO_INR   = 1;   // 1 credit = ₹1
@@ -5525,9 +5889,9 @@ ${transcript}`;
     }
   });
 
-  // Usage reports go to every address listed (comma-separated); carajanikant@gmail.com always receives them
+  // Usage reports go to every address listed (comma-separated); carajnikant@gmail.com always receives them
   const ALERT_EMAIL = [...new Set(String(process.env.ALERT_EMAIL || 'jainildoshi22@gmail.com')
-    .split(',').concat('carajanikant@gmail.com').map(s => s.trim().toLowerCase()).filter(Boolean))].join(', ');
+    .split(',').concat('carajnikant@gmail.com').map(s => s.trim().toLowerCase()).filter(Boolean))].join(', ');
 
   async function sendUsageEmail(period = 'daily') {
     if (DEV_MODE) { console.log('[usage-email] DEV MODE — skipping email'); return; }
@@ -5587,7 +5951,7 @@ ${transcript}`;
           <td style="padding:8px 14px;border-bottom:1px solid #F0EDE6;text-align:right;font-size:13px">${parseFloat(r.calls)}</td>
           <td style="padding:8px 14px;border-bottom:1px solid #F0EDE6;text-align:right;font-family:'Courier New',monospace;font-size:12px">${parseFloat(r.units||0).toFixed(0)}</td>
           <td style="padding:8px 14px;border-bottom:1px solid #F0EDE6;text-align:right;font-weight:700;color:#B8912A;font-family:'Courier New',monospace">$${parseFloat(r.cost_usd).toFixed(4)}</td>
-          <td style="padding:8px 14px;border-bottom:1px solid #F0EDE6;text-align:right;color:#8A93A8;font-family:'Courier New',monospace;font-size:11px">₹${(parseFloat(r.cost_usd)*84).toFixed(2)}</td>
+          <td style="padding:8px 14px;border-bottom:1px solid #F0EDE6;text-align:right;color:#8A93A8;font-family:'Courier New',monospace;font-size:11px">₹${(parseFloat(r.cost_usd)*USD_INR_RATE).toFixed(2)}</td>
         </tr>`).join('');
 
       const userTableRows = userRows.map(r => `
@@ -5595,7 +5959,7 @@ ${transcript}`;
           <td style="padding:7px 14px;border-bottom:1px solid #F0EDE6;font-family:'Courier New',monospace;font-size:11px">${r.user_email||'—'}</td>
           <td style="padding:7px 14px;border-bottom:1px solid #F0EDE6;text-align:center;font-size:13px">${r.meetings||0}</td>
           <td style="padding:7px 14px;border-bottom:1px solid #F0EDE6;text-align:right;font-weight:700;color:#B8912A;font-family:'Courier New',monospace">$${parseFloat(r.cost_usd).toFixed(4)}</td>
-          <td style="padding:7px 14px;border-bottom:1px solid #F0EDE6;text-align:right;color:#8A93A8;font-family:'Courier New',monospace;font-size:11px">₹${(parseFloat(r.cost_usd)*84).toFixed(2)}</td>
+          <td style="padding:7px 14px;border-bottom:1px solid #F0EDE6;text-align:right;color:#8A93A8;font-family:'Courier New',monospace;font-size:11px">₹${(parseFloat(r.cost_usd)*USD_INR_RATE).toFixed(2)}</td>
         </tr>`).join('');
 
       const sessionRows = sessions.map(s => {
@@ -5629,12 +5993,12 @@ ${transcript}`;
     <div style="padding:18px 20px;border-right:1px solid #E8E4D8">
       <div style="font-family:'Courier New',monospace;font-size:9px;color:#8A93A8;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Period Cost</div>
       <div style="font-size:26px;font-weight:700;color:#B8912A">$${period_total.toFixed(4)}</div>
-      <div style="font-size:11px;color:#8A93A8;margin-top:2px">₹${(period_total*84).toFixed(2)}</div>
+      <div style="font-size:11px;color:#8A93A8;margin-top:2px">₹${(period_total*USD_INR_RATE).toFixed(2)}</div>
     </div>
     <div style="padding:18px 20px;border-right:1px solid #E8E4D8">
       <div style="font-family:'Courier New',monospace;font-size:9px;color:#8A93A8;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">All-time Total</div>
       <div style="font-size:26px;font-weight:700;color:#0F1524">$${all_total.toFixed(4)}</div>
-      <div style="font-size:11px;color:#8A93A8;margin-top:2px">₹${(all_total*84).toFixed(2)}</div>
+      <div style="font-size:11px;color:#8A93A8;margin-top:2px">₹${(all_total*USD_INR_RATE).toFixed(2)}</div>
     </div>
     <div style="padding:18px 20px">
       <div style="font-family:'Courier New',monospace;font-size:9px;color:#8A93A8;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Active Users</div>
@@ -5846,7 +6210,7 @@ ${transcript}`;
   //    Checked every 30 min; email once per 24h per provider while below its alert level.
   const PROVIDER_BALANCE_THRESHOLD_INR = parseFloat(process.env.PROVIDER_BALANCE_THRESHOLD_INR || 1000);
   const PROVIDER_BALANCE_THRESHOLD_USD = parseFloat(process.env.PROVIDER_BALANCE_THRESHOLD_USD || 2);
-  const PROVIDER_USD_INR = parseFloat(process.env.USD_INR || 84);
+  const PROVIDER_USD_INR = USD_INR_RATE;
   // Without a separate diarization key, diarization is billed to the main Sarvam account
   const SARVAM_SHARED_KEY = !process.env.SARVAM_DIARIZATION_KEY;
   const PROVIDERS = [
@@ -5947,7 +6311,7 @@ ${transcript}`;
         spent:           round2(spent),
         remaining:       round2(remaining),
         alert_level:     alert,
-        low:             remaining < alert,
+        low:             remaining <= alert,   // at the alert level counts as low
         source:          liveOk ? 'provider' : 'app_log',
         live_checked_at: liveOk ? row.live_checked_at : null,
         live_error:      info.live_available ? (row.live_error || null) : null,
@@ -5957,9 +6321,10 @@ ${transcript}`;
     return out;
   }
 
-  // BALANCE_ALERT_EMAILS (comma-separated); falls back to the usage-report list
+  // BALANCE_ALERT_EMAILS (comma-separated) — who is told when any provider is low or out of credit
+  const DEFAULT_BALANCE_ALERT_EMAILS = 'carajnikant@gmail.com,jainildoshi22@gmail.com';
   function balanceAlertRecipients() {
-    return [...new Set(String(process.env.BALANCE_ALERT_EMAILS || ALERT_EMAIL).split(',')
+    return [...new Set(String(process.env.BALANCE_ALERT_EMAILS || DEFAULT_BALANCE_ALERT_EMAILS).split(',')
       .map(e => e.trim().toLowerCase()).filter(Boolean))].join(', ');
   }
 
@@ -6112,6 +6477,34 @@ ${transcript}`;
   });
 
   // Re-read provider spend now (instead of waiting for the 30-minute check)
+  // Sends the balance status of every provider to the alert recipients now, so delivery can be confirmed
+  app.post('/api/admin/provider-balances/test-alert', requireAdmin, async (req, res) => {
+    const to = balanceAlertRecipients();
+    if (DEV_MODE) return res.status(409).json({ error: 'Emails are not sent in dev mode.' });
+    if (!transporter) return res.status(503).json({ error: 'SMTP is not configured on this server.' });
+    if (!to) return res.status(409).json({ error: 'No recipients. Set BALANCE_ALERT_EMAILS in .env.' });
+    try {
+      const all = await getProviderBalances();
+      const lines = all.map(b => !b.configured
+        ? `${b.label}: balance not entered on the Usage page — no low-balance alerts until it is`
+        : `${b.label}: ${fmtMoney(b.remaining, b.currency)} remaining of ${fmtMoney(b.balance, b.currency)} — alert below ${fmtMoney(b.alert_level, b.currency)}${b.low ? ' (LOW)' : ''}`);
+      await transporter.sendMail({
+        from:    '"AiX Track" <notification@aiextensive.com>',
+        to,
+        subject: 'AiX Track — test of provider balance alerts',
+        html: `<div style="font-family:Roboto,Arial,sans-serif;max-width:520px;margin:auto;padding:24px">
+          <h2 style="color:#0F1B3D;font-size:18px;margin:0 0 12px">Balance alerts are reaching you</h2>
+          <p style="font-size:14px;color:#333;line-height:1.6">This is a test sent from the Usage page. Current status:</p>
+          <ul style="font-size:14px;color:#333;line-height:1.8;padding-left:18px">${lines.map(l => `<li>${l.replace(/[<>&]/g, '')}</li>`).join('')}</ul></div>`
+      });
+      console.log(`[provider-balance] Test alert sent to ${to}`);
+      res.json({ success: true, sent_to: to, providers: lines });
+    } catch (err) {
+      console.error('[provider-balance] test alert failed:', err.message);
+      res.status(502).json({ error: 'Email could not be sent: ' + err.message, sent_to: to });
+    }
+  });
+
   app.post('/api/admin/provider-balances/refresh', requireAdmin, async (req, res) => {
     try {
       await refreshLiveSpend();
@@ -6157,7 +6550,7 @@ ${transcript}`;
 
   // ── Credit rates for the UI (buttons, explainers, estimates) ─────────────────
   app.get('/api/config/rates', (req, res) => {
-    res.json({ standard_per_min: CREDIT_RATE_STANDARD, diarization_per_min: CREDIT_RATE_DIARIZATION, max_audio_hours: MAX_AUDIO_HOURS });
+    res.json({ standard_per_min: CREDIT_RATE_STANDARD, diarization_per_min: CREDIT_RATE_DIARIZATION, regenerate_per_min: CREDIT_RATE_REGENERATE, max_audio_hours: MAX_AUDIO_HOURS, usd_inr: USD_INR_RATE });
   });
 
   // ── Recording allowance — how long the user can record with free minutes + credits ──
@@ -6203,11 +6596,12 @@ ${transcript}`;
       const mime = String(req.body.mime_type || 'audio/webm').slice(0, 60);
       const ext  = mime.includes('ogg') ? 'ogg' : mime.includes('mp4') ? 'm4a' : 'webm';
       const filePath = path.join(RECORDINGS_DIR, `${id}.${ext}`);
+      // Screen B — the live recording starts only with the consent given for it
+      if (!(await recordConsent(req, 'start_recording', id))) return res.status(400).json(CONSENT_REQUIRED);
       await pool.query(
         `INSERT INTO recording_uploads (id, user_email, mime_type, file_path) VALUES ($1, $2, $3, $4)
          ON CONFLICT (id) DO NOTHING`,
         [id, req.session.user.email, mime, filePath]);
-      await recordConsent(req, 'start_recording', id);
       res.json({ success: true, max_seconds: MAX_AUDIO_SECONDS });
     } catch (err) { res.status(500).json({ error: err.message }); }
   });
@@ -6532,7 +6926,7 @@ ${transcript}`;
     } catch (err) { res.status(500).json({ error: err.message }); }
   });
 
-  // ── Low-credit alert email — triggered by frontend when balance < 100 ─────────
+  // ── Low-credit alert email — triggered by frontend when balance < 20 ─────────
   // POST /api/credits/low-credit-alert
   // Sends from notification@aiextensive.com to the user's email
   app.post('/api/credits/low-credit-alert', requireAuth, async (req, res) => {
@@ -6541,8 +6935,10 @@ ${transcript}`;
       const user = r.rows[0];
       if (!user) return res.status(404).json({ error: 'User not found.' });
 
-      const credits = parseInt(user.credits || 0);
-      if (credits >= 100) return res.json({ skipped: true, reason: 'Balance is healthy' });
+      // Alert on the total the user can spend (paid + free trial), same figure the nav chip shows
+      const ft = await checkFreeTier(user.email);
+      const credits = parseInt(user.credits || 0) + freeCreditsFromSeconds(ft.remainingSeconds);
+      if (credits >= 20) return res.json({ skipped: true, reason: 'Balance is healthy' });
       if (['admin', 'developer'].includes(await getUserRole(user.email))) return res.json({ skipped: true, reason: 'Unlimited account' });
 
       // Cooldown: don't spam — check if we already sent in the last 24h
@@ -6704,6 +7100,8 @@ ${transcript}`;
         fd.append('category', category);
         fd.append('tags', tags);
         fd.append('draft_session_id', String(draftSessionId || ''));
+        // The processing call needs the same participant consent the recording was made under
+        if (req.body.recording_consent_id) fd.append('recording_consent_id', String(req.body.recording_consent_id));
 
         // Internal call to /api/transcribe — reuse all existing logic
         const port = process.env.PORT || 3001;
@@ -6946,12 +7344,13 @@ Body rules (plain text, \\n for line breaks):
       const year    = new Date(m.created_at).getFullYear();
       const refId   = `MOC-${year}-${String(m.id).padStart(4, '0')}`;
 
-      // Two views from the same checked record:
+      // Two views from the same checked record (both are MOCs; never call either one a MOM):
       //   internal (default) — Detailed MOC: everything, incl. options raised, figures register, evidence appendix
-      //   client  (?view=client) — Professional MOM: agenda business, confirmed decisions, agreed actions only
+      //   client  (?view=client) — Client MOC: agenda business, confirmed decisions, agreed actions only
       const CLIENT   = req.query.view === 'client';
       const qual     = (m.moc_quality && typeof m.moc_quality === 'object') ? m.moc_quality : {};
       const matters  = safeArr(qual.matters_discussed);
+      const conclusions = safeArr(qual.working_conclusions).map(String).filter(Boolean);
       const figures  = safeArr(qual.key_figures);
       const qReport  = qual.report || null;
       // Decisions stay plain strings so user edits flow through; removing the bracketed status confirms one
@@ -7089,7 +7488,7 @@ Body rules (plain text, \\n for line breaks):
           spacing: { after: 160 },
         }));
         A.push(new Paragraph({
-          children: [new TextRun({ text: 'MINUTES OF MEETING', bold: true, size: 28, color: NAVY, font: 'Calibri', characterSpacing: 60 })],
+          children: [new TextRun({ text: CLIENT ? 'MINUTES OF CONVERSATION' : 'MINUTES OF CONVERSATION — DETAILED (INTERNAL)', bold: true, size: 28, color: NAVY, font: 'Calibri', characterSpacing: 60 })],
           spacing: { after: 40 },
         }));
         A.push(new Paragraph({
@@ -7108,7 +7507,7 @@ Body rules (plain text, \\n for line breaks):
           ['Subject',          m.subject || m.meeting_title || 'Not recorded'],
           ['Meeting Date',     [niceDate(m.meeting_date), m.meeting_time].filter(Boolean).join('  ·  ') || 'Not recorded'],
           ['Present',          att.length ? att.join(String.fromCharCode(10)) : 'Not recorded'],
-          ['MOM Status',       CLIENT ? 'Draft - for review and confirmation' : 'Detailed MOC - internal reference, not for circulation'],
+          ['MOC Status',       CLIENT ? 'Draft - for review and confirmation' : 'Detailed MOC - internal reference, not for circulation'],
           ['Prepared By / On', preparedOn || 'Not recorded'],
         ], [22, 78]));
 
@@ -7126,7 +7525,7 @@ Body rules (plain text, \\n for line breaks):
             ['#', 'Action / Deliverable', 'Responsible', 'Timeline', ...(withPri ? ['Priority'] : []), 'Status'],
             aiView.map((a, i) => [
               String(i + 1), a.task || '', ownerOf(a), timingOf(a),
-              ...(withPri ? [a.priority || '—'] : []), a.status || 'Not started',
+              ...(withPri ? [a.priority || '—'] : []), (!a.status || /^status not established$/i.test(a.status)) ? 'Pending' : a.status,
             ]),
             withPri ? [5, 41, 14, 16, 9, 15] : [5, 47, 16, 17, 15]));
         } else {
@@ -7155,9 +7554,10 @@ Body rules (plain text, \\n for line breaks):
         }
 
         // ── 4. Decisions — confirmed ones only; the rest are listed as requiring confirmation ──
-        A.push(secHead('4.  Decisions'));
-        if (decConfirmed.length) decConfirmed.forEach((d, i) => A.push(numbered((i + 1) + '.   ' + d)));
-        else A.push(body('No decisions were formally confirmed in the meeting.'));
+        A.push(secHead('4.  Agreed Directions / Working Conclusions'));
+        const directions = [...decConfirmed, ...conclusions];
+        if (directions.length) directions.forEach(d => A.push(body('•  ' + d, { after: 60 })));
+        else A.push(body('No common direction was recorded in the meeting.'));
         const advPending = [...decPending, ...(CLIENT ? aiPending.map(a => `${a.task} (responsibility: ${ownerOf(a)})`) : [])];
         if (advPending.length) {
           A.push(themeHead('Matters requiring confirmation'));
@@ -7199,17 +7599,17 @@ Body rules (plain text, \\n for line breaks):
 
         const advDoc = new Document({
           creator: lh.firm_name || 'AiX Track',
-          title: m.meeting_title || 'Minutes of Meeting',
+          title: m.meeting_title || 'Minutes of Conversation',
           sections: [{
             properties: { page: { margin: { top: 1000, bottom: 1000, left: 1000, right: 1000 } } },
             children: A,
           }],
         });
         const advBuf = await Packer.toBuffer(advDoc);
-        const advName = (m.client_name || m.meeting_title || 'MOM')
+        const advName = (m.client_name || m.meeting_title || 'MOC')
           .replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/ +/g, '_').slice(0, 40);
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-        res.setHeader('Content-Disposition', 'attachment; filename="' + (CLIENT ? 'MOM_' : 'MOC_Detailed_') + advName + '_' + refId + '.docx"');
+        res.setHeader('Content-Disposition', 'attachment; filename="' + (CLIENT ? 'MOC_Client_' : 'MOC_Detailed_') + advName + '_' + refId + '.docx"');
         return res.send(advBuf);
       }
 
@@ -7218,7 +7618,7 @@ Body rules (plain text, \\n for line breaks):
       // ── Letterhead ──
       children.push(new Paragraph({
         children: [
-          new TextRun({ text: CLIENT ? 'MINUTES OF MEETING' : 'MINUTES OF CONVERSATION — DETAILED (INTERNAL)', bold: true, size: 24, color: NAVY, font: 'Calibri', characterSpacing: 80 }),
+          new TextRun({ text: CLIENT ? 'MINUTES OF CONVERSATION' : 'MINUTES OF CONVERSATION — DETAILED (INTERNAL)', bold: true, size: 24, color: NAVY, font: 'Calibri', characterSpacing: 80 }),
           new TextRun({ text: '   ·   ', size: 20, color: GOLD }),
           new TextRun({ text: refId, size: 18, color: GOLD, font: 'Courier New' }),
         ],
@@ -7411,7 +7811,7 @@ Body rules (plain text, \\n for line breaks):
       const fname  = (m.meeting_title || 'MOC').replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/ +/g, '_').slice(0, 40);
 
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-      res.setHeader('Content-Disposition', `attachment; filename="${CLIENT ? 'MOM' : 'MOC_Detailed'}_${fname}_${refId}.docx"`);
+      res.setHeader('Content-Disposition', `attachment; filename="${CLIENT ? 'MOC_Client' : 'MOC_Detailed'}_${fname}_${refId}.docx"`);
       res.send(buffer);
 
     } catch (err) {
@@ -7446,7 +7846,7 @@ Body rules (plain text, \\n for line breaks):
   //  ALERTS — crash and error-spike emails to the admins
   //  OPS_ALERT_EMAILS (comma-separated) · ERROR_ALERT_THRESHOLD errors in 10 min
   // ════════════════════════════════════════════════════════════════════════════
-  const OPS_ALERT_TO = () => (process.env.OPS_ALERT_EMAILS || process.env.BALANCE_ALERT_EMAILS || 'carajanikant@gmail.com')
+  const OPS_ALERT_TO = () => (process.env.OPS_ALERT_EMAILS || process.env.BALANCE_ALERT_EMAILS || 'carajnikant@gmail.com')
     .split(',').map(e => e.trim()).filter(Boolean).join(', ');
   const ERROR_ALERT_THRESHOLD = Math.max(1, parseInt(process.env.ERROR_ALERT_THRESHOLD) || 10);
   const opsAlertLastSent = new Map();

@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <script src="/js/theme.js"></script>
+<script src="/js/rates.js"></script>
 <title>Usage Dashboard · AiX Track</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -262,7 +263,7 @@ tbody td:first-child{padding-left:18px}
 
   <div class="page-eyebrow">— Admin · Internal</div>
   <h1 class="page-title">API <em>usage</em> tracker</h1>
-  <div class="page-subtitle">Hostinger · Sarvam AI · Claude · ChatGPT — per-process &amp; per-user breakdown → jainildoshi22@gmail.com, carajanikant@gmail.com</div>
+  <div class="page-subtitle">Hostinger · Sarvam AI · Claude · ChatGPT — per-process &amp; per-user breakdown → jainildoshi22@gmail.com, carajnikant@gmail.com</div>
 
   <!-- Action bar -->
   <div class="action-bar">
@@ -283,10 +284,7 @@ tbody td:first-child{padding-left:18px}
   <div class="pricing-note">
     <strong>Cost estimates:</strong>
     Hosting (Hostinger) <strong id="note-hosting">monthly cost set on the Hostinger card</strong> ·
-    Sarvam saarika:v2.5 ~<strong>$0.0002/sec</strong> audio ·
-    Claude claude-sonnet-4-6 <strong>$3/$15</strong> per MTok in/out ·
-    OpenAI GPT-4o <strong>$5/$15</strong> per MTok in/out ·
-    INR ≈ cost × 84 · Verify against provider dashboards for billing.
+    Sarvam <strong>₹0.49/min</strong> (₹0.59/min with speakers) · Claude Sonnet 5.5 <strong>$2/$10</strong> per MTok in/out · ChatGPT GPT-4o <strong>$2.50/$10</strong> per MTok in/out · INR at <span data-fx>₹96</span>/USD (USD_INR in .env) · Published rates checked 16 Oct 2026 — verify against provider dashboards for billing.
   </div>
 
   <!-- Top stat ledger -->
@@ -416,7 +414,7 @@ const urlParams   = new URLSearchParams(window.location.search);
 const adminSecret = urlParams.get('secret') || '';
 
 function fmt$(v){ return '$' + parseFloat(v||0).toFixed(4); }
-function fmtINR(v){ return '₹' + (parseFloat(v||0)*84).toFixed(2); }
+function fmtINR(v){ return '₹' + (parseFloat(v||0)*AIX_FX()).toFixed(2); }
 function fmtNum(v){ return Number(parseFloat(v||0)).toLocaleString('en-IN'); }
 function fmtDate(d){ if(!d) return '—'; return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }
 function fmtDur(s){ const m=Math.floor(s/60),sec=Math.floor(s%60); return m>0?`${m}m ${sec}s`:`${sec}s`; }
@@ -449,11 +447,12 @@ function renderBalances(d){
   const anyLive = d.providers.some(p => p.live_available);
   document.getElementById('bal-meta').innerHTML =
     `Email when a balance falls below its alert level, and at once if a provider refuses a request for low credit` +
-    (anyLive ? `<button type="button" class="bal-refresh" onclick="refreshBalances(this)">Check provider spend now</button>` : '');
+    (anyLive ? `<button type="button" class="bal-refresh" onclick="refreshBalances(this)">Check provider spend now</button>` : '') +
+    `<button type="button" class="bal-refresh" onclick="testBalanceAlert(this)">Send test alert email</button>`;
   document.getElementById('bal-row').innerHTML = d.providers.map(p => {
     const state = !p.configured ? 'unset' : p.low ? 'low' : 'ok';
     const cur   = p.currency;
-    const badge = state === 'unset' ? 'Not set · no alerts' : state === 'low' ? `Below ${money(p.alert_level, cur)}` : 'OK';
+    const badge = state === 'unset' ? 'Not set · no alerts' : state === 'low' ? `At or below ${money(p.alert_level, cur)}` : 'OK';
     const amt   = p.configured ? money(p.remaining, cur) : '—';
     const sub   = p.configured
       ? `Balance ${money(p.balance, cur)} from ${fmtDate(p.set_at)}<br>Spent since: ${money(p.spent, cur)}<br>Alert below: ${money(p.alert_level, cur)}`
@@ -520,6 +519,16 @@ async function saveBalance(e, service){
     alert(err.message);
     btn.disabled = false; btn.textContent = label;
   }
+}
+async function testBalanceAlert(btn){
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    const res = await fetch(`/api/admin/provider-balances/test-alert?secret=${adminSecret}`, { method: 'POST', headers: authHeaders() });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Test failed');
+    alert('Test email sent to: ' + d.sent_to + '\n\n' + d.providers.join('\n') + '\n\nNot in the inbox? Check spam.');
+  } catch(err){ alert(err.message); }
+  btn.disabled = false; btn.textContent = 'Send test alert email';
 }
 async function refreshBalances(btn){
   btn.disabled = true; btn.textContent = 'Checking…';
@@ -628,7 +637,7 @@ function renderServices(rows){
   const make  = (svc, icon, label, extra='') => {
     const r = svcData[svc];
     const cost = r ? parseFloat(r.total_cost_usd||0) : 0;
-    const inr  = (cost * 84).toFixed(2);
+    const inr  = (cost * AIX_FX()).toFixed(2);
     const calls= r ? fmtNum(r.calls) : '0';
     const units= r ? parseFloat(r.total_units||0) : 0;
     const unitLabel = svc.startsWith('sarvam') ? `${(units/60).toFixed(1)} min audio` : `${fmtNum(units)} tokens`;
@@ -652,7 +661,7 @@ function renderServices(rows){
     <div class="svc-icon">🖥</div>
     <div class="svc-name">Hosting · Hostinger</div>
     <div class="svc-cost">${hostingMonthlyInr ? '₹' + hostInr.toFixed(2) : 'Not set'}</div>
-    <div class="svc-inr">${hostingMonthlyInr ? '$' + (hostInr / 84).toFixed(2) + ' · this period' : 'Enter the monthly cost'}</div>
+    <div class="svc-inr">${hostingMonthlyInr ? '$' + (hostInr / AIX_FX()).toFixed(2) + ' · this period' : 'Enter the monthly cost'}</div>
     <form class="bal-form" onsubmit="saveHosting(event)">
       <label>Monthly cost ₹<input type="number" min="0" step="1" inputmode="numeric" value="${hostingMonthlyInr || ''}" placeholder="e.g. 800" required></label>
       <button type="submit">Save</button>
@@ -661,8 +670,8 @@ function renderServices(rows){
   </div>`;
 
   grid.innerHTML = hosthtml
-    + make('sarvam',  '🎙', 'Sarvam AI · STT (₹30/hr)')
-    + make('sarvam_diarization', '🗣', 'Sarvam · Diarization (₹45/hr)')
+    + make('sarvam',  '🎙', 'Sarvam AI · STT (₹29.40/hr)')
+    + make('sarvam_diarization', '🗣', 'Sarvam · Diarization (₹35.40/hr)')
     + make('claude',  '🧠', 'Claude · Anthropic')
     + make('openai',  '✦',  'ChatGPT · OpenAI');
 }

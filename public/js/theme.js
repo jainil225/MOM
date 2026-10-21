@@ -56,3 +56,22 @@
     if (e.key === KEY && (e.newValue === 'dark' || e.newValue === 'light')) applyTheme(e.newValue, false);
   });
 })();
+
+/* Policy re-consent (Screen D): the server answers 428 to signed-in users who have not yet
+   accepted the current Terms, Usage Policy and Privacy Policy. Any page that meets it goes
+   to /consent and comes back here afterwards. */
+(function () {
+  if (!window.fetch) return;
+  var here = location.pathname;
+  if (/^\/(consent|login)/.test(here)) return;
+  var origFetch = window.fetch, sent = false;
+  window.fetch = function () {
+    return origFetch.apply(this, arguments).then(function (res) {
+      if (res.status === 428 && !sent) {
+        sent = true;
+        location.href = '/consent?next=' + encodeURIComponent(here + location.search);
+      }
+      return res;
+    });
+  };
+})();
