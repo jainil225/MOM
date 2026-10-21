@@ -732,9 +732,9 @@ async function init(){
     ]);
     _userData=meD||{};_settings=settD||{};_history=(histD.sessions)||[];
     renderIdentity(_userData);
-    const balVal=credD.credits??(_userData.credits??0);
+    const balVal=(typeof credD.total_available==='number')?credD.total_available:(credD.credits??(_userData.credits??0));
     renderCredits(balVal,_settings);
-    if(balVal<100){fetch('/api/credits/low-credit-alert',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'}}).catch(()=>{});}
+    if(balVal<20&&!credD.is_privileged){fetch('/api/credits/low-credit-alert',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'}}).catch(()=>{});}
     renderStats(_history);
     renderSession(_userData);
     const nc=document.getElementById('nav-credits');
@@ -853,10 +853,10 @@ function renderCredits(bal,s){
   const n=Number(bal)||0;
   const bigEl=document.getElementById('credit-big');
   bigEl.innerHTML=n.toLocaleString('en-IN')+'<em>cr</em>';
-  bigEl.style.color=n<100?'var(--rust)':n<500?'var(--gold)':'var(--sage)';
+  bigEl.style.color=n<20?'var(--rust)':n<50?'var(--gold)':'var(--sage)';
   const pct=Math.min(100,(n/2000)*100);
-  const barEl=document.getElementById('credit-bar');barEl.style.width=pct+'%';barEl.className='bar-fill '+(n<100?'red':n<500?'yellow':'green');
-  const tierEl=document.getElementById('credit-tier-info');tierEl.textContent=n<100?'⚠ Low — top up to continue':n<500?'Moderate balance':'Healthy balance ✓';tierEl.style.color=n<100?'var(--rust)':n<500?'var(--gold)':'var(--sage)';
+  const barEl=document.getElementById('credit-bar');barEl.style.width=pct+'%';barEl.className='bar-fill '+(n<20?'red':n<50?'yellow':'green');
+  const tierEl=document.getElementById('credit-tier-info');tierEl.textContent=n<20?'⚠ Low — top up to continue':n<50?'Moderate balance':'Healthy balance ✓';tierEl.style.color=n<20?'var(--rust)':n<50?'var(--gold)':'var(--sage)';
   const C=2*Math.PI*30;const ring=document.getElementById('credit-ring');
   if(ring)setTimeout(()=>{ring.setAttribute('stroke-dasharray',`${(pct/100*C).toFixed(1)} ${C.toFixed(1)}`);},150);
   const usedSec=parseFloat(s.free_minutes_used||0);const usedMin=usedSec/60;const limitMin=60;const remMin=Math.max(0,limitMin-usedMin);const trialPct=Math.min(100,(usedMin/limitMin)*100);

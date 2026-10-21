@@ -75,6 +75,7 @@ h1 em{font-style:italic;color:var(--gold)}
 .bal > *{position:relative;z-index:1}
 .bal-lbl{font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.6)}
 .bal-num{font-size:46px;font-weight:700;line-height:1.05;letter-spacing:-0.02em;margin:6px 0 2px}
+.bal-num.low{color:#FF8A80}.bal-num.warn{color:#FFC86B}
 .bal-num small{font-size:16px;font-weight:500;color:rgba(255,255,255,0.65);margin-left:6px}
 .bal-sub{font-size:12.5px;color:rgba(255,255,255,0.72)}
 .bal-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
@@ -343,6 +344,17 @@ function bindChart(rows) {
 }
 
 /* ── Single customer view (own usage, or admin viewing a customer) ── */
+// Bonus and regenerate rates come from the public rates endpoint (fetched once)
+let pubRates = null;
+fetch('/api/config/rates').then(r => r.ok ? r.json() : null).then(x => { pubRates = x; const el = document.getElementById('credit-rules'); if (el && x) el.innerHTML = creditRulesHTML(x); }).catch(() => {});
+function creditRulesHTML(x) {
+  if (!x) return '';
+  const row = (k, v) => (v == null ? '' : `<div class="rate"><span>${k}</span><b>${v}</b></div>`);
+  return row('Regenerate a MOC', x.regenerate_per_min != null ? `${x.regenerate_per_min} cr / min` : null)
+    + row('Joining bonus', x.joining_bonus ? `${x.joining_bonus} cr` : null)
+    + row('Friend joins with your link', x.friend_bonus ? `They get ${x.friend_bonus} cr` : null)
+    + row('Friend creates first MOC', x.referrer_reward ? `You get ${x.referrer_reward} cr` : null);
+}
 function renderUser(d, viewingOther) {
   const u = d.user, p = d.period, a = d.all_time, ft = d.free_trial;
   document.getElementById('page-title').innerHTML = viewingOther ? `${esc(u.name || u.email)}` : 'Your <em>usage</em>';
@@ -359,14 +371,15 @@ function renderUser(d, viewingOther) {
     <div class="hero">
       <div class="bal">
         <div class="bal-lbl">Credit balance</div>
-        <div class="bal-num">${nf(totalCr)}<small>credits</small></div>
-        <div class="bal-sub">${ft && ft.remaining_credits ? `Includes ${nf(ft.remaining_credits)} free trial credits · ` : ''}≈ ${nf(Math.floor(totalCr / d.rates.diarization_per_min))} min with diarization · ${nf(Math.floor(totalCr / d.rates.standard_per_min))} min standard</div>
+        <div class="bal-num ${u.is_privileged ? '' : totalCr < 20 ? 'low' : totalCr < 50 ? 'warn' : ''}">${nf(totalCr)}<small>credits</small></div>
+        <div class="bal-sub">${!u.is_privileged && totalCr < 20 ? 'Low balance — top up to continue · ' : ''}${ft && ft.remaining_credits ? `Includes ${nf(ft.remaining_credits)} free trial credits · ` : ''}≈ ${nf(Math.floor(totalCr / d.rates.diarization_per_min))} min with diarization · ${nf(Math.floor(totalCr / d.rates.standard_per_min))} min standard</div>
         ${viewingOther ? '' : `<div class="bal-actions"><a href="/pricing">Buy credits</a><a class="ghost" href="/">Start a new MOC</a></div>`}
       </div>
       <div class="side">
         <h3>How credits work</h3>
         <div class="rate"><span>Generate MOC</span><b>${d.rates.standard_per_min} cr / min</b></div>
         <div class="rate"><span>Generate MOC + Diarization</span><b>${d.rates.diarization_per_min} cr / min</b></div>
+        <div id="credit-rules">${creditRulesHTML(pubRates)}</div>
         <div class="rate"><span>Credits used (all time)</span><b>${nf(u.credits_used)}</b></div>
         ${trialHTML}
       </div>
@@ -468,7 +481,7 @@ function renderUsersTable() {
       <th>Customer</th><th class="num">Balance</th><th class="num">Used (all time)</th><th class="num">Conversations</th><th class="num">Minutes</th><th class="num">Credits (period)</th><th class="num">Paid</th><th>Last conversation</th><th>Last login</th></tr></thead><tbody>${
     rows.map(u => `<tr class="click" tabindex="0" data-email="${esc(u.email)}">
       <td><div class="who"><span>${esc(u.name || '—')}${['admin','developer'].includes(u.role) ? ' <span class="badge d">' + esc(u.role) + '</span>' : ''}</span><small>${esc(u.email)}</small></div></td>
-      <td class="num">${nf(u.credits)}${Number(u.credits) < 100 && !['admin','developer'].includes(u.role) ? ' <span class="badge low">low</span>' : ''}</td>
+      <td class="num">${nf(u.credits)}${Number(u.credits) < 20 && !['admin','developer'].includes(u.role) ? ' <span class="badge low">low</span>' : ''}</td>
       <td class="num">${nf(u.credits_used)}</td>
       <td class="num">${nf(u.meetings)}</td>
       <td class="num">${nf(mins(u.seconds))}</td>

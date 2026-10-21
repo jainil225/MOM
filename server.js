@@ -2244,17 +2244,30 @@ This meeting is minuted as professional advisory minutes. Apply everything above
 - discussion_points: group the meeting into its natural themes and give each theme ONE entry whose topic is the theme name, for example "Founder delegation and leadership system" or "Fund planning and capital deployment". Each theme carries four to seven short paragraphs of continuous prose, one point per paragraph, separated by a blank line. Do not use a bullet character. This is the body of the document — it should read as a professional record written by a person, not as notes.
 - action_items: in advisory work the accountable party is often an organisation rather than an individual. Set "owner" to the party as the meeting assigned it — the client, the advising firm, or a named person when one was named.
   - due_date: use DD/MM/YYYY only when a real date was agreed. Where the meeting set a condition rather than a date, put that condition in "timeline" and leave due_date as "TBD". Never invent a date to fill the field.
-  - timeline: add this field to every action item — the plain-language timing actually used in the meeting, such as "At the earliest", "Pending client review", "Before next strategy review", "After PMS data". Use "Not agreed" when no timing was stated. This is what the reader relies on, so it must be faithful to the record.
+  - timeline: add this field to every action item — the plain-language timing actually used in the meeting, such as "At the earliest", "Pending client review", "Before next strategy review", "After PMS data". Use "To be confirmed" when no timing was stated. This is what the reader relies on, so it must be faithful to the record.
 - pending_tracker: documents, data, access or confirmations the record shows are actually awaited, including items carried forward from earlier meetings where the record mentions them. Do not turn a suggestion into a pending requirement. Do not repeat an item that is already an action — the tracker is for inputs awaited, the action plan for work committed.
 - decision_log: the APPROVAL GATE applies in full. Write confirmed decisions as forward-looking directions that can be acted on; a direction that was only proposed or favoured belongs in matters_discussed.
 - next_agenda: see the rule at the end of this section. There is no expected number of items.
 - Where a numeric target, investment figure or compliance position was discussed but not confirmed, say plainly that it remains to be validated. Do not present it as settled.
 - Advice given by the advising firm is part of the record. Where the advisor recommended a course of action — products to focus on, a collaboration, a method, a sequence of steps — write each piece of advice in the relevant theme with its specifics (names, numbers, programmes, grades, sequence). Mark it as advice, not as a decision or an action, unless the client accepted it in words that pass the approval gate.
-- Responsible parties: use the project details to learn who the advising firm is and who the client is. Write "Client", the advising firm's name, or "Joint" in the owner and responsible fields when the meeting named that side for the work. Use "Not agreed" when it did not.
+- Responsible parties: use the project details to learn who the advising firm is and who the client is. Write "Client", the advising firm's name, or "Joint" in the owner and responsible fields as set out in the WRITING STANDARD below. Never guess a named individual.
 - Every action item also carries "status": one of Pending, In progress, Awaiting input, Pending client review, Blocked, Deferred, Completed — taken from the record. Use "Pending" when the meeting agreed the next step but said nothing more.
-- timeline: give the timing in the words the meeting used or the context clearly sets — "Before Diwali", "Next week", "Before the next meeting", "At the earliest", "After September data", "On the 15th, 12:00". Write "Not agreed" only when nothing in the discussion indicates timing.
+- timeline: give the timing in the words the meeting used or the context clearly sets — "Before Diwali", "Next week", "Before the next meeting", "At the earliest", "After September data", "On the 15th, 12:00". Write "To be confirmed" only when nothing in the discussion indicates timing.
 - working_conclusions: four to ten short lines stating the directions the discussion clearly converged on — the sequence of priorities, what must come first, how an area will be approached — written as forward-looking working conclusions in the style of a senior advisor. A working conclusion records the shared direction of discussion; it is not a formal approval, so do not put amounts, investments or commitments that were not accepted into it. Leave it empty when the meeting reached no common direction.
-- next_agenda: items participants proposed for the next meeting, plus items the meeting explicitly carried forward ("remaining agenda", "we will discuss again", pending reviews). Do not invent new topics; leave it empty when none was discussed.`,
+- next_agenda: items participants proposed for the next meeting, plus items the meeting explicitly carried forward ("remaining agenda", "we will discuss again", pending reviews). Do not invent new topics; leave it empty when none was discussed.
+
+WRITING STANDARD — advisory minutes a client is glad to receive
+The document is read by a business owner and kept on file. It should read like minutes written by a senior partner of the advising firm: calm, confident, specific and short enough to finish. The evidence rules above still decide WHAT goes in; this standard decides HOW it reads.
+- Lead with substance. Open each executive summary paragraph and each theme with what the discussion established or where it is heading ("PMS implementation was identified as urgent." / "Founder dependency was discussed in operational terms."), then the supporting detail. Do not open with "The meeting began with", "Participants discussed", "It was mentioned that".
+- State an uncertainty once, in the right place. Unapproved figures and options belong in matters_discussed and in "remains to be validated" wording where they first appear. Do not repeat "no decision was taken", "was not adopted", "not approved" or "this was shared as experience" in every paragraph, and do not end every theme with an "Outcome:" line — in this template the working conclusions, action plan and matters for consideration carry the outcome. Use an outcome line only when a theme ended with a confirmed decision.
+- Write the client's business, not the conversation. Keep anecdotes, other firms' practices, vendor sales claims, tool pricing chatter and side stories out unless they shaped a direction for the client; then give the business point in one sentence. Do not write "(as transcribed)", "a participant said", "one participant noted" when the side (client or advising firm) is clear — say "The client", "RMPS & Co" (or the advising firm's name), or the named person.
+- Plain, polished English: short sentences, active voice, Indian business terms as used (lakh, crore, GST, MIS). No filler ("various", "several aspects", "in detail", "it is pertinent to note"), no hype, no stacked hedges.
+- Each executive summary paragraph is 2-4 sentences and covers one theme. Each theme in discussion_points carries four to seven short paragraphs; a paragraph may start with a short label followed by a colon when it helps scanning ("Current position:", "Approach:").
+- Action plan quality: every agreed next step, including data, documents, confirmations and access the client is to provide, is an action with its responsible side, even when it also appears in the pending tracker — the tracker shows status, the action plan shows the work. Phrase each task as a complete deliverable a reader can tick off: verb first, the object, and the purpose when stated ("Share the updated PMS / Project Sheet with project location, square feet and final mapping details."). Order the plan as the meeting would act on it: client inputs first, then the advising firm's deliverables, then joint items.
+- Responsible side: decide it from who holds the data or who said they will do the work. "Client" for the client's data, documents, approvals, implementation and access; the advising firm's name for drafts, reviews, models, reports and updates it prepares; "Joint" for meetings to be fixed between both sides. Write "To be confirmed" only when the record truly gives no basis — never "Not agreed", "Not established" or "Status not established" in the action plan or tracker.
+- Timeline: use the meeting's words; where only the sequence is clear, a practical relative timing that the record supports ("At the earliest", "Before next review", "After receipt of PMS data", "Priority — current month" only when urgency was stated). Use "To be confirmed" when nothing supports a timing. Never invent a calendar date.
+- pending_tracker status: plain words — "Pending", "Pending client confirmation", "Pending review", "In progress", "Awaiting data", "Priority implementation". Never "Not established".
+- Before returning, reread the executive summary as the client would: it must make sense on its own, use the same names and figures as the body, and contain no internal notes, evidence remarks or speech-to-text comments.`,
     },
   };
 
@@ -3023,6 +3036,7 @@ ${transcript}`;
     const finalPath  = path.join(__dirname, 'uploads', finalName);
 
     let fullTranscript = '';   // hoisted outside try so catch can always access it
+    let draftDurationC = 0;     // audio length, kept so an AI-failure draft is billed on regenerate
     let savedFilePathC = '';   // hoisted outside try so catch can always access it
     let fileSizeBytes  = 0;    // hoisted outside try so catch can always access it
     // Hoisted so the finally block can delete them. Declared inside the try they were
@@ -3100,6 +3114,7 @@ ${transcript}`;
       wavPath = await stripSilence(wavPath);
 
       const durationSeconds = getWavDuration(wavPath);
+      draftDurationC = durationSeconds;
       console.log(`[transcribe] Duration after silence strip: ${durationSeconds.toFixed(1)}s`);
 
       // ── Charge check: free minutes first, remainder in credits ────
@@ -3393,7 +3408,7 @@ ${transcript}`;
             RETURNING id
           `, [
             req.session.user.email,
-            originalName, fileSizeBytes, 'chunked', 0,
+            originalName, fileSizeBytes, 'chunked', Math.round(draftDurationC || 0),
             fullTranscript,
             `[Draft – AI failed] ${originalName}`,
             'en', tags || '', category || '', savedFilePathC || ''
@@ -4037,7 +4052,12 @@ ${transcript}`;
       const attHtml = att.map(a => li(esc(a))).join('');
       const agHtml  = ag.map((a, i) => li(`${i + 1}. ${esc(a)}`)).join('');
       const wc = ADV && m.moc_quality && typeof m.moc_quality === 'object' ? safeArr(m.moc_quality.working_conclusions) : [];
-      const decHtml = [...dec, ...wc].map(d => li(`✓ ${esc(d)}`)).join('');
+      // Only confirmed decisions get a tick; ones still awaiting confirmation are marked as such
+      const UNCONF = /^\[(Requires confirmation|Contested|Conditional|Pending[^\]]*)\]\s*/i;
+      const GAP    = /^(—|-|not assigned|tbd|not agreed|not established|not recorded|status not established)$/i;
+      const gap    = (v, fb) => (!v || GAP.test(String(v).trim())) ? fb : v;
+      const decHtml = [...dec.map(String).filter(d => !UNCONF.test(d)), ...wc].map(d => li(`✓ ${esc(d)}`)).join('')
+        + dec.map(String).filter(d => UNCONF.test(d)).map(d => li(`<span style="color:${EM.ink3}">○ ${esc(d.replace(UNCONF, ''))} <em>(to be confirmed)</em></span>`)).join('');
 
       const dpHtml = dp.map(d => `
             <div style="margin:0 0 10px;padding:12px 14px;background:${EM.panel};border-radius:10px;border-left:3px solid ${EM.orange}">
@@ -4052,8 +4072,8 @@ ${transcript}`;
         return `
               <tr style="${isDone ? 'opacity:0.55;' : ''}">
                 <td style="padding:10px;font-size:13px;color:${EM.ink};border-bottom:1px solid ${EM.line};${isDone ? 'text-decoration:line-through;' : ''}">${esc(a.task || '')}</td>
-                <td style="padding:10px;font-size:12px;color:${EM.ink2};border-bottom:1px solid ${EM.line};white-space:nowrap">${esc(a.owner || '—')}</td>
-                <td style="padding:10px;font-size:12px;color:${EM.ink2};border-bottom:1px solid ${EM.line}">${esc(ADV ? (a.timeline || (a.due_date && a.due_date !== 'TBD' ? a.due_date : 'Not agreed')) : (a.due_date || 'TBD'))}</td>
+                <td style="padding:10px;font-size:12px;color:${EM.ink2};border-bottom:1px solid ${EM.line};white-space:nowrap">${esc(ADV ? gap(a.owner, 'To be confirmed') : (a.owner || '—'))}</td>
+                <td style="padding:10px;font-size:12px;color:${EM.ink2};border-bottom:1px solid ${EM.line}">${esc(ADV ? gap(a.timeline, a.due_date && a.due_date !== 'TBD' ? a.due_date : 'To be confirmed') : (a.due_date || 'TBD'))}</td>
                 <td style="padding:10px;font-size:11px;font-weight:500;color:${pc};border-bottom:1px solid ${EM.line};white-space:nowrap">${esc(a.priority || '')}</td>
                 <td style="padding:10px;font-size:11px;color:${isDone ? '#1A9A5A' : EM.ink3};border-bottom:1px solid ${EM.line}">${isDone ? '✓ Done' : 'Open'}</td>
               </tr>`;
@@ -4082,8 +4102,8 @@ ${transcript}`;
               <tbody>${trk.map(r => `<tr>
                 <td style="padding:10px;font-size:12px;color:${EM.ink2};border-bottom:1px solid ${EM.line};white-space:nowrap">${esc(r.area || '')}</td>
                 <td style="padding:10px;font-size:13px;color:${EM.ink};border-bottom:1px solid ${EM.line}">${esc(r.requirement || '')}</td>
-                <td style="padding:10px;font-size:12px;color:${EM.ink2};border-bottom:1px solid ${EM.line};white-space:nowrap">${esc(r.responsible || '')}</td>
-                <td style="padding:10px;font-size:12px;color:${EM.ink2};border-bottom:1px solid ${EM.line}">${esc(r.status || '')}</td>
+                <td style="padding:10px;font-size:12px;color:${EM.ink2};border-bottom:1px solid ${EM.line};white-space:nowrap">${esc(gap(r.responsible, 'To be confirmed'))}</td>
+                <td style="padding:10px;font-size:12px;color:${EM.ink2};border-bottom:1px solid ${EM.line}">${esc(gap(r.status, 'Pending'))}</td>
               </tr>`).join('')}</tbody>
             </table>` : '';
       const agdHtml = ADV && agd.length
@@ -6550,7 +6570,8 @@ ${transcript}`;
 
   // ── Credit rates for the UI (buttons, explainers, estimates) ─────────────────
   app.get('/api/config/rates', (req, res) => {
-    res.json({ standard_per_min: CREDIT_RATE_STANDARD, diarization_per_min: CREDIT_RATE_DIARIZATION, regenerate_per_min: CREDIT_RATE_REGENERATE, max_audio_hours: MAX_AUDIO_HOURS, usd_inr: USD_INR_RATE });
+    res.json({ standard_per_min: CREDIT_RATE_STANDARD, diarization_per_min: CREDIT_RATE_DIARIZATION, regenerate_per_min: CREDIT_RATE_REGENERATE, max_audio_hours: MAX_AUDIO_HOURS, usd_inr: USD_INR_RATE,
+      joining_bonus: JOINING_BONUS_CREDITS, friend_bonus: REFERRAL_FRIEND_BONUS, referrer_reward: REFERRAL_REWARD_CREDITS, free_trial_credits: FREE_TIER_MINUTES * CREDIT_RATE_STANDARD });
   });
 
   // ── Recording allowance — how long the user can record with free minutes + credits ──
@@ -7104,7 +7125,7 @@ ${transcript}`;
         if (req.body.recording_consent_id) fd.append('recording_consent_id', String(req.body.recording_consent_id));
 
         // Internal call to /api/transcribe — reuse all existing logic
-        const port = process.env.PORT || 3001;
+        const port = PORT;
         const sessionCookie = req.headers['cookie'] || '';
         const internalRes = await fetch_mod(`http://localhost:${port}/api/transcribe`, {
           method: 'POST',
@@ -7360,8 +7381,12 @@ Body rules (plain text, \\n for line breaks):
       const dpView   = CLIENT ? dp.filter(d => !['incidental', 'internal'].includes(d && d.relevance)) : dp;
       const aiPending = ai.filter(a => a && a.requires_confirmation);
       const aiView   = CLIENT ? ai.filter(a => a && !a.requires_confirmation) : ai;
-      const ownerOf  = a => (!a.owner || /^(—|-|not assigned|tbd)$/i.test(String(a.owner).trim())) ? 'Not agreed' : a.owner;
-      const timingOf = a => a.timeline || (a.due_date && a.due_date !== 'TBD' ? a.due_date : 'Not agreed');
+      // Client-facing wording for gaps: "To be confirmed" reads as a next step, "Not agreed" as a dispute
+      const GAP_RE   = /^(—|-|not assigned|tbd|not agreed|not established|not recorded|status not established)$/i;
+      const ownerOf  = a => (!a.owner || GAP_RE.test(String(a.owner).trim())) ? 'To be confirmed' : a.owner;
+      const timingOf = a => (a.timeline && !GAP_RE.test(String(a.timeline).trim())) ? a.timeline
+        : (a.due_date && a.due_date !== 'TBD' ? a.due_date : 'To be confirmed');
+      const gapText  = (v, fb) => (!v || GAP_RE.test(String(v).trim())) ? fb : v;
       const matterText = x => [String(x.item || '').replace(/([^.?!])$/, '$1.'), x.raised_by ? `Raised by ${x.raised_by}.` : '', x.views ? `Views: ${x.views}` : '',
         x.status ? `Status: ${x.status}.` : ''].filter(Boolean).join(' ');
       const figureRows = figures.map(f => [
@@ -7506,7 +7531,7 @@ Body rules (plain text, \\n for line breaks):
           ['Client',           m.client_name || 'Not recorded'],
           ['Subject',          m.subject || m.meeting_title || 'Not recorded'],
           ['Meeting Date',     [niceDate(m.meeting_date), m.meeting_time].filter(Boolean).join('  ·  ') || 'Not recorded'],
-          ['Present',          att.length ? att.join(String.fromCharCode(10)) : 'Not recorded'],
+          ['Present',          att.length ? att.join('  |  ') : 'Not recorded'],
           ['MOC Status',       CLIENT ? 'Draft - for review and confirmation' : 'Detailed MOC - internal reference, not for circulation'],
           ['Prepared By / On', preparedOn || 'Not recorded'],
         ], [22, 78]));
@@ -7525,7 +7550,7 @@ Body rules (plain text, \\n for line breaks):
             ['#', 'Action / Deliverable', 'Responsible', 'Timeline', ...(withPri ? ['Priority'] : []), 'Status'],
             aiView.map((a, i) => [
               String(i + 1), a.task || '', ownerOf(a), timingOf(a),
-              ...(withPri ? [a.priority || '—'] : []), (!a.status || /^status not established$/i.test(a.status)) ? 'Pending' : a.status,
+              ...(withPri ? [a.priority || '—'] : []), gapText(a.status, 'Pending'),
             ]),
             withPri ? [5, 41, 14, 16, 9, 15] : [5, 47, 16, 17, 15]));
         } else {
@@ -7537,7 +7562,7 @@ Body rules (plain text, \\n for line breaks):
           A.push(secHead('2.  Information and Pending Tracker'));
           A.push(table(
             ['Area', 'Requirement / Deliverable', 'Responsible', 'Status'],
-            pending.map(p => [p.area || '', p.requirement || '', p.responsible || '', p.status || '']),
+            pending.map(p => [p.area || '', p.requirement || '', gapText(p.responsible, 'To be confirmed'), gapText(p.status, 'Pending')]),
             [14, 48, 16, 22]));
         }
 

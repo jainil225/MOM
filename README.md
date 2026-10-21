@@ -11,6 +11,13 @@ The full **User flow** (customer and admin journeys) and **Technical flow** (arc
 - In this repository: [`docs/aix-track-flows.html`](docs/aix-track-flows.html) (download the file and open it in a browser)
 - Online: [AiX Track Flows](https://claude.ai/artifact/BaSVEkJsEWsxWHj5Nh3jyd)
 
+## Technical workflow and weekly checklist
+
+The step-by-step technical workflow (sign-up, referral, upload, transcription, MOC generation, quality gates, exports, Drive offload, credits), the deploy rules and the **weekly maintenance checklist** are in:
+
+- [`docs/TECHNICAL-WORKFLOW.md`](docs/TECHNICAL-WORKFLOW.md)
+
+
 ---
 
 ## 1. At a glance
@@ -119,7 +126,10 @@ flowchart TD
 - The rates come from `CREDITS_PER_MIN_STANDARD` and `CREDITS_PER_MIN_DIARIZATION` in `.env`, so prices can change without code changes. The UI reads them from `/api/config/rates`.
 - Diarization uses up the free trial twice as fast, the same as paid credits.
 - **Buying credits:** `/api/credits/create-order` creates a Razorpay order. Credits are added after the payment is verified, either by `/api/credits/verify-payment` or by the Razorpay webhook (`/api/razorpay/webhook`). Each webhook event is stored once, so a payment can't be credited twice.
-- **Referrals:** a link like `/r/<code>` records who referred a new user, and a reward is applied once the conditions in the code are met.
+- **Joining bonus:** every new user gets `JOINING_BONUS_CREDITS` (default 86), separate from the 60-credit free trial.
+- **Referrals:** a link like `/r/<code>` records who referred a new user. The friend gets `REFERRAL_FRIEND_BONUS` on sign-up, and the referrer gets `REFERRAL_REWARD_CREDITS` (default 86) once, when the friend creates their first MOC.
+- **Regenerate:** re-writing a MOC from its stored transcript costs `regenerate_per_min` (default 0.5 credit per minute).
+- **Low balance:** the balance shown is paid credits plus free trial. It turns amber below 50 and red below 20, and a low-credit email is sent below 20 (once per 24 hours).
 
 ---
 
@@ -136,7 +146,7 @@ mom-tool/
 │   ├── actions.html          Action items across all meetings
 │   ├── login.html            Sign in (Google or email code)
 │   ├── profile.html          User profile and settings
-│   ├── credits.html          Credit balance and purchase history
+│   ├── credits.html          Admin: credit and cost dashboard
 │   ├── pricing.html          Credit packs
 │   ├── share.html            Read-only shared MOC (/s/<token>)
 │   ├── admin.html            Admin: users, roles, credits
@@ -144,7 +154,7 @@ mom-tool/
 │   ├── cost.html             Admin: cost and provider balances
 │   ├── prompts.html          Admin: master prompt versions and prompt log
 │   ├── activity.html         Admin: activity view
-│   ├── logging.html          Admin: logging view
+│   ├── logging.html          Usage & balance (users), all customers (admins)
 │   ├── terms.html, privacy.html, refund.html   Legal pages
 │   ├── css/                  Shared styles and dark theme
 │   └── js/                   rates.js (credit rates), referral.js, theme.js
@@ -270,7 +280,7 @@ The full server setup is in [`ops/README.md`](ops/README.md).
 
 ## 11. Known limitations
 
-- Most of the server logic is in one large file (`server.js`, about 6,000 lines). Splitting it into modules for routes, audio, AI and billing would make maintenance easier.
-- There are no automated tests yet (`npm test` is a placeholder).
+- Most of the server logic is in one large file (`server.js`, about 8,000 lines). Splitting it into modules for routes, audio, AI and billing would make maintenance easier.
+- Automated tests cover only the MOC quality gates (`node ops/test-moc-quality.js`).
 - Uploaded audio is stored on the server's local disk (`uploads/`), so disk space needs monitoring. The health check alerts at 85% full.
 - AI-generated MOCs can contain mistakes. They are saved as drafts and need human review before they're shared.

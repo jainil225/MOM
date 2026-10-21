@@ -406,7 +406,7 @@ async function loadBalance(){
     const d=await r.json();const bal=(typeof d.total_available==='number')?d.total_available:(d.credits||0);
     const chip=document.getElementById('navCreditsChip');
     chip.textContent=bal.toLocaleString('en-IN')+' cr';
-    chip.className='credits-chip '+(bal<100?'red':bal<500?'yellow':'green');
+    chip.className='credits-chip '+(bal<20?'red':bal<50?'yellow':'green');
     chip.style.display='inline-flex';
     const bar=document.getElementById('balanceBar');bar.style.display='flex';
     document.getElementById('balanceVal').textContent=d.is_privileged?'Unlimited credits':bal.toLocaleString('en-IN')+' credits'+(d.free_credits_remaining?` (incl. ${d.free_credits_remaining} free trial)`:'');

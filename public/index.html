@@ -1453,26 +1453,9 @@ async function loadNavCredits() {
 }
 
 // Refresh nav credit chip from a server response (call after MOC generation)
-function refreshCreditsFromResponse(data) {
-  if (data) { loadNavCredits(); return; }
-  if (data && typeof data.credits_remaining === 'number') {
-    const el = document.getElementById('nav-credits');
-    const elStat = document.getElementById('stat-credits');
-    const bal = data.credits_remaining;
-    if (el) {
-      el.textContent = `⬡ ${bal.toLocaleString('en-IN')} credits left`;
-      const color = bal < LOW_CREDIT_THRESHOLD ? 'var(--rust)' : bal < 50 ? 'var(--gold)' : 'var(--sage)';
-      el.style.color = color;
-      el.style.borderColor = color;
-    }
-    if (elStat) elStat.textContent = `${bal.toLocaleString('en-IN')} cr`;
-    if (bal < LOW_CREDIT_THRESHOLD) {
-      fetch('/api/credits/low-credit-alert', {
-        method: 'POST', credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' }
-      }).catch(() => {});
-    }
-  }
+// A charge changes paid credits and/or free-trial minutes, so always re-read the full balance
+function refreshCreditsFromResponse() {
+  loadNavCredits();
 }
 
 async function checkAuth(){
@@ -3676,12 +3659,17 @@ async function regenerateMOM() {
 async function saveAndGoToArchive() {
   const editedMOM = readEditedMOM();
   try {
-    await fetch(`/api/history/${currentSessionId}/update`, {
+    const r = await fetch(`/api/history/${currentSessionId}`, {
       method: 'PATCH', credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mom: editedMOM })
+      body: JSON.stringify(editedMOM)
     });
-  } catch(_) {}
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      alert('Could not save your edits: ' + (d.error || r.status) + '. Please try again.');
+      return;
+    }
+  } catch (e) { alert('Could not save your edits: ' + e.message); return; }
   goToHistory();
 }
 
