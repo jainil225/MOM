@@ -145,6 +145,12 @@ body{font-family:var(--sans);background:radial-gradient(ellipse 90% 56% at 50% -
 /* FAQ */
 .section-label{font-family:var(--mono);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:0.16em;margin-bottom:1.25rem;display:flex;align-items:center;gap:8px}
 .section-label::before{content:'';width:14px;height:1px;background:var(--gold)}
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:0 0 2rem}
+.how-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem 1.1rem;box-shadow:var(--shadow-1)}
+.how-num{font-family:var(--serif);font-size:1.6rem;color:var(--gold);line-height:1.1;letter-spacing:-0.02em}
+.how-num small{font-size:12px;color:var(--ink3);margin-left:3px;font-family:var(--sans,inherit)}
+.how-lbl{font-size:13px;font-weight:500;color:var(--ink);margin-top:6px}
+.how-sub{font-size:11.5px;color:var(--ink3);margin-top:3px;line-height:1.45}
 .faq{display:flex;flex-direction:column;gap:8px;margin-bottom:2.5rem}
 .faq-item{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .15s}
 
@@ -256,6 +262,15 @@ body{font-family:var(--sans);background:radial-gradient(ellipse 90% 56% at 50% -
   </div>
 
 
+  <!-- HOW CREDITS WORK -->
+  <div class="how">
+    <div class="how-item"><div class="how-num"><span data-rate="joining">86</span><small>credits</small></div><div class="how-lbl">Joining bonus</div><div class="how-sub">Added once when you create your account.</div></div>
+    <div class="how-item"><div class="how-num"><span data-rate="trial">60</span><small>credits</small></div><div class="how-lbl">Free trial</div><div class="how-sub">Separate from the bonus. Used first, before paid credits.</div></div>
+    <div class="how-item"><div class="how-num"><span data-rate="standard">1</span><small>credits / min</small></div><div class="how-lbl">Generate MOC</div><div class="how-sub">With speaker names: <span data-rate="diarization">2</span> credits / min.</div></div>
+    <div class="how-item"><div class="how-num"><span data-rate="regenerate">0.5</span><small>credits / min</small></div><div class="how-lbl">Regenerate a MOC</div><div class="how-sub">Rewrites from the saved transcript, no new upload.</div></div>
+    <div class="how-item"><div class="how-num"><span data-rate="referrer">86</span><small>credits</small></div><div class="how-lbl">Refer a friend</div><div class="how-sub">They get <span data-rate="friend">30</span> credits on sign-up. You get this when they create their first MOC.</div></div>
+  </div>
+
   <!-- REFERRAL -->
   <div id="referral-card"></div>
 
@@ -336,7 +351,7 @@ body{font-family:var(--sans);background:radial-gradient(ellipse 90% 56% at 50% -
   <div class="faq">
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFaq(this)">How exactly are credits consumed? <span class="faq-chevron">▼</span></div>
-      <div class="faq-a">Credits are charged per minute of audio after silence is stripped: <strong><span data-rate="standard">1</span> credit per minute</strong> for a standard MOC, or <strong><span data-rate="diarization">2</span> credits per minute</strong> with speaker diarization (a speaker-wise transcript showing who said what). There is no separate charge for MOC generation. A 60-minute conversation uses <span data-rate="hour-standard">60</span> credits, or <span data-rate="hour-diarization">120</span> with diarization. Free trial minutes are used first. Long pauses do not count.</div>
+      <div class="faq-a">Credits are charged per minute of audio after silence is stripped: <strong><span data-rate="standard">1</span> credit per minute</strong> for a standard MOC, or <strong><span data-rate="diarization">2</span> credits per minute</strong> with speaker diarization (a speaker-wise transcript showing who said what). There is no separate charge for MOC generation. A 60-minute conversation uses <span data-rate="hour-standard">60</span> credits, or <span data-rate="hour-diarization">120</span> with diarization. Regenerating an existing MOC from its saved transcript costs <strong><span data-rate="regenerate">0.5</span> credit per minute</strong>. Free trial credits are used first. Long pauses do not count.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFaq(this)">Do credits expire? <span class="faq-chevron">▼</span></div>
@@ -352,7 +367,15 @@ body{font-family:var(--sans);background:radial-gradient(ellipse 90% 56% at 50% -
     </div>
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFaq(this)">Is there a free trial? <span class="faq-chevron">▼</span></div>
-      <div class="faq-a">New accounts receive 60 minutes of free transcription to evaluate the product. Once the trial is used, a credit pack is required to continue.</div>
+      <div class="faq-a">New accounts receive a <span data-rate="trial">60</span>-credit free trial plus a <span data-rate="joining">86</span>-credit joining bonus. Once both are used, a credit pack is required to continue.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">How does the referral reward work? <span class="faq-chevron">▼</span></div>
+      <div class="faq-a">Share your invite link. Your friend gets <span data-rate="friend">30</span> extra credits when they sign up with it, and you get <span data-rate="referrer">86</span> credits once, when they create their first MOC.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">When will I see a low-balance warning? <span class="faq-chevron">▼</span></div>
+      <div class="faq-a">Your balance is your paid credits plus any free trial left. It turns amber below 50 credits and red below 20, and we email you once a day while it stays below 20.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFaq(this)">Is payment secure? <span class="faq-chevron">▼</span></div>
@@ -391,7 +414,7 @@ let RAZORPAY_KEY_ID='',userEmail='',userName='',paymentEnabled=false;
 async function init(){
   try{
     const me=await fetch('/auth/me').then(r=>r.json());
-    if(!me.user){window.location.href='/login.html';return;}
+    if(!me.user){window._aixGuest=true;document.querySelectorAll('.plan-btn').forEach(b=>{b.textContent='Sign in to buy';});return;}
     userEmail=me.user.email||'';userName=me.user.name||'';
     const cfgRes=await fetch('/api/config/payment');
     if(cfgRes.ok){const cfg=await cfgRes.json();RAZORPAY_KEY_ID=cfg.razorpay_key_id||'';paymentEnabled=!!RAZORPAY_KEY_ID;}
@@ -405,7 +428,7 @@ async function loadBalance(){
     const r=await fetch('/api/credits/balance');if(!r.ok)return;
     const d=await r.json();const bal=(typeof d.total_available==='number')?d.total_available:(d.credits||0);
     const chip=document.getElementById('navCreditsChip');
-    chip.textContent=bal.toLocaleString('en-IN')+' cr';
+    chip.textContent=bal.toLocaleString('en-IN')+' credits';
     chip.className='credits-chip '+(bal<20?'red':bal<50?'yellow':'green');
     chip.style.display='inline-flex';
     const bar=document.getElementById('balanceBar');bar.style.display='flex';
@@ -416,6 +439,7 @@ async function loadBalance(){
 }
 
 async function initiatePurchase(planKey,totalCredits,amountInr,planName){
+  if(window._aixGuest){window.location.href='/login.html';return;}
   if(!paymentEnabled){alert('Payment is not configured. Contact your administrator.');return;}
   const btnId='btn-'+planKey;const btn=document.getElementById(btnId);const origHTML=btn.innerHTML;
   btn.disabled=true;btn.innerHTML='<span class="btn-spin"></span>';

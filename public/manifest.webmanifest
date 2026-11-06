@@ -1,0 +1,13 @@
+{
+  "name": "AiX Track",
+  "short_name": "AiX Track",
+  "description": "Record conversations and generate MOCs, organised by project.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F0EDE6",
+  "theme_color": "#18182C",
+  "icons": [
+    { "src": "/aix-logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

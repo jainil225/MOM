@@ -1,0 +1,19 @@
+{
+  "name": "MOC-2026-0335 — EcomBI technical workflow briefing (Gujarati, 15 min)",
+  "note": "DRAFT answer key prepared from the transcript. Confirm or correct each item; keywords are any-of groups.",
+  "actions": [
+    { "label": "Study the EcomBI website / reference material", "keywords": [["website"], ["study", "research"]], "owner": ["Team member"] },
+    { "label": "Prepare the technical workflow for review", "keywords": [["technical workflow", "technical flow"]], "owner": ["Team member"] },
+    { "label": "Share the functional workflow / diagram", "keywords": [["diagram"], ["share", "provide"]], "owner": ["Senior participant"] },
+    { "label": "Excel of dashboard data needed and its source", "keywords": [["excel"], ["dashboard"]], "owner": ["Team member"] },
+    { "label": "Post the three points in the group", "keywords": [["three", "3 "], ["point"], ["group"]], "owner": ["Team member"] },
+    { "label": "Create the common group — done during the meeting", "keywords": [["group"], ["create", "common"]], "status": "Completed" },
+    { "label": "Hand over AICFO dashboard to Josna on Monday 26/10/2026", "keywords": [["josna"], ["26/10/2026", "26 october", "monday"]] },
+    { "label": "Work through open issues tonight and note closing dates", "keywords": [["issue"], ["tonight", "evening", "night"]] }
+  ],
+  "decisions": [
+    { "label": "Immediate scope limited to steps 5 to 7", "keywords": [["5 to 7", "five to seven", "5-7"]] }
+  ],
+  "figures": [],
+  "must_not_contain": ["Keep updating the return", "Participant 1", "Speaker 1", "Speaker 2", "who is meant by Labhbhai", "Claude", "ChatGPT", "MINUTES OF MEETING"]
+}

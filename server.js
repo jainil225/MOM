@@ -161,6 +161,8 @@
   };
   async function recordConsent(req, kind, context = '') {
     const id = String(req.body?.recording_consent_id || '');
+    // The per-recording consent dialog has been removed — a recording or upload without an id proceeds
+    if (!id) return true;
     if (!UUID_RE.test(id)) return false;
     try {
       const r = await pool.query(
@@ -273,7 +275,7 @@
 
   // Screen D for app pages that are also served straight from /public: a signed-in user who has
   // not accepted the current policies is sent to /consent first, then back to the page
-  const CONSENT_GATED_PAGE_RE = /^\/(index\.html|history(\.html)?|actions(\.html)?|projects(\.html)?|profile\.html|logging(\.html)?|pricing(\.html)?)?$/;
+  const CONSENT_GATED_PAGE_RE = /^\/(index\.html|history(\.html)?|actions(\.html)?|projects?(\.html)?|profile\.html|logging(\.html)?|pricing(\.html)?)?$/;
   app.use(async (req, res, next) => {
     if (req.method !== 'GET' || !req.session?.user || req.session.consentVersion === POLICY_VERSION
         || !CONSENT_GATED_PAGE_RE.test(req.path)) return next();
@@ -283,7 +285,9 @@
     res.redirect('/consent?next=' + encodeURIComponent(req.originalUrl));
   });
 
-  app.use(express.static(path.join(__dirname, 'public')));
+  // Guests opening the app page go to sign-in; index:false so / reaches its requireAuth route
+  app.get('/index.html', (req, res, next) => req.session?.user ? next() : res.redirect('/login.html'));
+  app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
   // ════════════════════════════════════════════════════════════════════════════
   //  DATABASE — init tables + migrations
@@ -398,6 +402,8 @@
       // Project this conversation belongs to
       `ALTER TABLE mom_sessions ADD COLUMN IF NOT EXISTS project_id INTEGER`,
       `CREATE INDEX IF NOT EXISTS mom_sessions_project_idx ON mom_sessions (project_id)`,
+      // The per-meeting prompt as typed, kept so prompts can be compared across a project
+      `ALTER TABLE mom_sessions ADD COLUMN IF NOT EXISTS session_prompt TEXT DEFAULT ''`,
     ];
     for (const q of sessionCols) await pool.query(q);
 
@@ -421,6 +427,23 @@
     await pool.query(`CREATE INDEX IF NOT EXISTS projects_user_idx ON projects (user_email)`);
     // One project name per customer, so "Daily Morning" cannot be created twice
     await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS projects_user_name_idx ON projects (user_email, lower(name))`);
+    // carry_forward: earlier MOCs in the project feed the next conversation's MOC
+    await pool.query(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS carry_forward BOOLEAN DEFAULT TRUE`);
+    // auto_tags: a conversation with no project whose tags match one of these is filed here
+    await pool.query(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS auto_tags TEXT DEFAULT ''`);
+    // Every saved change to a project's description or context, so additions and
+    // deletions can be seen and an earlier version restored
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS project_context_versions (
+        id            SERIAL PRIMARY KEY,
+        project_id    INTEGER NOT NULL,
+        user_email    TEXT NOT NULL,
+        description   TEXT DEFAULT '',
+        context_notes TEXT DEFAULT '',
+        created_at    TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS project_context_versions_idx ON project_context_versions (project_id, created_at DESC)`);
 
     // ── API usage log table ──────────────────────────────────────────────────
     await pool.query(`
@@ -799,9 +822,10 @@
     return m ? decodeURIComponent(m.slice(name.length + 1)) : null;
   }
 
-  async function applyReferralOnSignup(req, res, email) {
+  // The code arrives from the login page (OTP body / Google OAuth state) or, as a fallback, the invite cookie
+  async function applyReferralOnSignup(req, res, email, codeHint = '') {
     try {
-      const code = (readCookie(req, 'aix_ref') || '').trim().toUpperCase();
+      const code = String(codeHint || readCookie(req, 'aix_ref') || '').replace(/[^a-z0-9]/gi, '').slice(0, 16).toUpperCase();
       if (!code) return;
       res.clearCookie('aix_ref', { path: '/' });
       const ref = await pool.query('SELECT email FROM users WHERE referral_code = $1', [code]);
@@ -1041,7 +1065,11 @@
       // Save the originating domain so we can redirect back after OAuth
       req.session.returnHost = req.headers.host || '';
       req.session.save(() => next());
-    }, passport.authenticate('google', { scope: ['profile', 'email'] }));
+    }, (req, res, next) => {
+      // The referral code rides in the OAuth state so it reaches the callback even on another host
+      const ref = String(req.query.ref || '').replace(/[^a-z0-9]/gi, '').slice(0, 16).toUpperCase();
+      passport.authenticate('google', { scope: ['profile', 'email'], ...(ref ? { state: 'ref:' + ref } : {}) })(req, res, next);
+    });
 
     app.get('/auth/google/callback',
       passport.authenticate('google', { failureRedirect: '/login.html?error=google' }),
@@ -1052,7 +1080,8 @@
           res.clearCookie(GOOGLE_CONSENT_COOKIE, { path: '/' });
         }
         // Without the cookie (e.g. it expired), the user meets the re-consent screen instead
-        if (req.user._isNew) await applyReferralOnSignup(req, res, req.user.email);
+        const stateRef = String(req.query.state || '').startsWith('ref:') ? String(req.query.state).slice(4) : '';
+        if (req.user._isNew) await applyReferralOnSignup(req, res, req.user.email, stateRef);
         req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
         await req.session.save();
         res.redirect('/');
@@ -1344,7 +1373,7 @@
     const user = await findOrCreateUser(email);
     req.session.user = { email: user.email, id: user.id, name: user.name };
     await logSignupConsent(req, user.email, 'email_otp');
-    if (user._isNew) await applyReferralOnSignup(req, res, user.email);
+    if (user._isNew) await applyReferralOnSignup(req, res, user.email, req.body?.ref);
     // Always 30 days (remember by default — rolling sessions keep this alive)
     req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
     await req.session.save();
@@ -1465,6 +1494,28 @@
   const SILENCE_REMOVAL_ON = (process.env.SILENCE_REMOVAL || 'on').toLowerCase() !== 'off';
   const SILENCE_MIN_PAUSE  = Math.max(0.3, parseFloat(process.env.SILENCE_MIN_PAUSE_SEC) || 1.5);
   const SILENCE_THRESHOLD  = parseInt(process.env.SILENCE_THRESHOLD_DB, 10) || -55;
+
+  // Speech-to-text is billed by audio length, so the audio sent for transcription is played faster.
+  // Credits are still charged on the real (silence-stripped) duration. TRANSCRIBE_SPEED=1 turns it off.
+  const TRANSCRIBE_SPEED = Math.min(1.5, Math.max(1, parseFloat(process.env.TRANSCRIBE_SPEED) || 1.25));
+
+  function speedUpForTranscription(wavPath) {
+    if (TRANSCRIBE_SPEED <= 1) return wavPath;
+    const fastPath = wavPath + '_fast.wav';
+    try {
+      execSync(`"${ffmpegPath}" -y -i "${wavPath}" -af "atempo=${TRANSCRIBE_SPEED}" -ar 16000 -ac 1 "${fastPath}"`,
+        { stdio: 'pipe', timeout: 3600000 });
+      if (getWavDuration(fastPath) > 1) {
+        try { fs.unlinkSync(wavPath); } catch (_) {}
+        console.log(`[speed] Audio sped up ${TRANSCRIBE_SPEED}x for transcription`);
+        return fastPath;
+      }
+    } catch (err) {
+      console.warn(`[speed] Speed-up failed, using normal audio: ${err.message}`);
+    }
+    try { fs.unlinkSync(fastPath); } catch (_) {}
+    return wavPath;
+  }
 
   async function stripSilence(wavPath) {
     if (!SILENCE_REMOVAL_ON) { console.log('[silence] Disabled (SILENCE_REMOVAL=off) — using original audio'); return wavPath; }
@@ -1658,6 +1709,9 @@
     // OpenAI GPT-4o (prompt composer) — $2.50/MTok input, $10/MTok output
     openai_input_per_token:  0.0000025,
     openai_output_per_token: 0.00001,
+    // OpenAI GPT-4o mini (prompt composer default) — $0.15/MTok input, $0.60/MTok output
+    openai_mini_input_per_token:  0.00000015,
+    openai_mini_output_per_token: 0.0000006,
   };
 
   async function logUsage({ service, userEmail, sessionId, detail, units, unitType, costUsd }) {
@@ -2103,7 +2157,7 @@ SPEAKER IDENTIFICATION: Many transcripts do not label speakers. You MUST attempt
   //  Every final prompt is logged per meeting in moc_prompt_log.
   // ════════════════════════════════════════════════════════════════════════════
 
-  const COMPOSER_MODEL = 'gpt-4o';
+  const COMPOSER_MODEL = process.env.COMPOSER_MODEL || 'gpt-4o-mini';   // meeting brief only; Claude still writes the MOC
   const MOC_MODEL      = 'claude-sonnet-5-5';
 
   let masterPromptCache = null;
@@ -2231,6 +2285,11 @@ INDIAN MULTILINGUAL MEETINGS
         "responsible": "Client / the advising firm / a named person — whichever the record supports",
         "status": "Plain-language status: Pending, Pending client confirmation, In progress, Awaiting PMS data, Priority implementation" }
     ],
+    "objective": "One sentence stating the purpose of the client business reviewed — e.g. 'Review the phased project investment, product profitability, shareholder arrangements and land lease for CAST 360.' Leave out the advising firm's internal matters",
+    "pending_decisions": [
+      { "area": "Short label — Funding, Land, Bank, Products, Shareholders agreement, Presentation",
+        "clarification": "The decision or confirmation the client still has to take, in one line" }
+    ],
     "working_conclusions": ["Each direction the discussion clearly converged on, as one short forward-looking line — e.g. 'Settle the PMS platform first; project profitability reporting builds on it.'"],
     "next_agenda": ["Each item proposed or implied for the next meeting, as a short directive line"]`,
 
@@ -2267,6 +2326,17 @@ The document is read by a business owner and kept on file. It should read like m
 - Responsible side: decide it from who holds the data or who said they will do the work. "Client" for the client's data, documents, approvals, implementation and access; the advising firm's name for drafts, reviews, models, reports and updates it prepares; "Joint" for meetings to be fixed between both sides. Write "To be confirmed" only when the record truly gives no basis — never "Not agreed", "Not established" or "Status not established" in the action plan or tracker.
 - Timeline: use the meeting's words; where only the sequence is clear, a practical relative timing that the record supports ("At the earliest", "Before next review", "After receipt of PMS data", "Priority — current month" only when urgency was stated). Use "To be confirmed" when nothing supports a timing. Never invent a calendar date.
 - pending_tracker status: plain words — "Pending", "Pending client confirmation", "Pending review", "In progress", "Awaiting data", "Priority implementation". Never "Not established".
+
+CLIENT MOC STANDARD — what the client's own reviewers expect
+- Client business only. Where the same recording also covers the advising firm's own matters (its AI tools, outreach campaigns, staff reporting, software purchases, internal calendars, other clients), give those topics relevance "internal" and keep them out of the executive_summary, objective, subject, meeting_title, pending_decisions and next_agenda. meeting_title and subject name the client and its business, e.g. "CAST 360 | Business Strategy, Project Funding & Agreement Review".
+- Commercial terms as a table. When a theme reviews a set of terms or figures — phase-wise funding, share capital, shareholders' agreement clauses, lease terms, a roadmap by period — add "terms": [{"term": "Rent", "position": "₹7 lakh per annum proposed; ₹6 lakh also appeared in the lease summary - confirm with landowner"}] to that discussion_points entry, and keep "details" to the narrative that the table does not carry (two to four short paragraphs). Every position states its status in the record: "proposed", "discussed", "preferred", "to be confirmed", "subject to legal review".
+- Conflicting figures. When two values were stated for the same item (₹5 crore and ₹6 crore; ₹7 lakh and ₹6 lakh), never pick one silently: write both and say which needs confirmation, in the body, the terms table and the executive summary alike. A total that depends on an unresolved figure says so ("₹16 crore discussed, consistent with ₹10 crore + ₹6 crore, subject to Phase 2 confirmation").
+- Aspirations are not facts. A target margin, capacity, subsidy, carbon credit or valuation multiple is written as "discussed as an aspiration / to be verified", and anything not established is said to be not established. Subsidy and similar receipts are excluded from the base case unless verified.
+- Action tracker discipline. An action is a specific deliverable someone took on — a slide to remove or add, a document to upload, an agreement to update, a confirmation to obtain from the bank, the landowner or a lawyer, a working to prepare. Do not create an action that restates the purpose of the meeting itself (e.g. "prepare the overview for partners" when the whole meeting is that preparation), an input someone merely said would be needed, or a schedule nobody undertook to prepare. Where the body says a schedule or statement "should be prepared" but nobody took it on, write that it was "not assigned as an action".
+- pending_decisions: the decisions or confirmations the client still has to take, one per area (funding, structure, products, agreements, land, bank, subsidy, presentation) — normally four to eight. They are decisions, not tasks; do not repeat the action tracker.
+- Dates: where the meeting states a weekday or a relative date ("the 4th, next Thursday", "tomorrow", "two hours after the other meeting"), resolve it against the reference date only when it is unambiguous, and mark it "(proposed; confirm)". Use the same rule to fill meeting_date when the discussion fixes it unambiguously; otherwise leave it empty.
+- Close with direction. The final executive_summary paragraph says which next steps were actually agreed and that other strategic and financial topics remain discussion points pending specific decisions.
+
 - Before returning, reread the executive summary as the client would: it must make sense on its own, use the same names and figures as the body, and contain no internal notes, evidence remarks or speech-to-text comments.`,
     },
   };
@@ -2275,13 +2345,79 @@ The document is read by a business owner and kept on file. It should read like m
     return Object.prototype.hasOwnProperty.call(MOC_TEMPLATES, v) ? v : 'standard';
   }
 
+  // ── Client-Ready MOC layer ──────────────────────────────────────────────────
+  // The detailed fields above are the internal record and can run long. The
+  // client document is a separate, deliberately short layer written in the same
+  // call from the same evidence: what was discussed, what was decided, what was
+  // assigned and to whom, and what is still open — kept apart, 2-4 pages.
+  const CLIENT_MOM_SCHEMA = `
+    "client_mom": {
+      "executive_summary": "ONE paragraph, 100-150 words: purpose, most important discussions, significant decisions, key unresolved matters, immediate priorities",
+      "agenda": [
+        { "topic": "Short agenda heading, e.g. 'Project cost review'",
+          "discussion": "2-4 sentences in past tense on the business substance — figures, alternatives, risks, dependencies",
+          "outcome": "One line stating the outcome actually established, or an empty string when none was",
+          "terms": [{ "term": "Particular", "position": "Position and its status (proposed / discussed / to be confirmed)" }] }
+      ],
+      "decisions": [{ "decision": "A decision supported by the meeting", "status": "Agreed | Agreed in principle | Subject to formal approval" }],
+      "actions": [
+        { "action_id": "A1 (keep the earlier ID when an action carries over from project memory)",
+          "action": "Verb-first, specific deliverable",
+          "owner": "Named person, team or organisation as assigned — or 'Owner to be confirmed'",
+          "owner_side": "client | advisor | joint | other | tbc",
+          "target_date": "Stated deadline (resolve 'tomorrow' etc. against the meeting date) or 'Target date to be confirmed'",
+          "status": "Pending | In Progress | Completed | On Hold | Owner to be Confirmed",
+          "confidence": "Exactly one word: High (explicit task and commitment) or Medium (clear task, owner or date incomplete)",
+          "evidence": "Short excerpt of the words that created the action, in the original language" }
+      ],
+      "pending_decisions": [{ "matter": "Unresolved matter", "clarification": "What has to be decided or confirmed" }],
+      "next_meeting": "Date / time if confirmed and main subjects for review — or 'Next meeting schedule to be confirmed'",
+      "conclusion": "2-3 sentences on progress achieved and immediate priorities; do not repeat the executive summary"
+    }`;
+
+  const CLIENT_MOM_RULES = `
+
+CLIENT-READY MOC — the "client_mom" object (always call the document an MOC — Minutes of Conversation — never "MOM" or "Minutes of Meeting")
+This is the document the client receives by default. The detailed fields above stay as the internal record; client_mom is written from the same evidence as a separate, short, management-ready MOC. Think like a senior consultant preparing minutes for the CEO and board: accuracy matters more than the number of actions.
+
+1. Classify every material point before writing: DISCUSSION (explained, considered, debated), DECISION (clearly accepted by the relevant participants), ACTION (someone committed or was instructed to do a specific task), PENDING DECISION (discussed, not finalised). Never mix the four. A question, suggestion, recommendation, concern, possible future activity or general intention is not an action.
+2. Strict action validation. An action needs an identifiable deliverable AND evidence of commitment, instruction or acceptance. "It may be useful to prepare a report" is a suggestion; "please prepare the report and share it by Monday" is an action. Work already done ("we have already prepared the model") is not a new action. Only High or Medium confidence items enter client_mom.actions — leave out anything weaker. Every action carries the evidence excerpt that created it.
+3. Responsibility, in this order: explicitly named person; explicitly assigned team or organisation; owner clearly established by the project details; otherwise "Owner to be confirmed". Never assign work to the advisor, client or organiser by default, and never write "Joint" unless joint ownership was agreed. Do not assume the advising firm handles GST, TDS, finance, HR, legal, recruitment or compliance unless the meeting or project details establish it. When one party supplies information and another prepares a document, these are two actions only if both were assigned.
+4. Dates: use the stated deadline; resolve relative dates against the confirmed meeting date; otherwise "Target date to be confirmed". Never turn the next meeting date into a deadline for every action.
+5. Merge duplicate actions that share a deliverable and owner; keep sub-steps of one agreed deliverable as one action unless they have separate owners or dates.
+6. Figures: write ₹10 crore, ₹50 lakh, ₹7 lakh per annum, with period or basis where material. Keep actual vs estimated, committed vs proposed, revenue vs profit, gross vs net margin, equity vs shareholder loan apart. When two figures were stated for one item, show both and say which needs confirmation. Never present an assumption as an approved decision, and never calculate unsupported figures.
+7. Legal and compliance: record terms reviewed, changes agreed in principle, approvals pending and documents required. Discussed clauses are not executed terms; do not state that a permission, exemption, subsidy or tax treatment is legally correct.
+8. Do not manufacture agreement. Where participants disagreed or a matter was left open, it goes to pending_decisions — never to decisions. An informal promoter or consultant discussion is not formal board approval.
+9. decisions: only matters actually agreed; status Agreed, Agreed in principle or Subject to formal approval. Leave the array empty when nothing was formally confirmed.
+10. pending_decisions: only issues that materially affect progress, commercial terms, funding, responsibilities or decisions — normally three to eight. They are not tasks.
+11. agenda: one entry per material business topic, merging minor related points; normally five to nine topics. 2-4 sentences each — longer only where technical or financial detail is essential, and then use "terms" (at most eight rows) instead of more prose. Leave "outcome" empty when none was established. Exclude greetings, small talk, personal stories, repetition, transcription noise, the advising firm's internal matters and digressions with no business consequence.
+12. Language: clear professional English in the past tense ("The participants reviewed…", "It was agreed that…" only when agreement is evidenced). Never write "the transcript says", "AI detected", "Speaker 1 mentioned", "it seems that", and never add AI disclaimers. Convert Hindi, Gujarati and mixed speech faithfully; mark unclear meaning as requiring confirmation rather than guessing.
+RULES 12a TO 12c APPLY TO THE WHOLE MOC — the detailed fields (attendees, action_items, discussion_points, summary) as well as client_mom.
+12a. People: use names exactly as spoken or as given in the project details. When a person cannot be identified, use one stable role label throughout ("Senior participant", "Team member") and never "Participant 1" or "Speaker 2". Do not use he / she / him / her for a person whose gender the record does not state; repeat the role or name instead. A person named in the meeting ("Labhbhai", "Josna") is a known person — never ask who they are. attendees: list every person who spoke, by name or stable role label; never leave it empty when people spoke.
+12a-i. Owners from direct address: when an instruction is spoken TO someone ("you study the website", "તમારે વેબસાઈટ સ્ટડી કરવાની છે", "તું … આપી જાય", "Labhbhai બનાવી દે"), the person addressed is the owner — write their name or stable role label (e.g. "Team member"). When a speaker says "I will…" ("હું તમને બનાવી નાખીશ", "I'll share the diagram"), the speaker is the owner. Use "Owner to be confirmed" only when the record truly does not show who was addressed or who spoke; do not fall back to it just because a speaker's name is unknown.
+12b. Tools and vendors: do not name AI tools or software vendors (ChatGPT, Claude, Gemini and similar) in client_mom unless the tool itself is the subject of the engagement; write "AI-generated diagram", "the AI tool" or the deliverable itself.
+12c. Actions that are easy to miss — capture each of these:
+   - A direct instruction to a person with a day or time ("give the dashboard to Josna on Monday", "send it by tonight") is an action even when said in passing near the end of the meeting. Resolve the day against the meeting date (e.g. meeting Friday 23/10/2026 → Monday 26/10/2026).
+   - A participant's own commitment ("I will sit tonight and update which issue closes when") is an action owned by that participant.
+   - A task that was assigned AND finished during the meeting itself goes in actions with status "Completed" and is never shown as pending — e.g. a group asked for early in the meeting and later reported as made ("શ્રી ગણેશ કર્યા નવા ગ્રુપમાં, બનાવી દીધું છે" = the new group has been created). Before finalising, check each pending action against the rest of the transcript for a later statement that it was done. Work that was already done before the meeting is not an action at all.
+   - A request or instruction is an action for the person asked, even without "please" or a date: "share the format you follow with me" (મને એ શેર કરો), "you will have to create a new WhatsApp group" (તમારે નવું ગ્રુપ બનાવવું પડશે), "make a separate project for it" (એના માટે એક અલગ બનાવી દો પ્રોજેક્ટ). Do not downgrade it to an "option raised" or "requires decision" because no date was given — record it with "Target date to be confirmed".
+   - Status "Completed" only when the whole task was reported done; partly done is "In Progress".
+   - Points read aloud from notes or an earlier meeting's list are not actions of this meeting unless someone is assigned to them here; list them under "Confirmation required" instead.
+   - Never infer an owner from who raised a point or whose list it was; only the person addressed or the "I will" speaker owns it — otherwise "Owner to be confirmed".
+   - People greeted or spoken to on a phone call, and their personal plans, are side conversation: not attendees, not agenda items. Product, feature and template names (e.g. "Client Advisory / Virtual CFO MOC") are not sessions or events.
+   - A note-taker's "I'll write it" against a stated requirement ("Chart of accounts to be hidden from the UI. I'll write it.") records an agreed requirement and an action for that person.
+   - A proposal accepted on the spot ("make it 30 seconds" — "yes, that's right") is a decision with status "Agreed" when nobody objected; do not demote it only because no owner or date was named.
+   - Read the closing minutes of the recording with the same care as the opening: last-minute instructions are often the most concrete actions.
+12d. Units and currency in any language: read the unit spoken with the number — "119 ડોલર" is US$119, "60 પૈસા" is 60 paise, "₹2" is ₹2. Never write "units not stated" when the record states them; flag only a unit that truly was not said.
+13. Continuity: when project memory lists earlier open actions, record progress or closure only when this meeting confirms it, keep the earlier action ID, and do not repeat unchanged actions.
+14. LENGTH BUDGET — this is what keeps the client document to 2-4 pages. The whole client_mom should be about 900-1,500 words for a normal 1-2 hour meeting and must not exceed about 2,200 words even for a long strategic meeting. Length follows business content, not the length of the recording: a short meeting gets a short MOC. If the draft runs over, merge topics and tighten wording — never drop a decision, a validated action or a material figure to save space.
+Before returning, silently check: every material topic captured; discussions and actions separated; every action has evidence; no invented owners or dates; duplicates merged; figures accurate and conflicts flagged; management can follow the decisions and next steps without the transcript.`;
+
   function buildMocStaticPrompt(masterContent, template = 'standard') {
     const t = MOC_TEMPLATES[mocTemplateKey(template)];
-    const schema = t.extraSchema
-      // the extra fields go inside the JSON object, just before the closing brace
-      ? MOC_OUTPUT_FIELDS.replace(/\n(\s*)\}\s*$/, `,${t.extraSchema}\n$1}`)
-      : MOC_OUTPUT_FIELDS;
-    return `${masterContent}\n\n${MOC_APP_CONFIG}${t.extraRules}\n\nAPPLICATION OUTPUT SCHEMA\n${schema}`;
+    // the extra fields go inside the JSON object, just before the closing brace
+    const schema = MOC_OUTPUT_FIELDS.replace(/\n(\s*)\}\s*$/, `,${t.extraSchema}${t.extraSchema ? ',' : ''}${CLIENT_MOM_SCHEMA}\n$1}`);
+    return `${masterContent}\n\n${MOC_APP_CONFIG}${t.extraRules}${CLIENT_MOM_RULES}\n\nAPPLICATION OUTPUT SCHEMA\n${schema}`;
   }
 
   function buildMocDynamicPrompt(briefText, userInstructions) {
@@ -2476,7 +2612,9 @@ ${TRANSCRIPT_SLOT}`;
         detail:    `MOC prompt composer (${COMPOSER_MODEL})`,
         units:     inTok + outTok,
         unitType:  'tokens',
-        costUsd:   (inTok * COST.openai_input_per_token) + (outTok * COST.openai_output_per_token)
+        costUsd:   /mini/.test(COMPOSER_MODEL)
+                     ? (inTok * COST.openai_mini_input_per_token) + (outTok * COST.openai_mini_output_per_token)
+                     : (inTok * COST.openai_input_per_token) + (outTok * COST.openai_output_per_token)
       });
     }
     const brief = JSON.parse(response.data.choices[0].message.content);
@@ -2565,7 +2703,11 @@ ${trimmedTranscript}`;
     // The retry after a cut-off therefore gets more room and a brevity instruction instead of repeating the same call.
     // Effort controls how long Claude reasons before writing. The default (high) is slow and eats the output budget on long meetings.
     const MOC_EFFORTS = ["low", "medium", "high", "xhigh", "max"];
-    const baseEffort = MOC_EFFORTS.includes((process.env.MOC_EFFORT || "").toLowerCase()) ? process.env.MOC_EFFORT.toLowerCase() : "medium";
+    // Meetings up to ~90 minutes (about 80,000 transcript characters) need less reasoning: SHORT_MOC_EFFORT (default low).
+    const SHORT_TX_CHARS = parseInt(process.env.SHORT_MOC_MAX_CHARS, 10) || 80000;
+    const shortEffort = (process.env.SHORT_MOC_EFFORT || "low").toLowerCase();
+    const baseEffort = transcript.length <= SHORT_TX_CHARS && MOC_EFFORTS.includes(shortEffort) ? shortEffort
+      : MOC_EFFORTS.includes((process.env.MOC_EFFORT || "").toLowerCase()) ? process.env.MOC_EFFORT.toLowerCase() : "medium";
     // Long conversations produce a long MOC: start with the bigger limit instead of paying for a run that is sure to be cut off
     const LONG_TX = trimmedTranscript.length > 40000, VERY_LONG_TX = trimmedTranscript.length > 70000;
     let maxTokens = LONG_TX ? 64000 : 32000, concise = false, effort = baseEffort;
@@ -2638,6 +2780,10 @@ ${trimmedTranscript}`;
             try { mom = JSON.parse(clean.slice(start, end + 1)); } catch (_) {}
           }
         }
+        // Last attempt cut off: keep what was written rather than fail the whole MOC
+        if (!mom && truncated && attempt === 3) {
+          try { mom = parseModelJson(clean); console.warn('[claude] Used the repaired, cut-off reply on the last attempt'); } catch (_) {}
+        }
 
         if (!mom) {
           if (attempt < 3) {
@@ -2657,12 +2803,13 @@ ${trimmedTranscript}`;
 
       } catch (err) {
         // Credit / billing errors — no point retrying; surface immediately
-        const isCredit = err?.status === 529 || err?.error?.type === 'overloaded_error' ||
-          (err?.message || '').toLowerCase().includes('credit') ||
-          (err?.message || '').toLowerCase().includes('billing') ||
-          (err?.message || '').toLowerCase().includes('credit balance');
+        const msg = (err?.message || '').toLowerCase();
+        const isCredit = msg.includes('credit') || msg.includes('billing');
         if (err.noRetry || isCredit || attempt === 3) throw err;
         if (maxTokens > 32000 && /max_tokens/i.test(err.message || "")) maxTokens = 32000;   // model does not allow the larger limit
+        // Busy or rate-limited (429 / 5xx / overloaded) is temporary: wait before the next attempt
+        const busy = [429, 500, 502, 503, 504, 529].includes(err?.status) || err?.error?.type === 'overloaded_error' || /overload|rate.?limit|timeout|econnreset|socket hang up/.test(msg);
+        if (busy) { const wait = 10000 * attempt; console.warn(`[claude] Busy (${err.status || 'network'}) — waiting ${wait / 1000}s`); await new Promise(r => setTimeout(r, wait)); }
         console.warn(`[claude] Attempt ${attempt} error: ${err.message} — retrying…`);
       }
     }
@@ -2720,6 +2867,241 @@ ${transcript}`;
     }
   }
 
+  // ── Step 1: commitment register ─────────────────────────────────────────────
+  // One focused pass over the transcript that only finds the things a MOC most
+  // often gets wrong — who is in the room, every instruction / request / "I
+  // will" / agreement, whether it was done later in the meeting, and figures
+  // with their units. No prose, no length limits. The writing pass then works
+  // from this list, so an action found here cannot silently go missing.
+  const EXTRACT_SYSTEM = `You read meeting transcripts (English, Hindi, Gujarati or mixed; speech-to-text, so expect errors) and extract a register of commitments. You do not write minutes.
+
+Return ONLY one JSON object:
+{
+  "people": [{ "label": "Name as spoken (e.g. 'Labhbhai', 'Josna') or a stable role when no name is used (e.g. 'Senior participant', 'Team member')", "basis": "how you know — self-introduction, direct address, role in the discussion" }],
+  "commitments": [{
+    "id": "C1",
+    "kind": "instruction | request | self_commitment | agreement",
+    "task": "Verb-first English description of the deliverable",
+    "owner": "A label from people — the person addressed by an instruction/request, or the speaker of an 'I will'. 'Owner to be confirmed' only when the record truly does not show it",
+    "due": "Deadline in the meeting's words, resolved to DD/MM/YYYY against the meeting date when unambiguous (e.g. 'Monday' after a Friday meeting), else ''",
+    "quote": "The exact words, in the original language, that created it",
+    "status": "Pending | Completed",
+    "done_quote": "Exact later words showing it was done during the meeting, or ''"
+  }],
+  "decisions": [{ "statement": "What was agreed", "quote": "Exact words of the proposal and its acceptance" }],
+  "figures": [{ "label": "What the number is", "value": "Number with its unit exactly as spoken (US$119, 60 paise, ₹2, 30 seconds, 28 groups)", "quote": "Exact words" }]
+}
+
+Rules:
+- Read the whole transcript, closing minutes included; last-minute instructions are often the most concrete.
+- An instruction or request is a commitment for the person asked even without a date or "please" ("share the format with me", "you will have to create a WhatsApp group", "make a separate project", "give the dashboard to Josna on Monday"). A speaker's "I will …" / "I'll write it" is a commitment for that speaker. A proposal accepted on the spot ("make it 30 seconds" — "yes, right") is a decision.
+- Not commitments: questions, opinions, ideas nobody took on, work already done before the meeting.
+- For every commitment, search the rest of the transcript for a statement that it was done ("બનાવી દીધું છે", "done", "sent", "posted") and set status and done_quote.
+- Status: "Completed" only when the whole task was reported done. Partly done ("one is already posted, I'll post the other") is "In Progress".
+- Owner only from the words: the person addressed, or the speaker of "I will". Never infer an owner from who raised the point, whose list it was or who usually does such work — use "Owner to be confirmed" instead.
+- People: only those taking part in the meeting. Someone greeted or spoken to on a phone call, and their personal plans (travel, other appointments), are side conversation — not a participant, not an agenda item.
+- Points read aloud from notes, a list or an earlier meeting ("these are our points: map the trial balance…") are not new commitments of this meeting unless someone is assigned to them here. Record them as decisions/figures only if agreed now; otherwise leave them out of commitments (the MOC will list them for confirmation).
+- A speaker's promise about their own follow-up ("I'll sit tonight and note which issue closes when") is always a self_commitment — never only background.
+- Product, feature and template names are not events: e.g. "Client Advisory / Virtual CFO MOC" is a document format of the product, not a session or meeting.
+- A figure's meaning comes only from the words: "we have US$119" is an amount available, not a cost. When the meaning is unclear, say so in the label.
+- Merge repeats of the same task by the same owner. Do not invent people, tasks, dates or units.
+- Never ask who a named person is; a name spoken in the meeting is a known person.`;
+
+  async function extractCommitments({ transcript, fileName, contextStr, anthropicKey, logCtx }) {
+    const client = anthropicKey ? new Anthropic({ apiKey: anthropicKey }) : anthropic;
+    const tx = transcript;   // long meetings never reach here — they go through condenseLongMeeting
+    const response = await withAiRetry('commitment register', () => client.beta.messages.stream({
+      model: MOC_MODEL, max_tokens: 32000, output_config: { effort: 'medium' },
+      betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
+      system: [{ type: 'text', text: EXTRACT_SYSTEM, cache_control: { type: 'ephemeral' } },
+               { type: 'text', text: `REFERENCE DATE: ${todayIST()} (Asia/Kolkata).` }],
+      messages: [{ role: 'user', content: `${contextStr ? contextStr + '\n\n' : ''}FILE: ${fileName}\n\nTRANSCRIPT:\n${tx}` }],
+    }).finalMessage());
+    const usage = response.usage || {};
+    const inTok = (usage.input_tokens || 0) + (usage.cache_creation_input_tokens || 0) + (usage.cache_read_input_tokens || 0);
+    const outTok = usage.output_tokens || 0;
+    await logUsage({ service: 'claude', userEmail: logCtx?.email, sessionId: logCtx?.sessionId, detail: 'MOC step 1 — commitment register',
+      units: inTok + outTok, unitType: 'tokens', costUsd: inTok * COST.claude_input_per_token + outTok * COST.claude_output_per_token });
+    const reg = parseModelJson(response.content.filter(b => b.type === 'text').map(b => b.text).join(''));
+    const arr = v => (Array.isArray(v) ? v : []);
+    return { people: arr(reg.people), commitments: arr(reg.commitments).filter(c => c && c.task),
+             decisions: arr(reg.decisions), figures: arr(reg.figures) };
+  }
+
+  // ── Long meetings (2–6 hours) ───────────────────────────────────────────────
+  // A single call cannot read a 4-5 hour transcript, and trimming the middle
+  // loses hours of discussion. Long transcripts are cut into parts at line
+  // breaks; each part is read in full by its own call, which returns detailed
+  // notes plus that part's commitments. The MOC is then written from the
+  // joined notes and the merged register — every minute of the meeting is read.
+  const LONG_MOC_CHARS = parseInt(process.env.LONG_MOC_CHARS, 10) || 70000;
+  const PART_CHARS     = parseInt(process.env.MOC_PART_CHARS, 10) || 40000;
+  const PART_OVERLAP   = 1500;
+
+  function splitTranscript(text) {
+    const parts = [];
+    let start = 0;
+    while (start < text.length) {
+      let end = Math.min(text.length, start + PART_CHARS);
+      if (end < text.length) {
+        // cut at the last line break (or sentence end) before the limit, so no sentence is split
+        const nl = text.lastIndexOf('\n', end), dot = text.lastIndexOf('. ', end);
+        const cut = Math.max(nl, dot);
+        if (cut > start + PART_CHARS * 0.6) end = cut + 1;
+      }
+      parts.push(text.slice(Math.max(0, start - (parts.length ? PART_OVERLAP : 0)), end));
+      start = end;
+    }
+    return parts;
+  }
+
+  const SEGMENT_SYSTEM = EXTRACT_SYSTEM.replace(
+    'You read meeting transcripts',
+    'You read ONE PART of a long meeting transcript (the meeting is split into consecutive parts; a short overlap with the previous part is included — do not record the overlap twice) and you read meeting transcripts'
+  ).replace(
+    '  "people": [',
+    `  "notes": [{ "topic": "Topic discussed in this part", "detail": "A faithful, detailed record in English of what was said on this topic in this part — positions, reasons, figures with units, names, alternatives, concerns, what was agreed or left open. 3-8 sentences. Keep the substance; drop small talk and repetition." }],
+  "people": [`
+  ) + `
+- notes: cover every material topic of this part in order. This text replaces the transcript for the writer of the MOC, so anything not in the notes or the commitments is lost.`;
+
+  // Parse model JSON; when a reply is cut short, close the open brackets and try again
+  function parseModelJson(text) {
+    const clean = String(text || '').replace(/```json\s*|```/gi, '').trim();
+    const s = clean.indexOf('{');
+    if (s < 0) throw new Error('No JSON in reply');
+    let body = clean.slice(s, clean.lastIndexOf('}') + 1 || undefined);
+    try { return JSON.parse(body); } catch (_) {}
+    body = clean.slice(s);
+    // drop a trailing half-written value, then close what is still open
+    body = body.replace(/,\s*"[^"]*"?\s*:?\s*("[^"]*)?$/, '').replace(/,\s*$/, '');
+    const stack = [];
+    let inStr = false, esc = false;
+    for (const ch of body) {
+      if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === '"') inStr = false; continue; }
+      if (ch === '"') inStr = true; else if (ch === '{' || ch === '[') stack.push(ch); else if (ch === '}' || ch === ']') stack.pop();
+    }
+    if (inStr) body += '"';
+    while (stack.length) body += stack.pop() === '{' ? '}' : ']';
+    return JSON.parse(body);
+  }
+
+  // Waits and retries when the AI service is busy or rate-limited; anything else is thrown at once
+  async function withAiRetry(label, fn, tries = 4) {
+    for (let i = 1; ; i++) {
+      try { return await fn(); }
+      catch (err) {
+        const msg = String(err?.message || '');
+        const busy = [429, 500, 502, 503, 504, 529].includes(err?.status) || /overload|rate.?limit|timeout|ECONNRESET|socket hang up/i.test(msg);
+        if (!busy || i >= tries || /credit|billing/i.test(msg)) throw err;
+        const wait = Math.min(60000, 5000 * 2 ** (i - 1));
+        console.warn(`[moc] ${label}: ${msg.slice(0, 120)} — waiting ${wait / 1000}s and retrying (${i}/${tries - 1})`);
+        await new Promise(r => setTimeout(r, wait));
+      }
+    }
+  }
+
+  async function readMeetingPart({ part, index, total, fileName, contextStr, client, logCtx }) {
+    return withAiRetry(`part ${index + 1}/${total}`, async () => {
+      const response = await client.beta.messages.stream({
+        model: MOC_MODEL, max_tokens: 24000, output_config: { effort: 'low' },
+        betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
+        system: [{ type: 'text', text: SEGMENT_SYSTEM, cache_control: { type: 'ephemeral' } },
+                 { type: 'text', text: `REFERENCE DATE: ${todayIST()} (Asia/Kolkata).` }],
+        messages: [{ role: 'user', content: `${contextStr ? contextStr + '\n\n' : ''}FILE: ${fileName}\nPART ${index + 1} OF ${total}\n\nTRANSCRIPT PART:\n${part}` }],
+      }).finalMessage();
+      const u = response.usage || {};
+      const inTok = (u.input_tokens || 0) + (u.cache_creation_input_tokens || 0) + (u.cache_read_input_tokens || 0), outTok = u.output_tokens || 0;
+      await logUsage({ service: 'claude', userEmail: logCtx?.email, sessionId: logCtx?.sessionId, detail: `MOC long meeting — part ${index + 1}/${total}`,
+        units: inTok + outTok, unitType: 'tokens', costUsd: inTok * COST.claude_input_per_token + outTok * COST.claude_output_per_token });
+      if (response.stop_reason === 'max_tokens') console.warn(`[moc] Part ${index + 1}/${total} hit its output limit — keeping what was returned`);
+      return parseModelJson(response.content.filter(b => b.type === 'text').map(b => b.text).join(''));
+    });
+  }
+
+  // Reads every part (three at a time) and returns the joined notes plus one merged register
+  async function condenseLongMeeting({ transcript, fileName, contextStr, anthropicKey, logCtx }) {
+    const client = anthropicKey ? new Anthropic({ apiKey: anthropicKey }) : anthropic;
+    const parts = splitTranscript(transcript);
+    console.log(`[moc] Long meeting: ${transcript.length} chars → ${parts.length} parts`);
+    const results = new Array(parts.length);
+    let next = 0;
+    await Promise.all(Array.from({ length: Math.min(3, parts.length) }, async () => {
+      while (next < parts.length) {
+        const i = next++;
+        try { results[i] = await readMeetingPart({ part: parts[i], index: i, total: parts.length, fileName, contextStr, client, logCtx }); }
+        catch (err) { console.error(`[moc] Part ${i + 1} failed:`, err.message); results[i] = null; }
+      }
+    }));
+    const failed = results.filter(r => !r).length;
+    if (failed > Math.floor(parts.length / 3)) throw new Error(`Could not read ${failed} of ${parts.length} parts of this long meeting. Please try again in a few minutes.`);
+
+    const arr = v => (Array.isArray(v) ? v : []);
+    const reg = { people: [], commitments: [], decisions: [], figures: [] };
+    const seenPeople = new Set(), seenTask = new Map();
+    const notes = [];
+    results.forEach((r, i) => {
+      if (!r) { notes.push(`=== PART ${i + 1} OF ${parts.length} ===\n[This part could not be read — say in the MOC that part of the recording was not processed.]`); return; }
+      notes.push(`=== PART ${i + 1} OF ${parts.length} ===\n` + arr(r.notes).map(n => `• ${n.topic}: ${n.detail}`).join('\n'));
+      arr(r.people).forEach(p => { const k = String(p.label || '').toLowerCase(); if (k && !seenPeople.has(k)) { seenPeople.add(k); reg.people.push(p); } });
+      arr(r.commitments).forEach(c => {
+        const k = String(c.task || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim().slice(0, 80);
+        if (!k) return;
+        // The same task again in a later part: keep one entry, and let a later "done" close it
+        const prev = seenTask.get(k);
+        if (prev) { if (/^completed$/i.test(c.status || '')) { prev.status = 'Completed'; prev.done_quote = c.done_quote || c.quote || prev.done_quote; } return; }
+        const entry = { ...c, id: `C${reg.commitments.length + 1}`, part: i + 1 };
+        seenTask.set(k, entry); reg.commitments.push(entry);
+      });
+      reg.decisions.push(...arr(r.decisions)); reg.figures.push(...arr(r.figures));
+    });
+    const condensed = `CONDENSED RECORD OF A LONG MEETING — the full recording (${Math.round(transcript.length / 1000)}k characters) was read in ${parts.length} consecutive parts. ` +
+      `These notes and the commitment register replace the raw transcript; quotes in the register are the original words.\n\n${notes.join('\n\n')}`;
+    return { condensed, register: reg, parts: parts.length, failed };
+  }
+
+  function renderRegister(reg) {
+    const lines = ['COMMITMENT REGISTER (step 1 — extracted from the whole transcript before writing; the transcript stays the evidence)', ''];
+    if (reg.people.length) lines.push('People: ' + reg.people.map(p => `${p.label}${p.basis ? ` (${p.basis})` : ''}`).join('; '), '');
+    if (reg.commitments.length) {
+      lines.push('Commitments:');
+      reg.commitments.forEach(c => lines.push(`- ${c.id || ''} [${c.kind || ''}] ${c.task} — owner: ${c.owner || 'Owner to be confirmed'}; due: ${c.due || 'to be confirmed'}; status: ${c.status || 'Pending'}; quote: "${c.quote || ''}"${c.done_quote ? `; done: "${c.done_quote}"` : ''}`));
+      lines.push('');
+    }
+    if (reg.decisions.length) { lines.push('Decisions:'); reg.decisions.forEach(d => lines.push(`- ${d.statement} — "${d.quote || ''}"`)); lines.push(''); }
+    if (reg.figures.length) { lines.push('Figures:'); reg.figures.forEach(f => lines.push(`- ${f.label}: ${f.value} — "${f.quote || ''}"`)); lines.push(''); }
+    lines.push('HOW TO USE THE REGISTER: every commitment above must appear in action_items and in client_mom.actions with the same owner, due date and status, unless the transcript clearly shows it is not an action — then leave it out on purpose. Completed items keep status "Completed". Use the people labels above for attendees and owners. Use the figures exactly as listed, with their units. You may add an action the register missed when the transcript supports it.');
+    return lines.join('\n');
+  }
+
+  // After writing: hold the MOC to the register. Completed items are marked
+  // completed; commitments the MOC dropped are reported for review.
+  function reconcileWithRegister(mom, reg) {
+    if (!reg || !mom) return;
+    const words = t => new Set(String(t || '').toLowerCase().match(/[a-z0-9ऀ-෿]{4,}/g) || []);
+    const overlap = (a, b) => { const B = words(b); let k = 0; words(a).forEach(x => { if (B.has(x)) k++; }); return k; };
+    // A match needs a real share of the task's words (not just "the", "group") — otherwise the commitment counts as missing
+    const best = (list, c, field) => {
+      const need = Math.max(2, Math.ceil(words(c.task).size * 0.4));
+      let hit = null, sc = need - 1;
+      (list || []).forEach(x => { const k = overlap(c.task, x && x[field]); if (k > sc) { sc = k; hit = x; } });
+      return hit;
+    };
+    const ai = Array.isArray(mom.action_items) ? mom.action_items : [];
+    const cmA = mom.moc_quality?.client_mom?.actions || [];
+    const missing = [];
+    reg.commitments.forEach(c => {
+      const a = best(ai, c, 'task'), b = best(cmA, c, 'action');
+      if (/^completed$/i.test(c.status || '')) { if (a) a.status = 'Completed'; if (b) b.status = 'Completed'; }
+      if (!a) missing.push(c.task);
+    });
+    const report = mom.moc_quality?.report;
+    if (report && missing.length) report.warnings.push(`Step 1 found ${missing.length} commitment(s) not in the action plan — review: ${missing.slice(0, 6).join('; ')}`);
+    const tbc = ai.filter(a => /to be confirmed|not assigned|^$/i.test(String(a.owner || ''))).length;
+    if (report && ai.length >= 3 && tbc / ai.length > 0.5) report.warnings.push(`${tbc} of ${ai.length} actions have no owner — check who each instruction was addressed to.`);
+    if (mom.moc_quality) mom.moc_quality.register = reg;
+  }
+
   // ── Provider router ─────────────────────────────────────────────────────────
   // 1. Claude + OpenAI keys → ChatGPT composes the meeting brief → Claude writes the MOC
   // 2. Claude only (or composer failed) → Claude with master prompt
@@ -2734,8 +3116,9 @@ ${transcript}`;
         if (p) {
           const block = `PROJECT DETAILS (the client/project this conversation belongs to):\nProject: ${p.name}` +
             (p.description ? `\nDescription: ${p.description}` : '') +
-            (p.context_notes ? `\nProject notes: ${p.context_notes}` : '');
-          contextStr = block + (contextStr ? `\n\n${contextStr}` : '');
+            (p.context_notes ? `\nProject instructions (set by the user for every MOC in this project — follow them, and treat the names and terms here as the correct spellings):\n${p.context_notes}` : '');
+          const earlier = p.carry_forward === false ? '' : await earlierProjectMocs(user.email, pid, sessionId);
+          contextStr = block + earlier + (contextStr ? `\n\n${contextStr}` : '');
         }
       } catch (e) { console.warn('[moc] Project details unavailable:', e.message); }
     }
@@ -2748,19 +3131,36 @@ ${transcript}`;
     const staticBlock  = buildMocStaticPrompt(master.content, tplKey);
     if (tplKey !== 'standard') console.log(`[moc] Template: ${MOC_TEMPLATES[tplKey].label}`);
 
-    let composed = null, composerError = null;
-    if (anthropicKey && openaiKey) {
+    let composed = null, composerError = null, register = null;
+    // Long meeting: read it part by part first; the MOC is written from the joined notes
+    let mocInput = transcript, longInfo = null;
+    if (anthropicKey && transcript.length > LONG_MOC_CHARS) {
+      longInfo = await condenseLongMeeting({ transcript, fileName, contextStr, anthropicKey, logCtx });
+      mocInput = longInfo.condensed;
+      register = longInfo.register;
+      console.log(`[moc] Long meeting condensed: ${longInfo.parts} parts (${longInfo.failed} failed) → ${mocInput.length} chars, ${register.commitments.length} commitments`);
+    }
+    // The meeting brief and the commitment register are independent — run them side by side
+    const briefJob = (anthropicKey && openaiKey) ? (async () => {
       try {
-        console.log('[moc] Step 1 — ChatGPT composing meeting brief…');
-        composed = await composeMeetingBrief({ transcript, fileName, contextStr, userInstructions, masterContent: master.content, openaiKey, logCtx });
+        console.log('[moc] Step 1a — ChatGPT composing meeting brief…');
+        composed = await composeMeetingBrief({ transcript: mocInput, fileName, contextStr, userInstructions, masterContent: master.content, openaiKey, logCtx });
       } catch (err) {
         composerError = err.response?.data?.error?.message || err.message;
         console.warn('[moc] Composer failed — continuing with master prompt only:', composerError);
         if (isOpenAICreditError(err)) alertProviderOutOfCredit('openai', composerError);
-        if (isOpenAICreditError(err)) alertProviderOutOfCredit('openai', composerError);
       }
-    }
-    const dynamicBlock = buildMocDynamicPrompt(composed?.briefText || null, userInstructions);
+    })() : null;
+    const registerJob = (anthropicKey && !longInfo && process.env.MOC_COMMITMENT_REGISTER !== 'off') ? (async () => {
+      try {
+        console.log('[moc] Step 1b — Claude extracting the commitment register…');
+        register = await extractCommitments({ transcript, fileName, contextStr, anthropicKey, logCtx });
+        console.log(`[moc] Register: ${register.people.length} people, ${register.commitments.length} commitments, ${register.decisions.length} decisions, ${register.figures.length} figures`);
+      } catch (err) { console.warn('[moc] Commitment register failed — continuing without it:', err.message); }
+    })() : null;
+    await Promise.all([briefJob, registerJob]);
+    const briefText = [composed?.briefText, register ? renderRegister(register) : null].filter(Boolean).join('\n\n') || null;
+    const dynamicBlock = buildMocDynamicPrompt(briefText, userInstructions);
     const finalSystemPrompt = `${staticBlock}\n\n${dynamicBlock}`;
 
     let result, flow, mocModel;
@@ -2768,7 +3168,7 @@ ${transcript}`;
       flow = composed ? 'chatgpt_composer+claude' : 'claude_only';
       mocModel = MOC_MODEL;
       console.log(`[moc] Step 2 — Claude generating MOC (${flow})…`);
-      result = await generateMOMClaude(transcript, fileName, { staticBlock, dynamicBlock }, contextStr, anthropicKey, contextImageBase64, contextImageMime);
+      result = await generateMOMClaude(mocInput, fileName, { staticBlock, dynamicBlock }, contextStr, anthropicKey, contextImageBase64, contextImageMime);
     } else if (openaiKey) {
       flow = 'openai_only';
       mocModel = 'gpt-4o';
@@ -2802,6 +3202,10 @@ ${transcript}`;
       const q = result.mom.moc_quality.report;
       console.log(`[moc] Quality gates — decisions confirmed ${q.decisions.confirmed}, requires confirmation ${q.decisions.requires_confirmation}, demoted ${q.decisions.demoted.length}; actions kept ${q.actions.kept}, moved to matters ${q.actions.moved_to_matters.length}, priority removed ${q.actions.priority_removed}, due cleared ${q.actions.due_cleared}`);
     } catch (e) { console.error('[moc] Quality gates failed:', e.message); }
+    try { reconcileWithRegister(result.mom, register); } catch (e) { console.error('[moc] Register check failed:', e.message); }
+    if (longInfo && result.mom.moc_quality?.report) {
+      result.mom.moc_quality.report.warnings.push(`Long meeting read in ${longInfo.parts} parts${longInfo.failed ? ` — ${longInfo.failed} part(s) could not be read; regenerate to retry` : ''}.`);
+    }
 
     return { mom: result.mom, inputTokens: result.inputTokens, outputTokens: result.outputTokens, promptLogId };
   }
@@ -3116,6 +3520,7 @@ ${transcript}`;
       const durationSeconds = getWavDuration(wavPath);
       draftDurationC = durationSeconds;
       console.log(`[transcribe] Duration after silence strip: ${durationSeconds.toFixed(1)}s`);
+      wavPath = speedUpForTranscription(wavPath);
 
       // ── Charge check: free minutes first, remainder in credits ────
       let chargeC = await computeCharge(req.session.user.email, durationSeconds, withDiarizationC);
@@ -3132,22 +3537,7 @@ ${transcript}`;
           stream.on('end',  () => resolve(hash.digest('hex')));
           stream.on('error', reject);
         });
-        const existingHashC = await pool.query(
-          `SELECT id, transcript, meeting_title FROM mom_sessions
-           WHERE file_hash = $1 AND user_email = $2
-           AND transcript IS NOT NULL AND LENGTH(TRIM(transcript)) > 50
-           LIMIT 1`,
-          [fileHashC, req.session.user.email]
-        );
-        if (existingHashC.rows.length > 0) {
-          const cachedC = existingHashC.rows[0];
-          console.log(`[dedup] Hash match — reusing session #${cachedC.id}, skipping Sarvam`);
-          return res.json({
-            success: true, session_id: cachedC.id, duplicate: true,
-            message: `Already processed (MOC: "${cachedC.meeting_title}"). Returning existing result.`,
-            mom: cachedC
-          });
-        }
+        // Same file again is allowed: each upload becomes a new MOC with its own ID
       } catch (hashErrC) {
         console.warn('[dedup] Hash check failed, continuing:', hashErrC.message);
       }
@@ -3243,7 +3633,7 @@ ${transcript}`;
         const stub = stubRes.rows[0];
         await linkRecordingConsent(req, stub.id);
         offloadToDriveInBackground(stub.id, req.session.user.email);
-        await fileSessionIntoProject(stub.id, req.session.user.email, req.body?.project_id);
+        await fileSessionIntoProject(stub.id, req.session.user.email, req.body?.project_id, sessionPromptC);
         return res.json({
           success: true, session_id: stub.id, created_at: stub.created_at,
           transcript: '', duration: durationSeconds, detected_language: 'en',
@@ -3296,7 +3686,7 @@ ${transcript}`;
       await linkRecordingConsent(req, saved.id);
       // Recording moves to the customer's Drive in the background, if connected
       offloadToDriveInBackground(saved.id, req.session.user.email);
-      await fileSessionIntoProject(saved.id, req.session.user.email, req.body?.project_id);
+      await fileSessionIntoProject(saved.id, req.session.user.email, req.body?.project_id, sessionPromptC);
       console.log(`[db] Saved as session #${saved.id}`);
       await linkPromptLog(promptLogIdC, saved.id);
       rewardReferralIfDue(req.session.user.email);
@@ -3313,7 +3703,7 @@ ${transcript}`;
                    : `${chunks.length} chunks · ${durationSeconds.toFixed(0)}s audio`,
         units:     durationSeconds,
         unitType:  'seconds',
-        costUsd:   durationSeconds * (diarizedC ? COST.sarvam_diarization_per_second : COST.sarvam_per_second)
+        costUsd:   durationSeconds / TRANSCRIBE_SPEED * (diarizedC ? COST.sarvam_diarization_per_second : COST.sarvam_per_second)
       });
 
       // ── Log Claude usage ──────────────────────────────────────────
@@ -3416,7 +3806,7 @@ ${transcript}`;
           const partialIdC = partialRes.rows[0]?.id;
           await linkRecordingConsent(req, partialIdC);
           offloadToDriveInBackground(partialIdC, req.session.user.email);
-          await fileSessionIntoProject(partialIdC, req.session.user.email, req.body?.project_id);
+          await fileSessionIntoProject(partialIdC, req.session.user.email, req.body?.project_id, sessionPromptC);
           console.warn(`[chunk-upload] AI failed — transcript saved as draft #${partialIdC}`);
 
           let userMsgC = rawMsgC;
@@ -3539,6 +3929,7 @@ ${transcript}`;
       const durationSeconds = getWavDuration(wavPath);
       durationSec = durationSeconds;   // keep hoisted copy for catch block
       console.log(`[transcribe] Duration after silence strip: ${durationSeconds.toFixed(1)}s`);
+      wavPath = speedUpForTranscription(wavPath);
 
       // ── Charge check: free minutes first, remainder in credits ────
       let charge = await computeCharge(req.session.user.email, durationSeconds, withDiarization);
@@ -3554,22 +3945,7 @@ ${transcript}`;
           stream.on('end',  () => resolve(hash.digest('hex')));
           stream.on('error', reject);
         });
-        const existingByHash = await pool.query(
-          `SELECT id, transcript, meeting_title FROM mom_sessions
-           WHERE file_hash = $1 AND user_email = $2
-           AND transcript IS NOT NULL AND LENGTH(TRIM(transcript)) > 50
-           LIMIT 1`,
-          [fileHash, req.session.user.email]
-        );
-        if (existingByHash.rows.length > 0) {
-          const cached = existingByHash.rows[0];
-          console.log(`[dedup] File hash match — reusing session #${cached.id}, skipping Sarvam`);
-          return res.json({
-            success: true, session_id: cached.id, duplicate: true,
-            message: `This file was already processed (MOC: "${cached.meeting_title}"). Returning existing result.`,
-            mom: cached
-          });
-        }
+        // Same file again is allowed: each upload becomes a new MOC with its own ID
       } catch (hashErr) {
         console.warn('[dedup] Hash check failed, continuing:', hashErr.message);
       }
@@ -3742,7 +4118,7 @@ ${transcript}`;
       await linkRecordingConsent(req, saved.id);
       // Recording moves to the customer's Drive in the background, if connected
       offloadToDriveInBackground(saved.id, req.session.user.email);
-      await fileSessionIntoProject(saved.id, req.session.user.email, req.body?.project_id);
+      await fileSessionIntoProject(saved.id, req.session.user.email, req.body?.project_id, sessionPrompt);
       console.log(`[db] Saved as session #${saved.id}`);
       await linkPromptLog(promptLogId, saved.id);
       rewardReferralIfDue(req.session.user.email);
@@ -3759,7 +4135,7 @@ ${transcript}`;
                    : `${chunks.length} chunks · ${durationSeconds.toFixed(0)}s audio`,
         units:     durationSeconds,
         unitType:  'seconds',
-        costUsd:   durationSeconds * (diarized ? COST.sarvam_diarization_per_second : COST.sarvam_per_second)
+        costUsd:   durationSeconds / TRANSCRIBE_SPEED * (diarized ? COST.sarvam_diarization_per_second : COST.sarvam_per_second)
       });
 
       // ── Log Claude usage ──────────────────────────────────────────
@@ -3877,7 +4253,7 @@ ${transcript}`;
           const partialId = partialResult.rows[0]?.id;
           await linkRecordingConsent(req, partialId);
           offloadToDriveInBackground(partialId, req.session.user.email);
-          await fileSessionIntoProject(partialId, req.session.user.email, req.body?.project_id);
+          await fileSessionIntoProject(partialId, req.session.user.email, req.body?.project_id, sessionPrompt);
           console.warn(`[transcribe] AI failed — transcript saved as draft session #${partialId}`);
 
           let userMsg = rawMsg;
@@ -4345,6 +4721,7 @@ ${transcript}`;
       workPath = '';
       wavPath  = await stripSilence(wavPath);
       const durationSeconds = getWavDuration(wavPath);
+      wavPath  = speedUpForTranscription(wavPath);
 
       // ── Charge check: only the speaker-rate difference ──
       const ft = await checkFreeTier(email);
@@ -4369,7 +4746,7 @@ ${transcript}`;
       await logUsage({
         service: 'sarvam_diarization', userEmail: email, sessionId: momId,
         detail: `re-run with speakers · ${diarized.speakerCount} speaker(s) · ${durationSeconds.toFixed(0)}s audio`,
-        units: durationSeconds, unitType: 'seconds', costUsd: durationSeconds * COST.sarvam_diarization_per_second
+        units: durationSeconds, unitType: 'seconds', costUsd: durationSeconds / TRANSCRIBE_SPEED * COST.sarvam_diarization_per_second
       });
 
       const notes = String(req.body?.additional_notes || '').trim().slice(0, 4000);
@@ -4649,11 +5026,132 @@ ${transcript}`;
     return r.rows[0] || null;
   }
 
+  // Project memory for the next MOC: the last few MOCs in the project, oldest
+  // first, with exact name spellings, every decision, each action with its
+  // owner / timeline / open-or-done status, the pending tracker and the agenda
+  // that was proposed for this meeting. A rolled-up register of everything
+  // still open follows, so the model can mark items as followed up, closed or
+  // still pending — but only when this transcript actually says so. Only
+  // conversations created before this one count when a MOC is regenerated.
+  const PROJECT_MEMORY_MOCS  = 5;
+  const PROJECT_MEMORY_CHARS = 14000;
+  async function earlierProjectMocs(email, pid, sessionId) {
+    try {
+      const sid = parseInt(sessionId, 10) || null;
+      const r = await pool.query(`
+        SELECT id, meeting_title, meeting_date, client_name, subject, attendees, summary, executive_summary,
+               decisions, action_items, action_items_done, pending_tracker, next_agenda, next_meeting
+          FROM mom_sessions
+         WHERE project_id = $1 AND user_email = $2 AND COALESCE(summary, '') <> ''
+           AND ($3::int IS NULL OR (id <> $3 AND created_at < (SELECT created_at FROM mom_sessions WHERE id = $3)))
+         ORDER BY created_at DESC LIMIT $4`, [pid, email, sid, PROJECT_MEMORY_MOCS]);
+      if (!r.rows.length) return '';
+
+      const txt = (x, n = 300) => String(typeof x === 'string' ? x
+        : (x?.task || x?.decision || x?.requirement || x?.item || x?.text || x?.point || JSON.stringify(x))).replace(/\s+/g, ' ').trim().slice(0, n);
+      const rows = r.rows.reverse();
+      const names = new Set(), openItems = [];
+
+      const blocks = rows.map((m, i) => {
+        const ref = `M${i + 1}`;
+        const att = safeArr(m.attendees).map(a => txt(a, 80)).filter(Boolean);
+        att.forEach(a => names.add(a));
+        const done = safeObj(m.action_items_done);
+        const acts = safeArr(m.action_items).map((a, j) => {
+          const isDone = !!done[String(j)] || /^(done|closed|completed)$/i.test(String(a?.status || ''));
+          const meta = [a?.owner || a?.responsibility, a?.due_date || a?.due || a?.timeline, a?.priority].filter(Boolean).join(' · ');
+          const lineTxt = `${txt(a)}${meta ? ` [${meta}]` : ''}`;
+          if (!isDone) openItems.push(`${ref}: ${lineTxt}`);
+          return `  ${isDone ? '✓ DONE' : '○ OPEN'}  ${lineTxt}`;
+        });
+        const trk = safeArr(m.pending_tracker).map(t => {
+          const st = String(t?.status || '');
+          const lineTxt = `${t?.area ? t.area + ' — ' : ''}${txt(t?.requirement || t)}${t?.responsible ? ` [${t.responsible}]` : ''}${st ? ` (${st})` : ''}`;
+          if (!/^(received|done|closed|completed)$/i.test(st)) openItems.push(`${ref} tracker: ${lineTxt}`);
+          return `  - ${lineTxt}`;
+        });
+        const xsum = safeArr(m.executive_summary).map(x => txt(x, 400));
+        return [
+          `── ${ref}: "${m.meeting_title || 'Conversation #' + m.id}" (${m.meeting_date || 'date not recorded'})`,
+          (m.client_name || m.subject) ? `Client / subject: ${[m.client_name, m.subject].filter(Boolean).join(' — ')}` : '',
+          att.length ? `Attendees: ${att.join(' · ')}` : '',
+          `Summary: ${xsum.length ? xsum.join(' ') : txt(m.summary, 900)}`,
+          safeArr(m.decisions).length ? `Decisions / agreed directions:\n${safeArr(m.decisions).map(d => `  - ${txt(d)}`).join('\n')}` : '',
+          acts.length ? `Actions:\n${acts.join('\n')}` : '',
+          trk.length ? `Information / pending tracker:\n${trk.join('\n')}` : '',
+          safeArr(m.next_agenda).length ? `Agenda proposed for the next meeting:\n${safeArr(m.next_agenda).map(a => `  - ${txt(a)}`).join('\n')}` : '',
+          m.next_meeting ? `Next meeting noted: ${txt(m.next_meeting, 200)}` : '',
+        ].filter(Boolean).join('\n');
+      });
+
+      let out = `\n\n${'═'.repeat(60)}\nPROJECT MEMORY — ${rows.length} EARLIER CONVERSATION${rows.length > 1 ? 'S' : ''} IN THIS PROJECT (oldest first)\n${'═'.repeat(60)}\n` +
+        `How to use this memory:\n` +
+        `  1. It is background only. Record in this MOC only what THIS transcript actually discusses.\n` +
+        `  2. Spell people, firms, clients and products exactly as they appear here and in the project details, unless this transcript clearly corrects them.\n` +
+        `  3. When this transcript follows up an open item below, show its updated status (completed / in progress / still pending / dropped) as stated in the discussion — never assume progress that is not said.\n` +
+        `  4. Do not copy old decisions, actions or tracker rows into this MOC unless they are re-discussed today. Items not discussed are not mentioned.\n` +
+        `  5. Where today's discussion changes or reverses an earlier decision, say so plainly (for example "revises the direction agreed on <date>").\n` +
+        `  6. If the earlier agenda was proposed for this meeting, use it to recognise topics, not to invent coverage.\n\n` +
+        blocks.join('\n\n');
+      if (names.size) out += `\n\nNAMES SEEN IN THIS PROJECT: ${[...names].join(' · ')}`;
+      if (openItems.length) out += `\n\nSTILL OPEN BEFORE THIS CONVERSATION (${openItems.length}):\n${openItems.map(o => `  ○ ${o}`).join('\n')}`;
+      out += `\n${'═'.repeat(60)}`;
+
+      // Keep the newest detail when the memory is long: drop the oldest blocks first
+      while (out.length > PROJECT_MEMORY_CHARS && blocks.length > 1) {
+        blocks.shift();
+        out = out.replace(/── M\d+:[\s\S]*?(?=\n\n── M|\n\nNAMES SEEN|\n\nSTILL OPEN|\n═)/, '');
+      }
+      console.log(`[moc] Project #${pid} memory: ${rows.length} MOC(s), ${openItems.length} open item(s), ${out.length} chars`);
+      return out.slice(0, PROJECT_MEMORY_CHARS);
+    } catch (e) { console.warn('[moc] Earlier project MOCs unavailable:', e.message); return ''; }
+  }
+
+  // Saves the project's description and context as a new version when they changed
+  async function snapshotProjectContext(p) {
+    try {
+      const last = await pool.query(
+        'SELECT description, context_notes FROM project_context_versions WHERE project_id = $1 ORDER BY id DESC LIMIT 1', [p.id]);
+      const prev = last.rows[0];
+      if (prev && prev.description === (p.description || '') && prev.context_notes === (p.context_notes || '')) return;
+      await pool.query(
+        'INSERT INTO project_context_versions (project_id, user_email, description, context_notes) VALUES ($1, $2, $3, $4)',
+        [p.id, p.user_email, p.description || '', p.context_notes || '']);
+    } catch (e) { console.warn('[projects] Context version not saved:', e.message); }
+  }
+
+  // No project picked: file the conversation into the project whose auto-file
+  // tags (or name) match one of its tags. First match by most recent project wins.
+  async function autoFileByTags(sessionId, email) {
+    try {
+      const sr = await pool.query('SELECT tags, project_id FROM mom_sessions WHERE id = $1 AND user_email = $2', [sessionId, email]);
+      const ses = sr.rows[0];
+      if (!ses || ses.project_id) return;
+      const norm = t => String(t || '').trim().toLowerCase();
+      const tags = new Set(String(ses.tags || '').split(',').map(norm).filter(Boolean));
+      if (!tags.size) return;
+      const pr = await pool.query(
+        'SELECT id, name, auto_tags FROM projects WHERE user_email = $1 AND archived = FALSE ORDER BY updated_at DESC', [email]);
+      const hit = pr.rows.find(p => [p.name, ...String(p.auto_tags || '').split(',')].map(norm).some(t => t && tags.has(t)));
+      if (!hit) return;
+      await pool.query('UPDATE mom_sessions SET project_id = $1 WHERE id = $2 AND user_email = $3 AND project_id IS NULL', [hit.id, sessionId, email]);
+      await pool.query('UPDATE projects SET updated_at = NOW() WHERE id = $1', [hit.id]);
+      console.log(`[projects] Session #${sessionId} auto-filed into project #${hit.id} by tag`);
+    } catch (err) { console.warn('[projects] Auto-file by tag failed:', err.message); }
+  }
+
   // Files a freshly created conversation into the project chosen on the upload
   // screen. Kept separate from the INSERT statements so the MOC is never lost
   // over a bad project id — a wrong or missing project just leaves it unfiled.
-  async function fileSessionIntoProject(sessionId, email, rawProjectId) {
+  async function fileSessionIntoProject(sessionId, email, rawProjectId, sessionPrompt = '') {
+    if (sessionId && sessionPrompt) {
+      try {
+        await pool.query('UPDATE mom_sessions SET session_prompt = $1 WHERE id = $2 AND user_email = $3',
+          [String(sessionPrompt).slice(0, 8000), sessionId, email]);
+      } catch (err) { console.warn('[projects] Could not save session prompt:', err.message); }
+    }
     const pid = parseInt(rawProjectId, 10);
+    if (sessionId && !Number.isInteger(pid)) return autoFileByTags(sessionId, email);
     if (!sessionId || !Number.isInteger(pid)) return;
     try {
       if (!(await ownedProject(email, pid))) return;
@@ -4668,7 +5166,7 @@ ${transcript}`;
     try {
       const includeArchived = req.query.archived === '1';
       const r = await pool.query(`
-        SELECT p.id, p.name, p.description, p.context_notes, p.color, p.archived,
+        SELECT p.id, p.name, p.description, p.context_notes, p.color, p.archived, p.carry_forward, p.auto_tags,
                p.created_at, p.updated_at,
                COUNT(s.id)::int AS session_count,
                MAX(s.created_at) AS last_activity
@@ -4693,13 +5191,15 @@ ${transcript}`;
       if (!name) return res.status(400).json({ error: 'Give the project a name.' });
 
       const r = await pool.query(`
-        INSERT INTO projects (user_email, name, description, context_notes, color)
-        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        INSERT INTO projects (user_email, name, description, context_notes, color, auto_tags)
+        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
         [req.session.user.email, name,
          String(req.body?.description   || '').slice(0, 2000),
          String(req.body?.context_notes || '').slice(0, 8000),
-         String(req.body?.color || '').slice(0, 20)]);
+         String(req.body?.color || '').slice(0, 20),
+         String(req.body?.auto_tags || '').slice(0, 1000)]);
 
+      await snapshotProjectContext(r.rows[0]);
       console.log(`[projects] ${req.session.user.email} created "${name}"`);
       res.json({ success: true, project: r.rows[0] });
     } catch (err) {
@@ -4727,18 +5227,65 @@ ${transcript}`;
       if (req.body?.context_notes !== undefined) put('context_notes', String(req.body.context_notes).slice(0, 8000));
       if (req.body?.color         !== undefined) put('color',         String(req.body.color).slice(0, 20));
       if (req.body?.archived      !== undefined) put('archived',      !!req.body.archived);
+      if (req.body?.carry_forward !== undefined) put('carry_forward', !!req.body.carry_forward);
+      if (req.body?.auto_tags     !== undefined) put('auto_tags',     String(req.body.auto_tags).slice(0, 1000));
       if (!sets.length) return res.status(400).json({ error: 'Nothing to update.' });
 
       sets.push('updated_at = NOW()');
       vals.push(req.params.id, email);
       const r = await pool.query(
         `UPDATE projects SET ${sets.join(', ')} WHERE id = $${vals.length - 1} AND user_email = $${vals.length} RETURNING *`, vals);
+      await snapshotProjectContext(r.rows[0]);
 
       res.json({ success: true, project: r.rows[0] });
     } catch (err) {
       if (err.code === '23505') return res.status(409).json({ error: 'You already have a project with that name.' });
       res.status(500).json({ error: err.message });
     }
+  });
+
+  // Context history: every saved version, newest first
+  app.get('/api/projects/:id/versions', requireAuth, async (req, res) => {
+    try {
+      if (!(await ownedProject(req.session.user.email, req.params.id)))
+        return res.status(404).json({ error: 'Project not found.' });
+      const r = await pool.query(
+        'SELECT id, description, context_notes, created_at FROM project_context_versions WHERE project_id = $1 ORDER BY id DESC LIMIT 100',
+        [req.params.id]);
+      res.json({ versions: r.rows });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+  });
+
+  // Exactly what the next MOC in this project will receive as project context
+  app.get('/api/projects/:id/memory', requireAuth, async (req, res) => {
+    try {
+      const email = req.session.user.email;
+      const p = await ownedProject(email, req.params.id);
+      if (!p) return res.status(404).json({ error: 'Project not found.' });
+      const memory = p.carry_forward === false ? '' : await earlierProjectMocs(email, p.id, null);
+      const n = await pool.query(
+        `SELECT COUNT(*)::int AS n FROM mom_sessions WHERE project_id = $1 AND user_email = $2 AND COALESCE(summary, '') <> ''`, [p.id, email]);
+      res.json({ name: p.name, instructions: p.context_notes || '', description: p.description || '',
+                 carry_forward: p.carry_forward !== false, earlier_mocs: Math.min(n.rows[0].n, PROJECT_MEMORY_MOCS), memory });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+  });
+
+  // Conversations in the project with the prompt each one was generated with
+  app.get('/api/projects/:id/prompts', requireAuth, async (req, res) => {
+    try {
+      const email = req.session.user.email;
+      if (!(await ownedProject(email, req.params.id)))
+        return res.status(404).json({ error: 'Project not found.' });
+      const r = await pool.query(`
+        SELECT s.id, s.meeting_title, s.file_name, s.meeting_date, s.created_at, s.tags, s.summary,
+               COALESCE(s.session_prompt, '') AS session_prompt,
+               COALESCE(l.composer_prompt, '') AS composed_prompt
+          FROM mom_sessions s
+          LEFT JOIN LATERAL (SELECT composer_prompt FROM moc_prompt_log
+                              WHERE session_id = s.id ORDER BY id DESC LIMIT 1) l ON TRUE
+         WHERE s.project_id = $1 AND s.user_email = $2 ORDER BY s.created_at ASC`, [req.params.id, email]);
+      res.json({ conversations: r.rows });
+    } catch (err) { res.status(500).json({ error: err.message }); }
   });
 
   // Deleting a project never deletes the conversations in it — they go back to
@@ -5184,6 +5731,7 @@ ${transcript}`;
   app.get('/history',requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'history.html')));
   app.get('/actions', requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'actions.html')));
   app.get('/projects', requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'projects.html')));
+  app.get('/project',  requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'project.html')));
   app.get('/profile.html',requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'profile.html')));
   // Old links and bookmarks used /login
   app.get('/login', (req, res) => {
@@ -5267,8 +5815,8 @@ ${transcript}`;
     res.sendFile(path.join(__dirname, 'public', 'activity.html'));
   });
 
+  // Public, so visitors can check prices before signing up; buying still needs sign-in
   app.get('/pricing', (req, res) => {
-    if (!req.session?.user) return res.redirect('/login.html');
     res.sendFile(path.join(__dirname, 'public', 'pricing.html'));
   });
 
@@ -6538,7 +7086,7 @@ ${transcript}`;
     const code = String(req.params.code || '').replace(/[^a-z0-9]/gi, '').slice(0, 16).toUpperCase();
     if (code) res.cookie('aix_ref', code, { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax', path: '/',
                                             secure: process.env.NODE_ENV === 'production' });
-    res.redirect(req.session?.user ? '/' : '/login.html?invited=1');
+    res.redirect(req.session?.user ? '/' : '/login.html?invited=1&ref=' + encodeURIComponent(code));
   });
 
   // GET — the user's invite link and referral earnings (creates the code on first use)
@@ -6861,10 +7409,13 @@ ${transcript}`;
       const r = await pool.query(`
         SELECT l.id, l.session_id, l.user_email, l.flow, l.master_prompt_id, l.composer_model, l.moc_model,
                l.composer_error, l.created_at, LENGTH(l.final_system_prompt) AS prompt_length,
-               l.composer_output->>'meeting_type' AS meeting_type, s.meeting_title
+               l.composer_output->>'meeting_type' AS meeting_type, s.meeting_title,
+               s.project_id, p.name AS project_name
         FROM moc_prompt_log l
         LEFT JOIN mom_sessions s ON s.id = l.session_id
-        ORDER BY l.id DESC LIMIT $1`, [limit]);
+        LEFT JOIN projects p ON p.id = s.project_id
+        WHERE ($2::text IS NULL OR ($2 = 'none' AND s.project_id IS NULL) OR p.name = $2)
+        ORDER BY l.id DESC LIMIT $1`, [limit, req.query.project || null]);
       res.json({ logs: r.rows });
     } catch (err) { res.status(500).json({ error: err.message }); }
   });
@@ -7341,6 +7892,222 @@ Body rules (plain text, \\n for line breaks):
   //  F03 — WORD (.docx) EXPORT
   // ════════════════════════════════════════════════════════════════════════════
 
+  // Shared Word layout for MOC and transcript downloads — matches the firm's client MOC format:
+  // centred letterhead, blue section headings, light-blue key-facts table, blue table headers, footer line.
+  function mocDocxKit(docxLib, lh) {
+    const {
+      Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType,
+      AlignmentType, Footer, PageNumber, LevelFormat, VerticalAlign,
+    } = docxLib;
+    const BLUE = '265D85', TINT = 'EAF1F6', ORANGE = 'F48120', GREY = '666666', INK = '1F2937', GRID = 'BFC9D3';
+    const FONT = 'Aptos';
+    const LINES = t => String(t == null ? '' : t).split(String.fromCharCode(10)).map(x => x.trim()).filter(Boolean);
+    const run = (text, o = {}) => new TextRun({ text: String(text == null ? '' : text), font: FONT, size: 20, color: INK, ...o });
+    const border = { style: BorderStyle.SINGLE, size: 4, color: GRID };
+    const borders = { top: border, bottom: border, left: border, right: border, insideHorizontal: border, insideVertical: border };
+
+    const K = {
+      LINES,
+      body: (text, o = {}) => new Paragraph({ children: [run(text, o.run)], spacing: { after: o.after == null ? 100 : o.after, line: 276 } }),
+      bullet: (text, o = {}) => new Paragraph({ children: [run(text, o.run)], numbering: { reference: 'moc-bullets', level: 0 }, spacing: { after: 60, line: 264 } }),
+      numbered: (text) => new Paragraph({ children: [run(text)], numbering: { reference: 'moc-numbers', level: 0 }, spacing: { after: 60, line: 264 } }),
+      h1: text => new Paragraph({ children: [run(text, { bold: true, size: 26, color: BLUE })], keepNext: true, spacing: { before: 280, after: 100 } }),
+      h2: text => new Paragraph({ children: [run(text, { bold: true, size: 21, color: BLUE })], keepNext: true, spacing: { before: 180, after: 60 } }),
+      gap: () => new Paragraph({ children: [], spacing: { after: 60 } }),
+      // "Discussion: …" / "Outcome: …" — bold label, plain text
+      labelled: (label, text) => new Paragraph({ children: [run(`${label}: `, { bold: true, color: BLUE }), run(text)], spacing: { after: 90, line: 276 } }),
+      // Shaded panel with an orange left rule, for the executive summary
+      callout: text => new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: { top: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }, bottom: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+                   right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }, left: { style: BorderStyle.SINGLE, size: 24, color: ORANGE },
+                   insideHorizontal: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }, insideVertical: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' } },
+        rows: [new TableRow({ children: [new TableCell({
+          shading: { type: ShadingType.CLEAR, color: 'auto', fill: TINT },
+          margins: { top: 120, bottom: 120, left: 180, right: 180 },
+          children: LINES(text).map(l => new Paragraph({ children: [run(l, { size: 21 })], spacing: { after: 60, line: 288 } })),
+        })] })],
+      }),
+
+      // Letterhead block: firm, service line, document title, "client | date" line
+      letterhead: (title, subline) => [
+        ...(lh.firm_name ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 20 },
+          children: [run(String(lh.firm_name).toUpperCase(), { bold: true, size: 18, color: ORANGE })] })] : []),
+        ...(lh.firm_service_line ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 40 },
+          children: [run(lh.firm_service_line, { size: 18, color: GREY })] })] : []),
+        new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 100 },
+          children: [run(title, { font: 'Aptos Display', bold: true, size: 40, color: BLUE })] }),
+        ...(subline ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 160 },
+          children: [run(subline, { bold: true, size: 21 })] })] : []),
+      ],
+
+      // Two-column key facts: shaded label, plain value; empty values are skipped
+      facts: pairs => new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE }, borders,
+        rows: pairs.filter(p => p[1]).map(([k, v]) => new TableRow({ children: [
+          new TableCell({ width: { size: 24, type: WidthType.PERCENTAGE }, verticalAlign: VerticalAlign.CENTER,
+            shading: { type: ShadingType.CLEAR, color: 'auto', fill: TINT },
+            margins: { top: 75, bottom: 75, left: 110, right: 110 },
+            children: [new Paragraph({ children: [run(k, { bold: true, size: 17 })] })] }),
+          new TableCell({ width: { size: 76, type: WidthType.PERCENTAGE }, verticalAlign: VerticalAlign.CENTER,
+            margins: { top: 75, bottom: 75, left: 110, right: 110 },
+            children: LINES(v).map(l => new Paragraph({ children: [run(l, { size: 17 })] })) }),
+        ] })),
+      }),
+
+      // Data table with a blue header row that repeats on each page
+      table: (headers, rows, widths, opt = {}) => new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE }, borders,
+        rows: [
+          new TableRow({ tableHeader: true, cantSplit: true, children: headers.map((h, i) => new TableCell({
+            width: { size: widths[i], type: WidthType.PERCENTAGE }, verticalAlign: VerticalAlign.CENTER,
+            shading: { type: ShadingType.CLEAR, color: 'auto', fill: BLUE },
+            margins: { top: 70, bottom: 70, left: 90, right: 90 },
+            children: [new Paragraph({ children: [run(h, { bold: true, size: 17, color: 'FFFFFF' })] })] })) }),
+          ...rows.map((r, ri) => new TableRow({ cantSplit: true, children: r.map((c, i) => new TableCell({
+            width: { size: widths[i], type: WidthType.PERCENTAGE }, verticalAlign: VerticalAlign.CENTER,
+            // light banding keeps long trackers readable
+            ...(ri % 2 ? { shading: { type: ShadingType.CLEAR, color: 'auto', fill: 'F7F9FB' } } : {}),
+            margins: { top: 60, bottom: 60, left: 90, right: 90 },
+            children: (LINES(c).length ? LINES(c) : ['—']).map(l => new Paragraph({
+              alignment: (opt.center || []).includes(i) ? AlignmentType.CENTER : AlignmentType.LEFT,
+              children: [run(l, { size: 18 })] })) })) })),
+        ],
+      }),
+
+      footer: extra => new Footer({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [
+        run([lh.firm_name || 'AiX Track', lh.firm_service_line, extra].filter(Boolean).join(' | '), { size: 16, color: GREY }),
+        run('   |   Page ', { size: 16, color: GREY }),
+        new TextRun({ children: [PageNumber.CURRENT], font: FONT, size: 16, color: GREY }),
+      ] })] }),
+
+      numbering: { config: [
+        { reference: 'moc-bullets', levels: [{ level: 0, format: LevelFormat.BULLET, text: '•', alignment: AlignmentType.LEFT,
+          style: { paragraph: { indent: { left: 360, hanging: 240 } } } }] },
+        { reference: 'moc-numbers', levels: [{ level: 0, format: LevelFormat.DECIMAL, text: '%1.', alignment: AlignmentType.LEFT,
+          style: { paragraph: { indent: { left: 360, hanging: 300 } } } }] },
+      ] },
+      styles: { default: { document: { run: { font: FONT, size: 20 } } } },
+      // A4 portrait
+      page: { size: { width: 11906, height: 16838 }, margin: { top: 1000, bottom: 1000, left: 1000, right: 1000 } },
+    };
+    return K;
+  }
+
+  const niceDocDate = d => /^\d{4}-\d{2}-\d{2}$/.test(d || '')
+    ? new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : (d || '');
+  const letterheadOf = async email => (await pool.query(
+    'SELECT firm_name, firm_service_line, prepared_by, moc_disclaimer FROM users WHERE email = $1', [email])).rows[0] || {};
+
+  // Open actions grouped the way the client reads them: from the client, from
+  // the advisor — or, for an internal meeting with neither side, by owner.
+  function clientMomPendingGroups(m, cm, lhFirm) {
+    const open = (Array.isArray(cm.actions) ? cm.actions : []).filter(a => !/^completed$/i.test(a.status || ''));
+    const side = s => open.filter(a => String(a.owner_side || '').toLowerCase() === s);
+    if (side('client').length || side('advisor').length) {
+      return [
+        { title: `Pending from ${m.client_name || 'Client'}`, items: side('client'), empty: 'No pending items from the client.' },
+        { title: `Pending from ${lhFirm || 'Advisor'}`, items: side('advisor'), empty: 'No pending items from the advisor.' },
+      ];
+    }
+    const byOwner = {};
+    open.forEach(a => { (byOwner[a.owner || 'Owner to be confirmed'] = byOwner[a.owner || 'Owner to be confirmed'] || []).push(a); });
+    return [{ title: 'Pending by Owner', owners: byOwner, empty: 'No open actions.' }];
+  }
+
+  // Client-Ready MOC as a print-ready HTML page. The browser renders every
+  // script (Gujarati, Hindi …) correctly, so "Save as PDF" gives a clean file.
+  app.get('/api/history/:id/client-mom.html', requireAuth, async (req, res) => {
+    try {
+      const r = await pool.query('SELECT * FROM mom_sessions WHERE id = $1 AND user_email = $2', [parseInt(req.params.id), req.session.user.email]);
+      const m = r.rows[0];
+      if (!m) return res.status(404).send('Not found.');
+      const qual = (m.moc_quality && typeof m.moc_quality === 'object') ? m.moc_quality : {};
+      const cm = qual.client_mom;
+      if (!cm || typeof cm !== 'object') return res.status(404).json({ error: 'This MOC has no client-ready version yet. Regenerate it to create one.' });
+
+      const lh = await letterheadOf(req.session.user.email);
+      const lhFirm = String(lh.firm_name || '').trim();
+      const e = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      const arr = v => Array.isArray(v) ? v : (() => { try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch { return []; } })();
+      const att = arr(m.attendees);
+      const refId = `MOC-${new Date(m.created_at).getFullYear()}-${String(m.id).padStart(4, '0')}`;
+      const dateTxt = niceDocDate(m.meeting_date);
+      const tbl = (head, rows, widths, center = []) => `<table><colgroup>${widths.map(w => `<col style="width:${w}%">`).join('')}</colgroup>
+        <thead><tr>${head.map(h => `<th>${e(h)}</th>`).join('')}</tr></thead>
+        <tbody>${rows.map(row => `<tr>${row.map((c, i) => `<td${center.includes(i) ? ' class="c"' : ''}>${e(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+      let n = 0;
+      const H = t => `<h2>${++n}. ${e(t)}</h2>`;
+      const actLine = a => `${e(a.action)} <span class="muted">(${e(a.action_id)}${/to be confirmed/i.test(a.target_date || '') ? '' : ' · ' + e(a.target_date)})</span>`;
+      const acts = arr(cm.actions), decs = arr(cm.decisions), pend = arr(cm.pending_decisions), agenda = arr(cm.agenda);
+
+      let body = `<header>
+        ${lhFirm ? `<div class="firm">${e(lhFirm.toUpperCase())}</div>` : ''}${lh.firm_service_line ? `<div class="svc">${e(lh.firm_service_line)}</div>` : ''}
+        <h1>Minutes of Conversation</h1><div class="sub">${e([m.client_name, m.subject || m.meeting_title].filter(Boolean).join('  |  '))}</div></header>`;
+      body += H('Meeting Information') + `<table class="facts">${[
+        ['Company / Client', m.client_name || 'Not confirmed'], ['Meeting Title', m.meeting_title || 'Not confirmed'],
+        ['Date', dateTxt || 'Not confirmed'], ['Time', m.meeting_time || 'Not confirmed'], ['Mode / Location', m.location || 'Not confirmed'],
+        ['Participants', att.length ? att.join(', ') : 'Not confirmed'], ['Reference', refId], ['Prepared By', lh.prepared_by || lhFirm],
+      ].filter(p => p[1]).map(p => `<tr><th>${e(p[0])}</th><td>${e(p[1])}</td></tr>`).join('')}</table>`;
+      if (qual.objective) body += `<p class="obj"><b>Objective:</b> ${e(qual.objective)}</p>`;
+      body += H('Executive Summary') + `<div class="callout">${e(cm.executive_summary || m.summary || 'Not recorded.')}</div>`;
+      const n3 = n + 1;
+      body += H('Agenda-wise Discussion & Outcomes') + (agenda.length ? agenda.map((t, i) => `<h3>${n3}.${i + 1} ${e(t.topic)}</h3>` +
+        (t.discussion ? `<p><b class="lbl">Discussion:</b> ${e(t.discussion)}</p>` : '') +
+        (arr(t.terms).length ? tbl(['Particular', 'Discussion / position'], arr(t.terms).map(x => [x.term, x.position]), [32, 68]) : '') +
+        (t.outcome ? `<p><b class="lbl">Outcome:</b> ${e(t.outcome)}</p>` : '')).join('') : '<p>No material business topics were recorded.</p>');
+      body += H('Key Decisions') + (decs.length ? tbl(['No.', 'Decision', 'Status'], decs.map((d, i) => [i + 1, d.decision, d.status]), [8, 70, 22], [0])
+        : '<p>No material decisions were formally confirmed during the meeting.</p>');
+      body += H('Action Item Tracker') + (acts.length ? tbl(['ID', 'Action / Deliverable', 'Responsible', 'Target Date', 'Status'],
+        acts.map(a => [a.action_id, a.action, a.owner, a.target_date, a.status]), [8, 46, 18, 15, 13], [0])
+        : '<p>No action items were confirmed during the meeting.</p>');
+      clientMomPendingGroups(m, cm, lhFirm).forEach(g => {
+        body += H(g.title);
+        if (g.owners) {
+          const owners = Object.keys(g.owners);
+          body += owners.length ? owners.map(o => `<p class="owner">${e(o)}</p><ol>${g.owners[o].map(a => `<li>${actLine(a)}</li>`).join('')}</ol>`).join('') : `<p>${g.empty}</p>`;
+        } else body += g.items.length ? `<ol>${g.items.map(a => `<li>${actLine(a)}</li>`).join('')}</ol>` : `<p>${g.empty}</p>`;
+      });
+      body += H('Pending Decisions / Clarifications') + (pend.length ? tbl(['No.', 'Matter', 'Clarification Required'],
+        pend.map((p, i) => [i + 1, p.matter, p.clarification]), [8, 34, 58], [0]) : '<p>No pending decisions were recorded.</p>');
+      body += H('Next Meeting') + `<p>${e(cm.next_meeting || m.next_meeting || 'Next meeting schedule to be confirmed.')}</p>`;
+      if (cm.conclusion) body += H('Conclusion') + `<p>${e(cm.conclusion)}</p>`;
+      body += `<p class="disc">${e(lh.moc_disclaimer || DEFAULT_MOC_DISCLAIMER)}</p>`;
+
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOC ${e(m.client_name || m.meeting_title || '')} ${refId}</title>
+<style>
+@page{size:A4;margin:16mm 15mm 18mm}
+*{box-sizing:border-box}
+body{font-family:Aptos,Calibri,"Segoe UI","Noto Sans Gujarati","Noto Sans Devanagari",Arial,sans-serif;color:#1F2937;font-size:10.5pt;line-height:1.5;margin:0 auto;max-width:180mm;padding:12mm 0}
+header{text-align:center;margin-bottom:14px;border-bottom:3px solid #F48120;padding-bottom:10px}
+.firm{color:#F48120;font-weight:700;font-size:9pt;letter-spacing:.08em}.svc{color:#666;font-size:9pt}
+h1{color:#265D85;font-size:18pt;margin:6px 0 2px;letter-spacing:.02em;text-transform:uppercase}
+.sub{font-weight:700;font-size:10.5pt}
+h2{color:#265D85;font-size:12.5pt;margin:18px 0 6px;break-after:avoid;border-bottom:1px solid #DCE4EB;padding-bottom:3px}
+h3{color:#265D85;font-size:11pt;margin:12px 0 4px;break-after:avoid}
+p{margin:0 0 7px}.lbl{color:#265D85}.muted{color:#6B7280;font-size:9pt}
+.obj{margin-top:8px}
+table{width:100%;border-collapse:collapse;margin:4px 0 10px;font-size:9.5pt;table-layout:fixed}
+th,td{border:1px solid #BFC9D3;padding:5px 7px;vertical-align:top;text-align:left;word-wrap:break-word}
+thead th{background:#265D85;color:#fff;font-weight:700}
+thead{display:table-header-group}tr{break-inside:avoid}
+tbody tr:nth-child(even) td{background:#F7F9FB}
+td.c{text-align:center}
+.facts th{background:#EAF1F6;width:26%;color:#1F2937}
+.callout{background:#EAF1F6;border-left:4px solid #F48120;padding:10px 14px;font-size:10.5pt;line-height:1.6}
+ol{margin:0 0 8px;padding-left:22px}li{margin-bottom:3px}
+.owner{font-weight:700;margin:8px 0 2px}
+.disc{margin-top:22px;font-size:8pt;color:#666;font-style:italic;border-top:1px solid #DCE4EB;padding-top:8px}
+.bar{position:sticky;top:0;background:#fff;padding:8px 0;text-align:right}
+.bar button{background:#265D85;color:#fff;border:0;border-radius:999px;padding:8px 18px;font:inherit;cursor:pointer}
+@media print{.bar{display:none}body{padding:0}}
+</style></head><body><div class="bar"><button onclick="print()">Save as PDF</button></div>${body}
+<script>if(location.hash==='#print')addEventListener('load',()=>setTimeout(print,300));</script></body></html>`);
+    } catch (err) { res.status(500).send(err.message); }
+  });
+
   app.get('/api/history/:id/export/docx', requireAuth, async (req, res) => {
     let docxLib;
     try { docxLib = require('docx'); } catch {
@@ -7370,6 +8137,9 @@ Body rules (plain text, \\n for line breaks):
       //   client  (?view=client) — Client MOC: agenda business, confirmed decisions, agreed actions only
       const CLIENT   = req.query.view === 'client';
       const qual     = (m.moc_quality && typeof m.moc_quality === 'object') ? m.moc_quality : {};
+      const lh       = await letterheadOf(req.session.user.email);
+      const lhFirm   = String(lh.firm_name || '').trim();
+      const pendingDec = safeArr(qual.pending_decisions);
       const matters  = safeArr(qual.matters_discussed);
       const conclusions = safeArr(qual.working_conclusions).map(String).filter(Boolean);
       const figures  = safeArr(qual.key_figures);
@@ -7383,7 +8153,16 @@ Body rules (plain text, \\n for line breaks):
       const aiView   = CLIENT ? ai.filter(a => a && !a.requires_confirmation) : ai;
       // Client-facing wording for gaps: "To be confirmed" reads as a next step, "Not agreed" as a dispute
       const GAP_RE   = /^(—|-|not assigned|tbd|not agreed|not established|not recorded|status not established)$/i;
-      const ownerOf  = a => (!a.owner || GAP_RE.test(String(a.owner).trim())) ? 'To be confirmed' : a.owner;
+      const ownerRaw = a => (!a.owner || GAP_RE.test(String(a.owner).trim())) ? 'To be confirmed' : a.owner;
+      // Client view names both sides the way the client reads them: "CAST 360 / Client", "RMPS & Co / Advisor"
+      const ownerOf  = a => {
+        const o = ownerRaw(a);
+        if (!CLIENT) return o;
+        if (/^client$/i.test(o)) return m.client_name ? `${m.client_name} / Client` : 'Client';
+        if (/^(advisor|advisory|advising firm)$/i.test(o) || (lhFirm && o.toLowerCase() === lhFirm.toLowerCase())) return `${lhFirm || 'Advisor'} / Advisor`;
+        if (/^joint$/i.test(o)) return m.client_name ? `Joint - ${m.client_name} / Advisor` : 'Joint';
+        return o;
+      };
       const timingOf = a => (a.timeline && !GAP_RE.test(String(a.timeline).trim())) ? a.timeline
         : (a.due_date && a.due_date !== 'TBD' ? a.due_date : 'To be confirmed');
       const gapText  = (v, fb) => (!v || GAP_RE.test(String(v).trim())) ? fb : v;
@@ -7391,7 +8170,8 @@ Body rules (plain text, \\n for line breaks):
         x.status ? `Status: ${x.status}.` : ''].filter(Boolean).join(' ');
       const figureRows = figures.map(f => [
         f.label || '',
-        [f.approximate ? '~' : '', f.amount || '', f.unit && !/INR|%/.test(f.unit) ? ' ' + f.unit : ''].join('').replace(/^~~/, '~'),
+        // the unit is added only when the amount does not already say it ("50 pieces … units" read twice)
+        [f.approximate ? '~' : '', f.amount || '', f.unit && !/INR|%/.test(f.unit) && /^[\d.,\s~₹-]+$/.test(String(f.amount || '')) ? ' ' + f.unit : ''].join('').replace(/^~~/, '~'),
         [f.basis && f.basis !== 'not stated' ? f.basis : '', f.period && f.period !== 'not stated' ? f.period : ''].filter(Boolean).join(', ') || 'Not stated',
         [String(f.source_type || '').replace(/_/g, ' '), f.note || ''].filter(Boolean).join(' — '),
       ]);
@@ -7405,442 +8185,295 @@ Body rules (plain text, \\n for line breaks):
       ];
       const qualityNotes = qReport ? safeArr(qReport.warnings) : [];
 
-      const {
-        Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-        WidthType, BorderStyle, ShadingType, AlignmentType, HeadingLevel,
-        convertInchesToTwip, UnderlineType
-      } = docxLib;
+      const { Document, Packer } = docxLib;
+      const K  = mocDocxKit(docxLib, lh);
+      const exec    = safeArr(m.executive_summary);
+      const pending = safeArr(m.pending_tracker);
+      const agendaN = safeArr(m.next_agenda);
+      const A = [];
+      let secNo = 0;
+      const sec = txt => { secNo++; A.push(K.h1(`${secNo}. ${txt}`)); return secNo; };
+      const dateTxt = niceDocDate(m.meeting_date);
 
-      // ── helpers ──
-      const NAVY   = '0F1B3D';
-      const GOLD   = 'B8912A';
-      const SAGE   = '4A7C59';
-      const RUST   = 'A0472E';
-      const INK2   = '4A5468';
-      const INK3   = '8A93A8';
+      // ── Client-Ready MOC: the short document written for the client ──
+      // Used whenever the MOC carries a client_mom layer; older MOCs fall back
+      // to the trimmed client view further down.
+      const cm = CLIENT && qual.client_mom && typeof qual.client_mom === 'object' ? qual.client_mom : null;
+      if (cm) {
+        const cAgenda = safeArr(cm.agenda), cDec = safeArr(cm.decisions), cAct = safeArr(cm.actions);
+        const cPend = safeArr(cm.pending_decisions);
 
-      const mono = t => new TextRun({ text: t, font: 'Courier New', size: 16, color: INK3 });
-      const sectionTitle = txt => new Paragraph({
-        children: [new TextRun({ text: txt.toUpperCase(), bold: true, size: 18, color: NAVY, font: 'Calibri', characterSpacing: 30 })],
-        spacing: { before: 280, after: 100 },
-        border:  { bottom: { style: BorderStyle.SINGLE, size: 6, color: GOLD, space: 4 } },
-      });
-      const bullet = txt => new Paragraph({
-        children: [new TextRun({ text: `•  ${txt}`, size: 20, font: 'Calibri', color: INK2 })],
-        spacing:  { after: 50 },
-        indent:   { left: 280 },
-      });
+        A.push(...K.letterhead('MINUTES OF CONVERSATION', [m.client_name, m.subject || m.meeting_title].filter(Boolean).join('  |  ')));
+        sec('Meeting Information');
+        A.push(K.facts([
+          ['Company / Client', m.client_name || 'Not confirmed'],
+          ['Meeting Title', m.meeting_title || 'Not confirmed'],
+          ['Date', dateTxt || 'Not confirmed'],
+          ['Time', m.meeting_time || 'Not confirmed'],
+          ['Mode / Location', m.location || 'Not confirmed'],
+          ['Participants', att.length ? att.join(', ') : 'Not confirmed'],
+          ['Reference', refId],
+          ['Prepared By', lh.prepared_by || lh.firm_name],
+        ]));
+        if (qual.objective) A.push(K.gap(), K.body(`Objective: ${qual.objective}`, { run: { bold: true } }));
 
-      // ══════════════════════════════════════════════════════════════════════
-      //  ADVISORY TEMPLATE — professional client minutes
-      //  Letterhead, metadata table, themed executive summary, action plan and
-      //  pending tracker as tables, themed discussion, working conclusions,
-      //  proposed agenda, disclaimer.
-      // ══════════════════════════════════════════════════════════════════════
-      if (mocTemplateKey(m.moc_template) === 'advisory') {
-        const lh = (await pool.query(
-          'SELECT firm_name, firm_service_line, prepared_by, moc_disclaimer FROM users WHERE email = $1',
-          [req.session.user.email])).rows[0] || {};
+        sec('Executive Summary');
+        A.push(K.callout(cm.executive_summary || m.summary || 'Not recorded.'));
 
-        const exec    = safeArr(m.executive_summary);
-        const pending = safeArr(m.pending_tracker);
-        const agendaN = safeArr(m.next_agenda);
-        const LINES   = t => String(t == null ? '' : t)
-          .split(String.fromCharCode(10)).map(x => x.trim()).filter(Boolean);
-
-        const A = [];
-        const body = (text, opts = {}) => new Paragraph({
-          children: [new TextRun({ text, size: 20, font: 'Calibri', color: INK2, ...(opts.run || {}) })],
-          spacing: { after: opts.after == null ? 120 : opts.after, line: 276 },
-          ...(opts.indent ? { indent: opts.indent } : {}),
+        const n3 = sec('Agenda-wise Discussion & Outcomes');
+        if (cAgenda.length) cAgenda.forEach((t, i) => {
+          A.push(K.h2(`${n3}.${i + 1} ${t.topic}`));
+          if (t.discussion) A.push(K.labelled('Discussion', t.discussion));
+          const terms = safeArr(t.terms);
+          if (terms.length) A.push(K.table(['Particular', 'Discussion / position'], terms.map(x => [x.term, x.position || '']), [32, 68]), K.gap());
+          if (t.outcome) A.push(K.labelled('Outcome', t.outcome));
         });
-        const numbered = txt => new Paragraph({
-          children: [new TextRun({ text: txt, size: 20, font: 'Calibri', color: INK2 })],
-          spacing: { after: 80, line: 276 }, indent: { left: 280, hanging: 280 },
-        });
-        const secHead = txt => new Paragraph({
-          children: [new TextRun({ text: txt, bold: true, size: 24, color: NAVY, font: 'Calibri' })],
-          spacing: { before: 320, after: 140 },
-          border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: GOLD, space: 4 } },
-        });
-        const themeHead = txt => new Paragraph({
-          children: [new TextRun({ text: txt, bold: true, size: 21, color: NAVY, font: 'Calibri' })],
-          spacing: { before: 220, after: 90 },
-        });
+        else A.push(K.body('No material business topics were recorded.'));
 
-        const cell = (text, o = {}) => new TableCell({
-          width: { size: o.w || 25, type: WidthType.PERCENTAGE },
-          shading: o.head ? { type: ShadingType.CLEAR, fill: 'F2EFE7' } : undefined,
-          margins: { top: 90, bottom: 90, left: 120, right: 120 },
-          children: LINES(text).length
-            ? LINES(text).map(l => new Paragraph({
-                children: [new TextRun({
-                  text: l, size: o.head ? 17 : 19, font: 'Calibri',
-                  bold: !!o.head, color: o.head ? NAVY : INK2,
-                })],
-                spacing: { after: 0, line: 260 },
-              }))
-            : [new Paragraph({ children: [new TextRun({ text: '', size: 19, font: 'Calibri' })] })],
-        });
-        const table = (headers, rows, widths) => new Table({
-          width: { size: 100, type: WidthType.PERCENTAGE },
-          borders: {
-            top:    { style: BorderStyle.SINGLE, size: 2, color: 'D8D2C4' },
-            bottom: { style: BorderStyle.SINGLE, size: 2, color: 'D8D2C4' },
-            left:   { style: BorderStyle.SINGLE, size: 2, color: 'D8D2C4' },
-            right:  { style: BorderStyle.SINGLE, size: 2, color: 'D8D2C4' },
-            insideHorizontal: { style: BorderStyle.SINGLE, size: 2, color: 'D8D2C4' },
-            insideVertical:   { style: BorderStyle.SINGLE, size: 2, color: 'D8D2C4' },
-          },
-          rows: [
-            new TableRow({
-              tableHeader: true,
-              children: headers.map((h, i) => cell(h, { head: true, w: widths[i] })),
-            }),
-            ...rows.map(r => new TableRow({
-              children: r.map((c, i) => cell(c, { w: widths[i] })),
-            })),
-          ],
+        sec('Key Decisions');
+        if (cDec.length) A.push(K.table(['No.', 'Decision', 'Status'],
+          cDec.map((d, i) => [String(i + 1), d.decision, d.status || 'Agreed']), [8, 70, 22], { center: [0] }));
+        else A.push(K.body('No material decisions were formally confirmed during the meeting.'));
+
+        sec('Action Item Tracker');
+        if (cAct.length) A.push(K.table(['ID', 'Action / Deliverable', 'Responsible', 'Target Date', 'Status'],
+          cAct.map(a => [a.action_id, a.action, a.owner, a.target_date, a.status]), [8, 46, 18, 15, 13], { center: [0] }));
+        else A.push(K.body('No action items were confirmed during the meeting.'));
+
+        const actLine = a => `${a.action} (${a.action_id}${/to be confirmed/i.test(a.target_date || '') ? '' : ' · ' + a.target_date})`;
+        clientMomPendingGroups(m, cm, lhFirm).forEach(g => {
+          sec(g.title);
+          if (g.owners) {
+            const owners = Object.keys(g.owners);
+            if (!owners.length) A.push(K.body(g.empty));
+            owners.forEach(o => { A.push(K.body(o, { run: { bold: true }, after: 40 })); g.owners[o].forEach(a => A.push(K.bullet(actLine(a)))); });
+          } else if (g.items.length) g.items.forEach(a => A.push(K.bullet(actLine(a))));
+          else A.push(K.body(g.empty));
         });
 
-        // ── Letterhead ──
-        if (lh.firm_name) A.push(new Paragraph({
-          children: [new TextRun({ text: lh.firm_name, bold: true, size: 26, color: NAVY, font: 'Calibri' })],
-          spacing: { after: 20 },
-        }));
-        if (lh.firm_service_line) A.push(new Paragraph({
-          children: [new TextRun({ text: lh.firm_service_line, size: 19, color: GOLD, font: 'Calibri' })],
-          spacing: { after: 160 },
-        }));
-        A.push(new Paragraph({
-          children: [new TextRun({ text: CLIENT ? 'MINUTES OF CONVERSATION' : 'MINUTES OF CONVERSATION — DETAILED (INTERNAL)', bold: true, size: 28, color: NAVY, font: 'Calibri', characterSpacing: 60 })],
-          spacing: { after: 40 },
-        }));
-        A.push(new Paragraph({
-          children: [new TextRun({ text: refId, size: 17, color: GOLD, font: 'Courier New' })],
-          spacing: { after: 200 },
-          border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: GOLD, space: 6 } },
-        }));
+        sec('Pending Decisions / Clarifications');
+        if (cPend.length) A.push(K.table(['No.', 'Matter', 'Clarification Required'],
+          cPend.map((p, i) => [String(i + 1), p.matter, p.clarification]), [8, 34, 58], { center: [0] }));
+        else A.push(K.body('No pending decisions were recorded.'));
 
-        // ── Metadata ──
-        const niceDate = d => /^\d{4}-\d{2}-\d{2}$/.test(d || '')
-          ? new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : (d || '');
-        const preparer = lh.prepared_by || lh.firm_name || '';
-        const preparedOn = preparer ? [preparer, niceDate(m.meeting_date)].filter(Boolean).join('  |  ') : '';
-        A.push(table(['Field', 'Detail'], [
-          ['Client',           m.client_name || 'Not recorded'],
-          ['Subject',          m.subject || m.meeting_title || 'Not recorded'],
-          ['Meeting Date',     [niceDate(m.meeting_date), m.meeting_time].filter(Boolean).join('  ·  ') || 'Not recorded'],
-          ['Present',          att.length ? att.join('  |  ') : 'Not recorded'],
-          ['MOC Status',       CLIENT ? 'Draft - for review and confirmation' : 'Detailed MOC - internal reference, not for circulation'],
-          ['Prepared By / On', preparedOn || 'Not recorded'],
-        ], [22, 78]));
+        sec('Next Meeting');
+        A.push(K.body(cm.next_meeting || m.next_meeting || 'Next meeting schedule to be confirmed.'));
 
-        // ── Executive summary ──
-        A.push(secHead('Executive Summary'));
-        if (exec.length) exec.forEach(p => A.push(body(String(p))));
-        else if (m.summary) A.push(body(m.summary));
-        else A.push(body('Not recorded.'));
+        if (cm.conclusion) { sec('Conclusion'); A.push(K.body(cm.conclusion)); }
 
-        // ── 1. Action plan — only work someone committed to ──
-        A.push(secHead('1.  Agreed Action Plan'));
-        if (aiView.length) {
-          const withPri = aiView.some(a => a.priority);
-          A.push(table(
-            ['#', 'Action / Deliverable', 'Responsible', 'Timeline', ...(withPri ? ['Priority'] : []), 'Status'],
-            aiView.map((a, i) => [
-              String(i + 1), a.task || '', ownerOf(a), timingOf(a),
-              ...(withPri ? [a.priority || '—'] : []), gapText(a.status, 'Pending'),
-            ]),
-            withPri ? [5, 41, 14, 16, 9, 15] : [5, 47, 16, 17, 15]));
-        } else {
-          A.push(body('No action items were explicitly agreed in the meeting. Matters raised for follow-up are listed under Matters for Future Consideration.'));
-        }
+        A.push(K.gap(), K.body(lh.moc_disclaimer || DEFAULT_MOC_DISCLAIMER, { run: { size: 15, italics: true, color: '666666' } }));
 
-        // ── 2. Pending tracker ──
-        if (pending.length) {
-          A.push(secHead('2.  Information and Pending Tracker'));
-          A.push(table(
-            ['Area', 'Requirement / Deliverable', 'Responsible', 'Status'],
-            pending.map(p => [p.area || '', p.requirement || '', gapText(p.responsible, 'To be confirmed'), gapText(p.status, 'Pending')]),
-            [14, 48, 16, 22]));
-        }
-
-        // ── 3. Points discussed ──
-        if (dpView.length) {
-          A.push(secHead('3.  Points Discussed'));
-          dpView.forEach(d => {
-            A.push(themeHead((d.topic || '') + (!CLIENT && d.relevance === 'incidental' ? '  (incidental — internal note)' : '')
-              + (!CLIENT && d.relevance === 'internal' ? '  (internal — not for circulation)' : '')));
-            const paras = LINES(d.details);
-            if (paras.length) paras.forEach(p => A.push(body(p, { after: 110 })));
-            else A.push(body('Not recorded.', { after: 110 }));
-          });
-        }
-
-        // ── 4. Decisions — confirmed ones only; the rest are listed as requiring confirmation ──
-        A.push(secHead('4.  Agreed Directions / Working Conclusions'));
-        const directions = [...decConfirmed, ...conclusions];
-        if (directions.length) directions.forEach(d => A.push(body('•  ' + d, { after: 60 })));
-        else A.push(body('No common direction was recorded in the meeting.'));
-        const advPending = [...decPending, ...(CLIENT ? aiPending.map(a => `${a.task} (responsibility: ${ownerOf(a)})`) : [])];
-        if (advPending.length) {
-          A.push(themeHead('Matters requiring confirmation'));
-          advPending.forEach((d, i) => A.push(numbered((i + 1) + '.   ' + d.replace(UNCONF_RE, ''))));
-        }
-
-        // ── 4A. Matters for future consideration ──
-        if (matters.length) {
-          A.push(secHead(CLIENT ? '4A.  Matters Discussed / For Future Consideration' : '4A.  Discussion / Options Raised (not approved)'));
-          matters.forEach((x, i) => A.push(numbered((i + 1) + '.   ' + matterText(x))));
-        }
-
-        // ── Key figures (internal) ──
-        if (!CLIENT && figureRows.length) {
-          A.push(secHead('Key Figures Reported'));
-          A.push(table(['Figure', 'Amount', 'Basis / Period', 'Source / Note'], figureRows, [26, 14, 20, 40]));
-        }
-
-        // ── 5. Next agenda ──
-        if (agendaN.length) {
-          A.push(secHead('5.  Proposed Agenda for Next Meeting'));
-          agendaN.forEach((a, i) => A.push(numbered((i + 1) + '.   ' + a)));
-        } else if (m.next_meeting) {
-          A.push(secHead('5.  Next Meeting'));
-          A.push(body(m.next_meeting));
-        }
-
-        // ── Internal appendix: evidence and review notes ──
-        if (!CLIENT && (evidenceRows.length || qualityNotes.length)) {
-          A.push(secHead('Appendix — Evidence and Review Notes (internal)'));
-          if (qualityNotes.length) qualityNotes.forEach(n => A.push(body('•  ' + n, { after: 60 })));
-          if (evidenceRows.length) A.push(table(['Type', 'Item', 'Status', 'Transcript evidence'], evidenceRows, [11, 37, 14, 38]));
-        }
-
-        // ── Disclaimer ──
-        A.push(secHead('Disclaimer'));
-        A.push(body(lh.moc_disclaimer || DEFAULT_MOC_DISCLAIMER,
-          { run: { size: 18, italics: true, color: INK3 } }));
-
-        const advDoc = new Document({
-          creator: lh.firm_name || 'AiX Track',
-          title: m.meeting_title || 'Minutes of Conversation',
-          sections: [{
-            properties: { page: { margin: { top: 1000, bottom: 1000, left: 1000, right: 1000 } } },
-            children: A,
-          }],
+        const doc = new Document({
+          creator: lh.firm_name || 'AiX Track', title: m.meeting_title || 'Minutes of Conversation', description: refId,
+          styles: K.styles, numbering: K.numbering,
+          sections: [{ properties: { page: K.page }, footers: { default: K.footer([m.client_name, refId].filter(Boolean).join(' | ')) }, children: A }],
         });
-        const advBuf = await Packer.toBuffer(advDoc);
-        const advName = (m.client_name || m.meeting_title || 'MOC')
-          .replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/ +/g, '_').slice(0, 40);
+        const buffer = await Packer.toBuffer(doc);
+        const fname  = (m.client_name || m.meeting_title || 'MOC').replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/ +/g, '_').slice(0, 40);
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-        res.setHeader('Content-Disposition', 'attachment; filename="' + (CLIENT ? 'MOC_Client_' : 'MOC_Detailed_') + advName + '_' + refId + '.docx"');
-        return res.send(advBuf);
+        res.setHeader('Content-Disposition', `attachment; filename="MOC_Client_${fname}_${refId}.docx"`);
+        return res.send(buffer);
       }
 
-      const children = [];
+      // ── Letterhead + key facts ──
+      A.push(...K.letterhead(CLIENT ? 'MINUTES OF CONVERSATION' : 'MINUTES OF CONVERSATION — DETAILED',
+        [m.client_name || m.meeting_title, dateTxt].filter(Boolean).join(' | ')));
+      A.push(K.facts([
+        ['Meeting Date', dateTxt || 'Not recorded'],
+        ['Time', m.meeting_time],
+        ['Mode / Venue', m.location],
+        ['Client', m.client_name],
+        ['Subject', m.subject || m.meeting_title || 'Not recorded'],
+        ['Present', att.length ? att.join(' | ') : ''],
+        ['Prepared By', lh.prepared_by || lh.firm_name],
+        ['MOC Status', CLIENT ? 'Draft - for review and confirmation' : 'Detailed MOC - internal reference, not for circulation'],
+        ['Reference', refId],
+      ]));
+      if (qual.objective) A.push(K.body(`Objective: ${qual.objective}`, { run: { bold: true } }));
 
-      // ── Letterhead ──
-      children.push(new Paragraph({
-        children: [
-          new TextRun({ text: CLIENT ? 'MINUTES OF CONVERSATION' : 'MINUTES OF CONVERSATION — DETAILED (INTERNAL)', bold: true, size: 24, color: NAVY, font: 'Calibri', characterSpacing: 80 }),
-          new TextRun({ text: '   ·   ', size: 20, color: GOLD }),
-          new TextRun({ text: refId, size: 18, color: GOLD, font: 'Courier New' }),
-        ],
-        spacing: { after: 100 },
-      }));
-      children.push(new Paragraph({
-        children: [new TextRun({ text: m.meeting_title || 'Untitled', bold: true, size: 36, color: NAVY, font: 'Calibri', italics: false })],
-        spacing: { after: 80 },
-      }));
-      if (m.meeting_date) {
-        children.push(new Paragraph({
-          children: [new TextRun({ text: [m.meeting_date, m.meeting_time].filter(Boolean).join('   ·   '), size: 18, color: INK2, font: 'Calibri' })],
-          spacing: { after: 20 },
-        }));
-      }
-      // Divider
-      children.push(new Paragraph({
-        children: [new TextRun({ text: '' })],
-        border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: GOLD } },
-        spacing: { before: 80, after: 300 },
-      }));
+      // ── Executive summary ──
+      A.push(K.h1('Executive Summary'));
+      // Client view of an older MOC (no client_mom layer): keep it to a shareable length
+      if (exec.length) (CLIENT ? exec.slice(0, 3) : exec).forEach(p => A.push(K.bullet(String(p))));
+      else if (m.summary) K.LINES(m.summary).forEach(p => A.push(K.body(p)));
+      else A.push(K.body('Not recorded.'));
 
-      // ── Attendees ──
-      if (att.length) {
-        children.push(sectionTitle('Attendees'));
-        att.forEach(a => children.push(bullet(a)));
-        children.push(new Paragraph({ spacing: { after: 120 } }));
-      }
+      if (ag.length) { A.push(K.h2('Agenda')); ag.forEach(a => A.push(K.numbered(String(a)))); }
 
-      // ── Agenda ──
-      if (ag.length) {
-        children.push(sectionTitle('Agenda'));
-        ag.forEach((a, i) => children.push(new Paragraph({
-          children: [new TextRun({ text: `${String(i + 1).padStart(2, '0')}.   ${a}`, size: 20, font: 'Calibri', color: INK2 })],
-          spacing: { after: 50 }, indent: { left: 280 },
-        })));
-        children.push(new Paragraph({ spacing: { after: 120 } }));
-      }
-
-      // ── Summary — first, for a reader who will not read further ──
-      if (m.summary) {
-        children.push(sectionTitle('Summary'));
-        children.push(new Paragraph({
-          children: [new TextRun({ text: m.summary, size: 20, color: INK2, font: 'Calibri' })],
-          spacing: { after: 80 }, indent: { left: 280 },
-        }));
-        children.push(new Paragraph({ spacing: { after: 120 } }));
-      }
-
-      // ── Discussions ──
-      if (dpView.length) {
-        children.push(sectionTitle('Key Discussions'));
-        dpView.forEach(d => {
-          const tag = CLIENT ? '' : d.relevance === 'incidental' ? '  (incidental — internal note)' : d.relevance === 'internal' ? '  (internal — not for circulation)' : '';
-          children.push(new Paragraph({
-            children: [new TextRun({ text: `§   ${d.topic || ''}${tag}`, bold: true, size: 22, color: NAVY, font: 'Calibri', italics: true })],
-            spacing: { before: 120, after: 60 },
-          }));
-          if (d.details) String(d.details).split('\n').forEach(line => {
-            if (!line.trim()) return;
-            children.push(new Paragraph({
-              children: [new TextRun({ text: line.trim(), size: 20, color: INK2, font: 'Calibri' })],
-              spacing: { after: 80 }, indent: { left: 360 },
-            }));
-          });
-        });
-        children.push(new Paragraph({ spacing: { after: 120 } }));
-      }
-
-      const hCell = (txt, w) => new TableCell({
-        width: { size: w, type: WidthType.PERCENTAGE },
-        children: [new Paragraph({ children: [new TextRun({ text: txt, bold: true, size: 18, color: 'FFFFFF', font: 'Calibri' })], alignment: AlignmentType.LEFT })],
-        shading: { type: ShadingType.SOLID, color: NAVY },
-        margins: { top: 80, bottom: 80, left: 100, right: 100 },
-      });
-      const dCell = (txt, w, col = INK2, bg = 'FFFFFF') => new TableCell({
-        width: { size: w, type: WidthType.PERCENTAGE },
-        children: [new Paragraph({ children: [new TextRun({ text: String(txt || '—'), size: 18, color: col, font: 'Calibri' })], alignment: AlignmentType.LEFT })],
-        shading: { type: ShadingType.SOLID, color: bg },
-        margins: { top: 70, bottom: 70, left: 100, right: 100 },
-      });
-      // Few, wide columns so long cells stay readable
-      const stdTable = (headers, rows, widths, colors = []) => {
-        children.push(new Table({
-          width: { size: 100, type: WidthType.PERCENTAGE },
-          rows: [
-            new TableRow({ tableHeader: true, children: headers.map((h, i) => hCell(h, widths[i])) }),
-            ...rows.map((r, ri) => new TableRow({
-              children: r.map((c, i) => dCell(c, widths[i], colors[i] || INK2, ri % 2 === 0 ? 'FAF8F3' : 'FFFFFF')),
-            })),
-          ],
-        }));
-        children.push(new Paragraph({ spacing: { after: 160 } }));
-      };
-      const plain = (txt, opts = {}) => children.push(new Paragraph({
-        children: [new TextRun({ text: txt, size: 20, color: opts.color || INK2, font: 'Calibri', bold: !!opts.bold, italics: !!opts.italics })],
-        spacing: { after: 60 }, indent: { left: 280 },
-      }));
-
-      // ── Key figures (internal) ──
-      if (!CLIENT && figureRows.length) {
-        children.push(sectionTitle('Key Figures Reported'));
-        stdTable(['Figure', 'Amount', 'Basis / Period', 'Source / Note'], figureRows, [26, 14, 20, 40], [NAVY]);
-      }
-
-      // ── Decisions — only those confirmed in the meeting ──
-      children.push(sectionTitle('Decisions'));
-      if (decConfirmed.length) decConfirmed.forEach(d => plain(`✓   ${d}`, { color: SAGE, bold: true }));
-      else plain('No decisions were formally confirmed in the meeting.', { italics: true });
-      const stdPending = [...decPending, ...(CLIENT ? aiPending.map(a => `${a.task} (responsibility: ${ownerOf(a)})`) : [])];
-      if (stdPending.length) {
-        children.push(new Paragraph({
-          children: [new TextRun({ text: 'Matters requiring confirmation', bold: true, size: 20, color: NAVY, font: 'Calibri' })],
-          spacing: { before: 120, after: 60 }, indent: { left: 280 },
-        }));
-        stdPending.forEach(d => plain(`?   ${d.replace(UNCONF_RE, '')}`, { color: RUST }));
-      }
-      children.push(new Paragraph({ spacing: { after: 120 } }));
-
-      // ── Matters discussed / options raised ──
-      if (matters.length) {
-        children.push(sectionTitle(CLIENT ? 'Matters Discussed / For Future Consideration' : 'Discussion / Options Raised (not approved)'));
-        matters.forEach(x => plain(`•   ${matterText(x)}`));
-        children.push(new Paragraph({ spacing: { after: 120 } }));
-      }
-
-      // ── Action items — the one authoritative list ──
-      children.push(sectionTitle(CLIENT ? 'Agreed Actions' : 'Action Items'));
-      if (aiView.length) {
+      // ── Action plan — only work someone committed to ──
+      // Client view follows the client's own minutes: discussion first, then the action tracker
+      const actionPlan = () => {
+      sec(CLIENT ? 'Action Item Tracker' : 'Action Plan');
+      if (CLIENT && aiView.length) {
+        A.push(K.table(['No.', 'Action item', 'Responsibility', 'Target'],
+          aiView.map((a, i) => [String(i + 1), a.task || '', ownerOf(a), timingOf(a)]), [7, 55, 22, 16]));
+      } else if (aiView.length) {
         const withPri = aiView.some(a => a.priority);
-        stdTable(
-          ['#', 'Action', 'Responsible', 'Timing', ...(withPri ? ['Priority'] : [])],
+        A.push(K.table(
+          ['#', 'Action / Deliverable', 'Responsible', 'Timeline', ...(withPri ? ['Priority'] : []), 'Status'],
           aiView.map((a, i) => [
-            String(i + 1).padStart(2, '0'),
-            a.task + (a.acceptance_criteria ? ` — Done when: ${a.acceptance_criteria}` : '') + (!CLIENT && a.requires_confirmation ? '  (requires confirmation)' : ''),
-            ownerOf(a), timingOf(a), ...(withPri ? [a.priority || '—'] : []),
+            String(i + 1),
+            (a.task || '') + (a.acceptance_criteria ? ` — Done when: ${a.acceptance_criteria}` : '') + (!CLIENT && a.requires_confirmation ? ' (requires confirmation)' : ''),
+            ownerOf(a), timingOf(a), ...(withPri ? [a.priority || '—'] : []), gapText(a.status, 'Pending'),
           ]),
-          withPri ? [6, 52, 17, 15, 10] : [6, 56, 20, 18],
-          [GOLD, NAVY, INK2, RUST]);
-      } else {
-        plain('No action items were explicitly agreed in the meeting.', { italics: true });
-        children.push(new Paragraph({ spacing: { after: 120 } }));
+          withPri ? [5, 43, 15, 14, 9, 14] : [5, 49, 17, 15, 14]));
+      } else A.push(K.body('No action items were explicitly agreed in the meeting.'));
+      };
+      if (!CLIENT) actionPlan();
+
+      // ── Information / pending tracker ──
+      if (pending.length) {
+        sec('Information / Pending Tracker');
+        A.push(K.table(['Area', 'Requirement / Deliverable', 'Responsible', 'Status / Remarks'],
+          pending.map(p => [p.area || '', p.requirement || '', gapText(p.responsible, 'To be confirmed'), gapText(p.status, 'Pending')]),
+          [16, 44, 16, 24]));
       }
 
-      // ── Next Meeting ──
-      if (m.next_meeting) {
-        children.push(sectionTitle('Next Conversation'));
-        children.push(new Paragraph({
-          children: [new TextRun({ text: m.next_meeting, size: 20, italics: true, color: NAVY, font: 'Calibri' })],
-          spacing: { after: 80 }, indent: { left: 280 },
-        }));
-        children.push(new Paragraph({ spacing: { after: 120 } }));
+      // ── Points discussed — numbered sub-headings with bullet points ──
+      if (dpView.length) {
+        const n = sec('Points Discussed');
+        dpView.forEach((d, i) => {
+          const tag = CLIENT ? '' : d.relevance === 'incidental' ? ' (incidental — internal note)' : d.relevance === 'internal' ? ' (internal — not for circulation)' : '';
+          A.push(K.h2(`${n}.${i + 1} ${(d && d.topic) || d}${tag}`));
+          const pts = K.LINES(d && d.details).map(p => p.replace(/^[-•*]\s*/, ''));
+          const terms = safeArr(d && d.terms).filter(t => t && t.term);
+          if (terms.length) A.push(K.table(['Particular', 'Discussion / proposed position'], terms.map(t => [t.term, t.position || '']), [30, 70]));
+          if (CLIENT) pts.slice(0, 2).forEach(p => A.push(K.body(p)));
+          else (pts.length ? pts : ['Not recorded.']).forEach(p => A.push(K.bullet(p)));
+        });
       }
+      if (CLIENT) {
+        actionPlan();
+        if (pendingDec.length) {
+          sec('Pending Decisions');
+          A.push(K.table(['Area', 'Clarification needed'], pendingDec.map(p => [p.area, p.clarification]), [24, 76]));
+        }
+      }
+
+      // ── Decisions — confirmed ones; the rest listed as requiring confirmation ──
+      sec('Agreed Directions / Working Conclusions');
+      const directions = [...decConfirmed, ...conclusions];
+      if (directions.length) directions.forEach(d => A.push(K.bullet(d)));
+      else A.push(K.body('No common direction was recorded in the meeting.'));
+      const toConfirm = [...decPending, ...(CLIENT ? aiPending.map(a => `${a.task} (responsibility: ${ownerOf(a)})`) : [])];
+      if (toConfirm.length) {
+        A.push(K.h2('Matters requiring confirmation'));
+        toConfirm.forEach(d => A.push(K.numbered(d.replace(UNCONF_RE, ''))));
+      }
+
+      if (matters.length) {
+        sec(CLIENT ? 'Matters for Future Consideration' : 'Discussion / Options Raised (not approved)');
+        (CLIENT ? matters.slice(0, 5) : matters).forEach(x => A.push(K.numbered(matterText(x))));
+      }
+
+      // ── Current pending status — open actions by who they are pending from ──
+      const openItems = aiView.filter(a => !/^(done|completed?|closed)$/i.test(String(a.status || '').trim()));
+      if (!CLIENT && openItems.length) {
+        sec('Current Pending Status');
+        A.push(K.table(['Pending From', 'Item'], openItems.map(a => [ownerOf(a), a.task || '']), [22, 78]));
+      }
+
+      if (!CLIENT && figureRows.length) {
+        sec('Key Figures Reported');
+        A.push(K.table(['Figure', 'Amount', 'Basis / Period', 'Source / Note'], figureRows, [26, 14, 20, 40]));
+      }
+
+      // ── Next review ──
+      if (agendaN.length) { sec('Proposed Agenda for Next Review'); agendaN.forEach(a => A.push(K.bullet(String(a)))); }
+      else if (m.next_meeting) { sec('Next Meeting'); A.push(K.body(m.next_meeting)); }
 
       // ── Internal appendix: evidence and review notes ──
       if (!CLIENT && (evidenceRows.length || qualityNotes.length)) {
-        children.push(sectionTitle('Appendix — Evidence and Review Notes (internal)'));
-        qualityNotes.forEach(n => plain(`•   ${n}`, { color: INK3 }));
-        if (evidenceRows.length) stdTable(['Type', 'Item', 'Status', 'Transcript evidence'], evidenceRows, [11, 37, 14, 38], [GOLD, NAVY]);
+        A.push(K.h1('Appendix — Evidence and Review Notes (internal)'));
+        qualityNotes.forEach(n => A.push(K.bullet(n)));
+        if (evidenceRows.length) A.push(K.table(['Type', 'Item', 'Status', 'Transcript evidence'], evidenceRows, [11, 37, 14, 38]));
       }
 
-      // ── Footer ──
-      children.push(new Paragraph({
-        children: [new TextRun({ text: `Generated by AiX Track  ·  ${refId}  ·  ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`, size: 16, color: INK3, font: 'Calibri' })],
-        alignment: AlignmentType.CENTER,
-        spacing:   { before: 600 },
-        border:    { top: { style: BorderStyle.SINGLE, size: 2, color: 'E8E4D8', space: 6 } },
-      }));
+      A.push(K.h1('Disclaimer'));
+      A.push(K.body(lh.moc_disclaimer || DEFAULT_MOC_DISCLAIMER, { run: { size: 17, italics: true, color: '666666' } }));
 
       const doc = new Document({
-        creator:     'AiX Track',
-        title:       m.meeting_title || 'Minutes of Conversation',
+        creator: lh.firm_name || 'AiX Track',
+        title: m.meeting_title || 'Minutes of Conversation',
         description: refId,
-        sections: [{
-          properties: {
-            page: {
-              margin: {
-                top:    convertInchesToTwip(1.0),
-                bottom: convertInchesToTwip(1.0),
-                left:   convertInchesToTwip(1.1),
-                right:  convertInchesToTwip(1.1),
-              }
-            }
-          },
-          children,
-        }],
+        styles: K.styles, numbering: K.numbering,
+        sections: [{ properties: { page: K.page }, footers: { default: K.footer(m.client_name || refId) }, children: A }],
       });
-
       const buffer = await Packer.toBuffer(doc);
-      const fname  = (m.meeting_title || 'MOC').replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/ +/g, '_').slice(0, 40);
-
+      const fname  = (m.client_name || m.meeting_title || 'MOC').replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/ +/g, '_').slice(0, 40);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
       res.setHeader('Content-Disposition', `attachment; filename="${CLIENT ? 'MOC_Client' : 'MOC_Detailed'}_${fname}_${refId}.docx"`);
       res.send(buffer);
 
     } catch (err) {
       console.error('[docx-export]', err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Transcript as a Word file — speaker-wise when diarization ran, otherwise the plain transcript
+  app.get('/api/history/:id/export/transcript-docx', requireAuth, async (req, res) => {
+    let docxLib;
+    try { docxLib = require('docx'); } catch {
+      return res.status(503).json({ error: 'Word export unavailable. Run: npm install docx on the server.' });
+    }
+    try {
+      const result = await pool.query('SELECT * FROM mom_sessions WHERE id = $1 AND user_email = $2',
+        [parseInt(req.params.id), req.session.user.email]);
+      if (!result.rows.length) return res.status(404).json({ error: 'Not found.' });
+      const m  = result.rows[0];
+      const tx = String(m.transcript || '').trim();
+      if (!tx) return res.status(404).json({ error: 'No transcript saved for this record.' });
+
+      const safeArr = v => { if (!v) return []; if (Array.isArray(v)) return v; try { return JSON.parse(v) || []; } catch { return []; } };
+      const refId = `MOC-${new Date(m.created_at).getFullYear()}-${String(m.id).padStart(4, '0')}`;
+      const lh = await letterheadOf(req.session.user.email);
+      const K  = mocDocxKit(docxLib, lh);
+      const { Document, Packer, Paragraph, TextRun } = docxLib;
+
+      const names = {};
+      safeArr(m.speakers).forEach(sp => { if (sp && sp.label) names[sp.label] = sp.name || sp.label; });
+      const segs = safeArr(m.diarized_segments).filter(s => s && s.text && s.speaker);
+      const clock = t => { t = Math.floor(t || 0); const h = Math.floor(t / 3600), mm = Math.floor((t % 3600) / 60), ss = t % 60;
+        return (h ? String(h).padStart(2, '0') + ':' : '') + String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0'); };
+      const dur = Number(m.duration_seconds) || 0;
+      const words = tx.split(/\s+/).filter(Boolean).length;
+
+      const A = [];
+      A.push(...K.letterhead('TRANSCRIPT', [m.client_name || m.meeting_title, niceDocDate(m.meeting_date)].filter(Boolean).join(' | ')));
+      A.push(K.facts([
+        ['Conversation', m.meeting_title],
+        ['Meeting Date', [niceDocDate(m.meeting_date), m.meeting_time].filter(Boolean).join(' · ')],
+        ['Duration', dur ? `${Math.round(dur / 60)} min` : ''],
+        ['Speakers', segs.length ? [...new Set(segs.map(s => names[s.speaker] || s.speaker))].join(' | ') : ''],
+        ['Length', `${words.toLocaleString('en-IN')} words`],
+        ['Reference', refId],
+      ]));
+      A.push(K.h1(segs.length ? 'Speaker-wise Transcript' : 'Transcript'));
+      if (segs.length) {
+        segs.forEach(s => A.push(new Paragraph({ spacing: { after: 90, line: 276 }, children: [
+          new TextRun({ text: `[${clock(s.start)}]  `, font: 'Aptos', size: 17, color: '888888' }),
+          new TextRun({ text: `${names[s.speaker] || s.speaker}: `, font: 'Aptos', size: 20, bold: true, color: '265D85' }),
+          new TextRun({ text: String(s.text).trim(), font: 'Aptos', size: 20, color: '1F2937' }),
+        ] })));
+      } else {
+        K.LINES(tx).forEach(p => A.push(K.body(p)));
+      }
+      A.push(K.body('This transcript is generated automatically from the recording and may contain recognition errors. Please verify important points against the recording.',
+        { run: { size: 16, italics: true, color: '666666' } }));
+
+      const doc = new Document({
+        creator: lh.firm_name || 'AiX Track', title: (m.meeting_title || 'Conversation') + ' — Transcript', description: refId,
+        styles: K.styles, numbering: K.numbering,
+        sections: [{ properties: { page: K.page }, footers: { default: K.footer('Transcript ' + refId) }, children: A }],
+      });
+      const buffer = await Packer.toBuffer(doc);
+      const fname  = (m.client_name || m.meeting_title || 'Conversation').replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/ +/g, '_').slice(0, 40);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="Transcript_${fname}_${refId}.docx"`);
+      res.send(buffer);
+    } catch (err) {
+      console.error('[transcript-docx]', err.message);
       res.status(500).json({ error: err.message });
     }
   });

@@ -1,0 +1,136 @@
+<title>AiX Track MOC Export Update</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one reading column — status header, the 7-step pipeline as a numbered rail, then change table, layout spec and status checklist */
+:root{
+  --bg:#F6F8FA; --surface:#FFFFFF; --fg:#16232F; --muted:#5B6B7A; --line:#D7E0E8;
+  --blue:#265D85; --tint:#EAF1F6; --orange:#D9701A;
+  --ok:#2E7D52; --ok-bg:#E6F3EC; --wait:#9A6400; --wait-bg:#FBF1DC;
+  --display:"Fraunces",Georgia,serif; --body:"Source Sans 3","Segoe UI",system-ui,sans-serif; --mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E151C; --surface:#152029; --fg:#E4ECF2; --muted:#9AAAB8; --line:#26343F;
+  --blue:#7FB3DA; --tint:#1B2C3A; --orange:#F0A060; --ok:#6CCB97; --ok-bg:#16301F; --wait:#E7B65A; --wait-bg:#33280F; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E151C; --surface:#152029; --fg:#E4ECF2; --muted:#9AAAB8; --line:#26343F;
+  --blue:#7FB3DA; --tint:#1B2C3A; --orange:#F0A060; --ok:#6CCB97; --ok-bg:#16301F; --wait:#E7B65A; --wait-bg:#33280F; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.6 var(--body)}
+.wrap{max-width:880px;margin:0 auto;padding-block:40px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:44px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--orange)}
+h1{font:600 clamp(30px,5vw,44px)/1.1 var(--display);color:var(--blue);margin:6px 0 10px;text-wrap:balance}
+h2{font:600 24px/1.2 var(--display);color:var(--blue);margin:0 0 16px}
+.lede{color:var(--muted);max-width:62ch;margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.chip{font:600 13px var(--body);padding:4px 12px;border-radius:999px;background:var(--tint);color:var(--blue)}
+/* pipeline */
+.rail{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.rail li{display:grid;grid-template-columns:44px 1fr auto;gap:14px;align-items:start;padding:14px 0;border-top:1px solid var(--line)}
+.rail li:last-child{border-bottom:1px solid var(--line)}
+.n{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font:600 15px var(--mono);background:var(--blue);color:var(--surface)}
+.rail b{display:block}
+.rail span{color:var(--muted);font-size:15px}
+.who{font:500 12px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding-top:8px;white-space:nowrap}
+.rail li.new .n{background:var(--orange)}
+.tag{font:700 11px var(--mono);color:var(--orange);margin-left:6px;letter-spacing:.06em}
+/* tables */
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{width:100%;border-collapse:collapse;min-width:600px}
+th{background:var(--blue);color:var(--surface);text-align:left;font:600 13px var(--body);padding:10px 12px}
+td{padding:11px 12px;border-top:1px solid var(--line);vertical-align:top;font-size:15px}
+td:first-child{font-weight:700;white-space:nowrap}
+td.before{color:var(--muted)}
+/* layout spec */
+.doc{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.page{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px;min-width:0}
+.page ol{margin:0;padding-left:22px;display:grid;gap:4px}
+.page p{margin:0 0 10px;color:var(--muted);font-size:15px}
+.page h3{margin:0 0 8px;font:700 16px var(--body)}
+/* status */
+.status{display:grid;gap:8px}
+.st{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border:1px solid var(--line);border-radius:8px;flex-wrap:wrap}
+.pill{font:700 12px var(--mono);padding:4px 10px;border-radius:999px;letter-spacing:.04em}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.wait{background:var(--wait-bg);color:var(--wait)}
+code{font:500 13px var(--mono);background:var(--tint);padding:1px 6px;border-radius:4px;overflow-wrap:anywhere}
+footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:16px}
+@media (max-width:520px){.rail li{grid-template-columns:40px 1fr}.who{grid-column:2;padding-top:0}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">AiX Track · Release note</div>
+    <h1>MOC export update</h1>
+    <p class="lede">Word MOCs now come out in a client-ready firm format, transcripts download as Word files, and the PDF download that failed on the live site is fixed.</p>
+    <div class="meta"><span class="chip">Effective 30 October 2026</span><span class="chip">All users</span><span class="chip">No action needed</span></div>
+  </header>
+
+  <section>
+    <h2>How a MOC reaches the client</h2>
+    <ol class="rail">
+      <li><div class="n">1</div><div><b>Capture</b><span>Record live in the browser or upload an audio or video file.</span></div><div class="who">User</div></li>
+      <li><div class="n">2</div><div><b>Transcribe</b><span>Speech becomes text. With diarization, each speaker is identified and named.</span></div><div class="who">AiX Track</div></li>
+      <li><div class="n">3</div><div><b>Generate MOC</b><span>Executive summary, action plan, pending tracker, points discussed and next agenda.</span></div><div class="who">AiX Track</div></li>
+      <li><div class="n">4</div><div><b>Quality check</b><span>Decisions and actions are checked against the transcript. Unclear items are marked "requires confirmation".</span></div><div class="who">AiX Track</div></li>
+      <li><div class="n">5</div><div><b>Review and edit</b><span>The user confirms the MOC before it goes out.</span></div><div class="who">User</div></li>
+      <li class="new"><div class="n">6</div><div><b>Download<span class="tag">UPDATED</span></b><span>Word MOC in firm format, transcript in Word, or PDF.</span></div><div class="who">User</div></li>
+      <li><div class="n">7</div><div><b>Share</b><span>Email, WhatsApp or a secure link.</span></div><div class="who">User</div></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>What changed</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Area</th><th>Before</th><th>Now</th></tr></thead>
+      <tbody>
+        <tr><td>Word MOC</td><td class="before">Basic layout that varied by template</td><td>Firm format: letterhead, key-facts table, numbered sections, action and pending tables, disclaimer, page footer</td></tr>
+        <tr><td>Transcript</td><td class="before">Copy only</td><td>Download in Word, speaker by speaker with time stamps when diarized</td></tr>
+        <tr><td>PDF</td><td class="before">Did nothing on live: the PDF file was not uploaded</td><td>Added to both deploy scripts. Falls back to a print-ready view if the PDF cannot be built</td></tr>
+        <tr><td>"MOC saved" screen</td><td class="before">PDF, WhatsApp, Copy</td><td>Adds Download Word and Transcript (Word)</td></tr>
+        <tr><td>Documentation</td><td class="before">Internal workflow doc out of date</td><td>Updated, plus a client note for 30 October</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>The Word MOC</h2>
+    <div class="doc">
+      <div class="page">
+        <h3>Page layout</h3>
+        <ol>
+          <li>Firm name, service line, <b>Minutes of Conversation</b>, client and date</li>
+          <li>Key facts: date, time, venue, subject, present, prepared by, status, reference</li>
+          <li>Executive Summary</li>
+          <li>Action Plan</li>
+          <li>Information / Pending Tracker</li>
+          <li>Points Discussed (3.1, 3.2 …)</li>
+          <li>Agreed Directions</li>
+          <li>Current Pending Status</li>
+          <li>Proposed Agenda for Next Review</li>
+          <li>Disclaimer and page footer</li>
+        </ol>
+      </div>
+      <div class="page">
+        <h3>Client MOC</h3>
+        <p>Confirmed decisions and agreed actions only. This is the version to send out.</p>
+        <h3>Detailed MOC</h3>
+        <p>For internal use. Adds options raised, key figures and the transcript lines behind each decision and action.</p>
+        <h3>Firm details</h3>
+        <p>Firm name, service line and disclaimer come from each user's Profile settings.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Status</h2>
+    <div class="status">
+      <div class="st"><span>Code built and sample files checked in Word</span><span class="pill ok">DONE</span></div>
+      <div class="st"><span>Client note <code>AiX-Track-Workflow-Update-30-Oct-2026.docx</code></span><span class="pill ok">READY</span></div>
+      <div class="st"><span>Test on the test site</span><span class="pill wait">PENDING</span></div>
+      <div class="st"><span>Deploy to live</span><span class="pill wait">PENDING APPROVAL</span></div>
+      <div class="st"><span>Git commit</span><span class="pill wait">PENDING</span></div>
+    </div>
+  </section>
+
+  <footer>The MOC is a draft prepared with AI assistance. Please review and confirm it before circulation.</footer>
+</div>

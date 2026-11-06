@@ -1,0 +1,26 @@
+{
+  "name": "MOC-2026-0334 — Product review: login demo, pricing, TB mapping, EcomBI setup (Gujarati, 16 min)",
+  "note": "DRAFT answer key prepared from the transcript. Confirm or correct each item; keywords are any-of groups.",
+  "actions": [
+    { "label": "Bring the TB with opening, debit, credit and closing", "keywords": [["trial balance", "tb"], ["opening"]] },
+    { "label": "Post screenshots of both items — one posted, one pending (In Progress, not Completed)", "keywords": [["screenshot"], ["group"]], "status": "In Progress" },
+    { "label": "Keep updating the EcomBI points / notes", "keywords": [["updat"], ["points", "notes"]] },
+    { "label": "Share the Amazon data format being followed", "keywords": [["format"], ["amazon", "data"]] },
+    { "label": "Create a separate project for EcomBI", "keywords": [["separate project", "project for"]] },
+    { "label": "Create a new WhatsApp group for EcomBI", "keywords": [["whatsapp"]] },
+    { "label": "Hide the chart of accounts from the UI", "keywords": [["chart of accounts"], ["hid", "ui"]] },
+    { "label": "30-second demo video — owner not stated (must not be guessed)", "keywords": [["demo video", "video"], ["30"]], "owner": ["to be confirmed"] }
+  ],
+  "decisions": [
+    { "label": "Login demo video cut to 30 seconds (agreed)", "keywords": [["30 seconds", "30-second", "30 second"]] },
+    { "label": "Keep current terms and policy for now", "keywords": [["terms"], ["for now", "unchanged", "continue"]] },
+    { "label": "First-phase cost reduction target 40-50%", "keywords": [["40", "40–50", "40-50"], ["%", "per cent", "percent"]] }
+  ],
+  "figures": [
+    { "label": "US$119 (dollar unit read)", "keywords": [["us$119", "$119", "usd 119", "119 dollars", "us$ 119", "119 usd"]] },
+    { "label": "28 groups and 85 ledgers", "keywords": [["28"], ["85"]] },
+    { "label": "Cost 60 paise per minute", "keywords": [["60 paise"]] }
+  ],
+  "must_not_contain": ["Participant 1", "Participant 2", "identity not established", "units not stated", "MINUTES OF MEETING",
+    "advisory virtual MOC session", "because the points list was theirs", "Ecom BI cost was stated as US$119"]
+}

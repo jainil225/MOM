@@ -471,7 +471,7 @@ async function loadCreditOverview(){
   bar.style.background = color;
   cxSet('mc-paid', paid); cxSet('mc-free', free);
   if (bal.free_credits_total) document.getElementById('mc-free-lbl').textContent = 'Free trial left of ' + cxNum(bal.free_credits_total);
-  if (chip){ chip.textContent = cxNum(total) + ' cr'; chip.className = 'nav-chip ' + lvl; chip.style.display = 'inline-flex'; }
+  if (chip){ chip.textContent = cxNum(total) + ' credits'; chip.className = 'nav-chip ' + lvl; chip.style.display = 'inline-flex'; }
 }
 loadCreditOverview();
 </script>

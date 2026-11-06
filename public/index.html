@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="/js/moc-pdf.js"></script>
 <style>
 /* ═══════════════════════════════════════════════════════════════
    AiX Track · Sarvam Theme
@@ -238,6 +239,12 @@ body{
 
 .rec-status-chip{border-radius:999px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.08em;padding:4px 12px;display:inline-flex;align-items:center;gap:6px}
 .rec-status-recording{background:rgba(192,48,48,0.08);color:#C03030;border:1px solid rgba(192,48,48,0.25)}
+.rec-controls{display:none;gap:10px;justify-content:center;margin:4px 0 8px}
+.recorder-card.recording-active .rec-controls{display:flex}
+.rec-ctl-btn{border:1px solid var(--gold-tint-strong);background:var(--gold-tint);color:var(--ink);border-radius:999px;padding:7px 16px;font-size:12px;font-weight:600;cursor:pointer}
+.rec-ctl-btn:hover{filter:brightness(0.96)}
+.rec-ctl-done{background:#1A9A5A;border-color:#1A9A5A;color:#fff}
+.rec-status-paused{background:rgba(200,140,20,0.10);color:#A06A00;border:1px solid rgba(200,140,20,0.3)}
 .rec-status-done{background:rgba(26,154,90,0.08);color:#1A9A5A;border:1px solid rgba(26,154,90,0.25)}
 .rec-file-preview{display:flex;align-items:center;gap:14px;text-align:left;background:var(--gold-tint);border:1px solid var(--gold-tint-strong);border-radius:14px;padding:12px 14px;margin-top:1rem}
 .rec-file-icon{font-size:28px;flex-shrink:0}
@@ -598,6 +605,59 @@ input.native::placeholder{color:var(--ink4)}
   .sn-circle{width:36px;height:36px;font-size:14px}
   .sn-lbl{font-size:7px}
 }
+.btn-pdf{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;font:600 12.5px/1 var(--sans);color:#fff;
+  background:linear-gradient(135deg,#0F1B3D,#24366E);border:1px solid #B8912A;border-radius:999px;cursor:pointer;
+  box-shadow:0 2px 10px rgba(15,27,61,0.25);transition:transform .15s,box-shadow .15s}
+.btn-pdf:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(15,27,61,0.35)}
+.btn-pdf:disabled{opacity:.6;cursor:wait;transform:none}
+.btn-pdf svg{color:#E8C25A}
+
+/* Project picker and prefilled project context */
+.pp{position:relative}
+.pp-btn{width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border-strong,rgba(24,18,12,.18));border-radius:12px;background:var(--card,#fff);color:var(--ink,#18182C);font:inherit;font-size:14px;font-weight:500;cursor:pointer;text-align:left;transition:border-color .15s,box-shadow .15s}
+.pp-btn:hover,.pp-btn[aria-expanded=true]{border-color:var(--gold,#E0621A);box-shadow:0 0 0 3px rgba(224,98,26,.12)}
+.pp-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pp-sub{font-family:var(--mono,monospace);font-size:10px;color:var(--ink3,#7878A0)}
+.pp-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:1.5px dashed transparent}
+.pp-menu{display:none;position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:60;background:var(--paper,#F0EDE6);border:1px solid var(--border-strong,rgba(24,18,12,.18));border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.18);padding:8px;min-width:280px}
+.pp-menu.open{display:block}
+.pp-search{width:100%;padding:8px 10px;border:1px solid var(--border,rgba(24,18,12,.09));border-radius:9px;background:var(--card,#fff);color:inherit;font:inherit;font-size:13px;margin-bottom:6px}
+.pp-search:focus{outline:none;border-color:var(--gold,#E0621A)}
+.pp-list{max-height:280px;overflow:auto}
+.pp-item{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:9px;cursor:pointer}
+.pp-item .pp-dot{margin-top:5px}
+.pp-item:hover{background:rgba(224,98,26,.08)}
+.pp-item.on{background:rgba(224,98,26,.14)}
+.pp-item b{display:block;font-size:13.5px;font-weight:600}
+.pp-item small{display:block;font-size:11.5px;color:var(--ink3,#7878A0);margin-top:1px}
+.pp-empty{padding:12px;font-size:12.5px;color:var(--ink3,#7878A0);text-align:center}
+.pp-foot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border,rgba(24,18,12,.09));margin-top:6px;padding:8px 4px 2px}
+.pp-foot button{background:var(--navy,#18182C);color:#fff;border:none;border-radius:999px;padding:7px 14px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.pp-foot a{font-size:12px;color:var(--gold,#E0621A);text-decoration:none}
+.pc-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.pc-badge{font-family:var(--mono,monospace);font-size:10px;padding:3px 9px;border-radius:999px;background:rgba(26,154,90,.10);color:var(--sage,#1A9A5A);white-space:nowrap}
+.pc textarea,.pc input[type=text]{width:100%;padding:10px 12px;border:1px solid var(--border-strong,rgba(24,18,12,.18));border-radius:10px;background:var(--card,#fff);color:inherit;font:inherit;font-size:13.5px;line-height:1.55;resize:vertical}
+.pc textarea:focus,.pc input[type=text]:focus{outline:none;border-color:var(--gold,#E0621A);box-shadow:0 0 0 3px rgba(224,98,26,.12)}
+.pc-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap}
+.pc-hint{font-size:11.5px;color:var(--ink3,#7878A0)}
+.pc-adv-btn{display:inline-flex;align-items:center;gap:4px;background:none;border:1px solid var(--border-strong,rgba(24,18,12,.18));border-radius:999px;padding:5px 12px;font:inherit;font-size:12px;font-weight:600;color:var(--ink2,#44445E);cursor:pointer}
+.pc-adv-btn svg{transition:transform .2s}.pc-adv-btn.open svg{transform:rotate(180deg)}
+.pc-adv-btn:hover,.pc-adv-btn.open{border-color:var(--gold,#E0621A);color:var(--gold,#E0621A)}
+.pc-adv{display:none;margin-top:10px;padding:12px;border:1px solid var(--border,rgba(24,18,12,.09));border-radius:12px;background:rgba(255,255,255,.4)}
+.pc-adv.open{display:block}
+.pc-lbl{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3,#7878A0);margin:8px 0 4px}
+.pc-tog{display:flex;gap:10px;align-items:flex-start;margin-top:12px;cursor:pointer;font-size:13px}
+.pc-tog input{display:none}
+.pc-tog small{display:block;font-size:11.5px;color:var(--ink3,#7878A0)}
+.pc-sw{flex:0 0 36px;height:20px;border-radius:10px;background:var(--ink4,#ABABC0);position:relative;transition:.2s;margin-top:1px}
+.pc-sw::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.pc-tog input:checked+.pc-sw{background:var(--gold,#E0621A)}
+.pc-tog input:checked+.pc-sw::after{left:18px}
+.pc-link{font-size:12px;color:var(--gold,#E0621A);text-decoration:none}
+.pc-mem{margin-top:10px;font-size:12px}
+.pc-mem summary{cursor:pointer;color:var(--ink2,#44445E)}
+.pc-mem pre{white-space:pre-wrap;font-size:11px;max-height:260px;overflow:auto;background:var(--paper2,#E8E4DA);padding:8px 10px;border-radius:8px;margin-top:6px}
+[data-theme=dark] .pc-adv{background:rgba(255,255,255,.03)}
 </style>
 <link rel="stylesheet" href="/css/theme-dark.css">
 <style>
@@ -611,6 +671,7 @@ input.native::placeholder{color:var(--ink4)}
 </style>
 <link rel="stylesheet" href="/css/aix-uniform.css">
 <link rel="stylesheet" href="/css/aix-polish.css">
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#18182C"><script>if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(function(){});</script>
 </head>
 <body>
 
@@ -633,7 +694,7 @@ input.native::placeholder{color:var(--ink4)}
       <span id="server-label">Connecting</span>
     </div>
     <span class="user-badge" id="nav-user"></span>
-    <a href="/pricing" class="btn-nav" id="nav-credits" title="Credits left — buy more">⬡ —</a>
+    <a href="/pricing" class="btn-nav" id="nav-credits" title="Credits left — buy more">⬡ Credits</a>
     <button class="btn-nav theme-btn" onclick="toggleTheme()" id="theme-btn">◐</button>
   </div>
 </nav>
@@ -693,7 +754,7 @@ input.native::placeholder{color:var(--ink4)}
     <div class="sidebar-divider"></div>
 
     <!-- Today's actions -->
-    <div class="action-tracker">
+    <div class="action-tracker" id="action-tracker" style="display:none">
       <div class="tracker-header">
         <div class="tracker-title">Today's Actions</div>
         <div class="tracker-count" id="tracker-count"></div>
@@ -738,8 +799,16 @@ input.native::placeholder{color:var(--ink4)}
       <div class="section-hd">
         <div class="section-hd-eyebrow">— New MOC</div>
         <h1 class="section-hd-title">Record or upload your <em>conversation</em></h1>
-        <p class="aix-banner-sub">Record live or upload a file — AiX Track names every speaker and writes your MOC with decisions and action items.</p>
+        <p class="aix-banner-sub">Record live or upload a file — AiX Track names every speaker and writes your <strong title="Minutes of Conversation">MOC (Minutes of Conversation)</strong>: a structured record of what was discussed, decided and assigned.</p>
         <div class="aix-banner-chips"><span>🗣 Who said what</span><span>✅ Action items by owner</span><span>🇮🇳 Indian languages</span><span>⚡ MOC in minutes</span></div>
+      </div>
+
+      <!-- MOC workflow -->
+      <div class="moc-flow" aria-label="How a MOC is made">
+        <div class="moc-flow-step"><b>1</b><span><strong>Capture</strong>Record live or upload audio / video</span></div>
+        <div class="moc-flow-step"><b>2</b><span><strong>Transcribe</strong>Speech to text, speaker names optional</span></div>
+        <div class="moc-flow-step"><b>3</b><span><strong>Generate MOC</strong>Summary, decisions, action items</span></div>
+        <div class="moc-flow-step"><b>4</b><span><strong>Review &amp; share</strong>Edit, then PDF, Word, email or WhatsApp</span></div>
       </div>
 
       <!-- Free Trial 60-min lifetime bar -->
@@ -749,12 +818,11 @@ input.native::placeholder{color:var(--ink4)}
         </div>
         <div class="ft-track"><div class="ft-fill" id="ft-fill" style="width:0%"></div></div>
         <div class="ft-mins" id="free-tier-used"></div>
+        <div class="ft-mins ft-explain" id="free-tier-explain"></div>
       </div>
 
-      <!-- Recording consent (Screen B) is asked in a dialog when Record or Generate is clicked,
-           so it cannot be missed on the page; each confirmation is logged on the server. -->
       <div class="consent-row consent-note" id="consent-row">
-        <span>Before each recording or upload you'll confirm that every participant knows it is being recorded and processed by AI.
+        <span>Please let participants know the conversation is being recorded to prepare minutes.
           <a href="/usage-policy" target="_blank" rel="noopener">Usage Policy</a> · <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a></span>
       </div>
 
@@ -798,7 +866,11 @@ input.native::placeholder{color:var(--ink4)}
             <svg class="rec-ico rec-ico-stop" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>
             <span id="rec-btn-label">Start Recording</span>
           </button>
-          <div class="rec-caption"><span class="rc-idle">Tap the mic to start recording</span><span class="rc-live">Tap to stop</span></div>
+          <div class="rec-controls" id="rec-controls">
+            <button type="button" class="rec-ctl-btn" id="rec-pause-btn" onclick="togglePauseRecording()">⏸ Pause</button>
+            <button type="button" class="rec-ctl-btn rec-ctl-done" onclick="stopRecording(false)">✓ Done</button>
+          </div>
+          <div class="rec-caption"><span class="rc-idle">Tap the mic to start recording.</span><span class="rc-live">Pause to take a break, or tap Done when the meeting is over.</span></div>
           <div id="rec-status" style="display:none" class="rec-status-chip"></div>
           <div id="rec-preview" style="display:none" class="rec-file-preview">
             <div class="rec-file-icon">🎙</div>
@@ -965,7 +1037,7 @@ input.native::placeholder{color:var(--ink4)}
           <div class="setting-label">
             Language
             <span class="lang-detected-chip" id="lang-detected-chip"></span>
-            <span class="lang-detecting" id="lang-detecting">detecting…</span>
+            <span class="lang-detecting" id="lang-detecting"></span>
           </div>
           <select class="native" id="language-select" onchange="onLangChange(this.value)">
             <option value="auto">🔍 Auto Detect</option>
@@ -1011,12 +1083,25 @@ input.native::placeholder{color:var(--ink4)}
       <div class="settings-row">
         <div class="setting-box">
           <div class="setting-label">Project <span style="color:var(--ink4);font-weight:400;letter-spacing:0">(optional)</span></div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <select class="native" id="project-select" style="flex:1">
-              <option value="">— No project —</option>
-            </select>
-            <button type="button" class="btn-sm" id="new-project-btn" onclick="createProjectInline()"
-                    style="white-space:nowrap">+ New</button>
+          <!-- The native select keeps the value every upload path reads; the picker below drives it -->
+          <select class="native" id="project-select" style="display:none" aria-hidden="true">
+            <option value="">— No project —</option>
+          </select>
+          <div class="pp" id="pp">
+            <button type="button" class="pp-btn" id="pp-btn" onclick="toggleProjectPicker()" aria-haspopup="listbox" aria-expanded="false">
+              <span class="pp-dot" id="pp-dot"></span>
+              <span class="pp-label" id="pp-label">No project</span>
+              <span class="pp-sub" id="pp-sub"></span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="pp-menu" id="pp-menu" role="listbox">
+              <input type="text" class="pp-search" id="pp-search" placeholder="Search projects…" oninput="paintProjectMenu()">
+              <div class="pp-list" id="pp-list"></div>
+              <div class="pp-foot">
+                <button type="button" id="new-project-btn" onclick="closeProjectPicker();createProjectInline()">＋ New project</button>
+                <a href="/projects">Manage projects ↗</a>
+              </div>
+            </div>
           </div>
         </div>
         <div class="setting-box">
@@ -1027,6 +1112,11 @@ input.native::placeholder{color:var(--ink4)}
           </select>
           <div id="template-hint" style="font-family:var(--mono);font-size:10px;color:var(--ink4);margin-top:6px;line-height:1.5"></div>
         </div>
+      </div>
+
+      <!-- Project context — prefilled from the selected project, editable before generating -->
+      <div class="settings-row" id="project-ctx-row" style="grid-template-columns:1fr;display:none">
+        <div class="setting-box pc" id="project-ctx"></div>
       </div>
 
       <!-- Tags -->
@@ -1102,7 +1192,7 @@ input.native::placeholder{color:var(--ink4)}
             <span class="gen-btn-title">Generate MOC + Diarization</span>
             <span class="gen-btn-sub">Who said what · every speaker named in the MOC</span>
           </span>
-          <span class="gen-btn-rate"><span data-rate="diarization">2</span> cr/min</span>
+          <span class="gen-btn-rate"><span data-rate="diarization">2</span> credits/min</span>
         </button>
         <button type="button" class="gen-btn gen-btn-std" onclick="generateMOC(false)">
           <span class="gen-btn-icon">✦</span>
@@ -1110,7 +1200,7 @@ input.native::placeholder{color:var(--ink4)}
             <span class="gen-btn-title">Generate MOC</span>
             <span class="gen-btn-sub">Without speaker names</span>
           </span>
-          <span class="gen-btn-rate"><span data-rate="standard">1</span> cr/min</span>
+          <span class="gen-btn-rate"><span data-rate="standard">1</span> credits/min</span>
         </button>
       </div>
       <p class="btn-note" id="btn-note-txt">🔒 Private & Secure · AI transcription · Structured output</p>
@@ -1259,7 +1349,9 @@ input.native::placeholder{color:var(--ink4)}
           <button onclick="resetTool()" class="btn-sm" style="padding:10px 16px;font-size:13px">↩ New recording</button>
         </div>
         <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <button onclick="downloadMOMPDF()" class="btn-sm" style="padding:7px 14px;font-size:12px">📄 Download PDF</button>
+          <button onclick="downloadMOMPDF(this)" class="btn-pdf"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download PDF</button>
+          <button onclick="downloadMOMWord(this,'client')" class="btn-pdf" style="background:linear-gradient(135deg,#265D85,#2F74A6)">📝 Download Word</button>
+          <button onclick="downloadMOMWord(this,'transcript')" class="btn-sm" style="padding:7px 14px;font-size:12px">📄 Transcript (Word)</button>
           <button onclick="shareWhatsApp()" class="btn-sm" style="padding:7px 14px;font-size:12px;background:#25D366;color:#fff;border-color:#25D366">📱 WhatsApp</button>
           <button onclick="copyMOMSummary()" class="btn-sm" style="padding:7px 14px;font-size:12px" id="copy-summary-btn">📋 Copy Summary</button>
         </div>
@@ -1437,7 +1529,7 @@ async function loadNavCredits() {
     const elStat = document.getElementById('stat-credits');
     const bal = (typeof d.total_available === 'number') ? d.total_available : (d.credits || 0);
     if(el) el.textContent = d.is_privileged ? '⬡ Unlimited credits' : `⬡ ${bal.toLocaleString('en-IN')} credits left`;
-    if(elStat) elStat.textContent = `${bal.toLocaleString('en-IN')} cr`;
+    if(elStat) elStat.textContent = `${bal.toLocaleString('en-IN')} credits`;
     const bigEl = document.getElementById('stat-credits-big');
     if(bigEl) bigEl.textContent = bal.toLocaleString('en-IN');
     const color = bal < LOW_CREDIT_THRESHOLD ? 'var(--rust)' : bal < 50 ? 'var(--gold)' : 'var(--sage)';
@@ -1548,6 +1640,8 @@ function renderActionTracker(actionItems) {
   const rightPanel = document.getElementById('right-action-panel');
   const rightItems = document.getElementById('right-action-items');
 
+  const trackerBox = document.getElementById('action-tracker');
+  if (trackerBox) trackerBox.style.display = (actionItems && actionItems.length) ? '' : 'none';
   if (!actionItems || !actionItems.length) {
     container.innerHTML = '<div class="tracker-empty"><span class="tracker-empty-icon">✅</span>Generate a MOC to see today\'s action items here.</div>';
     if(countEl) countEl.textContent = '—';
@@ -1679,7 +1773,7 @@ function checkRecordingLimit(sec) {
   }
   if (!_recWarn.diar && a.max_seconds_diarization < a.max_seconds_standard && sec >= a.max_seconds_diarization) {
     _recWarn.diar = true;
-    showToast('Diarization limit reached', `From here your balance covers this recording only with the standard Generate MOC (${window.AIX_RATES.standard_per_min} cr/min).`, 'warn', 9000);
+    showToast('Diarization limit reached', `From here your balance covers this recording only with the standard Generate MOC (${window.AIX_RATES.standard_per_min} credits/min).`, 'warn', 9000);
   }
   if (!_recWarn.five && left <= 300 && left > 60) {
     _recWarn.five = true;
@@ -1747,7 +1841,7 @@ const recServer = {
   markFailed(msg)     { if (this.id && inputMode === 'record') this.status('failed', { error: String(msg || 'Unknown error').slice(0, 900) }); },
 };
 
-/* ══ GENERATE BUTTONS — standard (1 cr/min) or with diarization (2 cr/min) ══ */
+/* ══ GENERATE BUTTONS — standard (1 credits/min) or with diarization (2 credits/min) ══ */
 let useDiarization = false;
 /* ══ RECORDING CONSENT ══ */
 /* Consent is no longer a tick box standing between the user and the Generate
@@ -1828,6 +1922,7 @@ function askRecordingConsent(forUpload) {
 
 // Returns the consent id for what is about to be recorded or uploaded, asking when there is none yet
 async function ensureRecordingConsent(kind) {
+  return true;   // per-recording consent dialog removed
   const key = kind === 'recording' ? 'recording' : consentKeyFor(currentFile);
   if (recConsent && recConsent.key === key) return recConsent.id;
   const id = await askRecordingConsent(kind !== 'recording');
@@ -1845,7 +1940,7 @@ async function generateMOC(withDiarization) {
   if (useDiarization && inputMode === 'record' && currentFile && recordedSeconds > 0) {
     const a = await loadRecordingAllowance();
     if (a && !a.unlimited && recordedSeconds > a.max_seconds_diarization) {
-      showError(`This recording is ${fmtLeft(recordedSeconds)} long. With diarization (${window.AIX_RATES.diarization_per_min} cr/min) your balance covers ${fmtLeft(a.max_seconds_diarization)}. Use "Generate MOC" (standard, ${window.AIX_RATES.standard_per_min} cr/min) or buy credits.`);
+      showError(`This recording is ${fmtLeft(recordedSeconds)} long. With diarization (${window.AIX_RATES.diarization_per_min} credits/min) your balance covers ${fmtLeft(a.max_seconds_diarization)}. Use "Generate MOC" (standard, ${window.AIX_RATES.standard_per_min} credits/min) or buy credits.`);
       return;
     }
   }
@@ -2202,7 +2297,8 @@ async function startRecording(){
       showLiveNotes(true); loadLiveNotes(); recordedSeconds = 0; updateTimerDisplay(0);
   if (_recAllowance && !_recAllowance.unlimited && _recAllowance.max_seconds_standard <= 600)
     showToast('Short balance', `Your balance covers about ${fmtLeft(_recAllowance.max_seconds_standard)} of recording. Recording will stop automatically at that point.`, 'warn', 9000);
-  recordingTimer = setInterval(() => { recordedSeconds++; updateTimerDisplay(recordedSeconds); checkRecordingLimit(recordedSeconds); }, 1000);
+  isRecPaused = false; document.getElementById("rec-pause-btn").textContent = "⏸ Pause";
+  recordingTimer = setInterval(() => { if (isRecPaused) return; recordedSeconds++; updateTimerDisplay(recordedSeconds); checkRecordingLimit(recordedSeconds); }, 1000);
   // Flush chunks to IndexedDB every 5 s so a hard crash loses at most 5 s
   _chunkSaveTimer = setInterval(function() {
     if (!isRecording || audioChunks.length === 0) return;
@@ -2226,7 +2322,26 @@ async function startRecording(){
   setRecStatus('recording', '⏺ Recording…');
 }
 
+// Pause keeps the same recording open; resume continues from the same point
+let isRecPaused = false;
+function togglePauseRecording(){
+  if (!isRecording || !mediaRecorder) return;
+  const btn = document.getElementById("rec-pause-btn");
+  if (!isRecPaused){
+    if (mediaRecorder.state === 'recording') mediaRecorder.pause();
+    isRecPaused = true;
+    btn.textContent = "▶ Resume";
+    setRecStatus('paused', '⏸ Paused');
+  } else {
+    if (mediaRecorder.state === 'paused') mediaRecorder.resume();
+    isRecPaused = false;
+    btn.textContent = "⏸ Pause";
+    setRecStatus('recording', '⏺ Recording…');
+  }
+}
+
 function stopRecording(){
+  isRecPaused = false;
   if (recordingTimer){ clearInterval(recordingTimer); recordingTimer = null; }
   if (_chunkSaveTimer){ clearInterval(_chunkSaveTimer); _chunkSaveTimer = null; }
   isRecording = false;
@@ -2780,7 +2895,7 @@ function showInsufficientCreditsError(needed, have, shortfall, customMsg) {
       <div style="display:flex;flex-direction:column;gap:3px">
         <div>🎙️ Generate MOC — <strong style="color:#0F1B3D">${window.AIX_RATES.standard_per_min} credit / min</strong></div>
         <div>🎤 MOC + Diarization (who said what) — <strong style="color:#0F1B3D">${window.AIX_RATES.diarization_per_min} credits / min</strong></div>
-        <div>⏱️ 1-hr conversation — <strong style="color:#0F1B3D">${window.AIX_RATES.standard_per_min * 60} cr · with diarization ${window.AIX_RATES.diarization_per_min * 60} cr</strong></div>
+        <div>⏱️ 1-hr conversation — <strong style="color:#0F1B3D">${window.AIX_RATES.standard_per_min * 60} credits · with diarization ${window.AIX_RATES.diarization_per_min * 60} credits</strong></div>
         <div>♾️ Credits — <strong style="color:#4A7C59">never expire</strong></div>
       </div>
     </div>`;
@@ -2837,7 +2952,54 @@ function showInsufficientCreditsError(needed, have, shortfall, customMsg) {
 }
 
 /* ══ PDF ══ */
-function downloadMOMPDF() {
+// Branded PDF file via /js/moc-pdf.js; the print view is the fallback for Indian-script text
+async function downloadMOMPDF(btn) {
+  if (!currentMOM) return;
+  if (btn) btn.disabled = true;
+  // The Client-Ready MOC, when this MOC has one, opens as a print-ready page (every script renders)
+  if (currentSessionId) {
+    const url = `/api/history/${currentSessionId}/client-mom.html`;
+    // The tab is opened inside the click so pop-up blockers allow it, then pointed at the page
+    const w = window.open('', '_blank');
+    try {
+      const r = await fetch(url, { credentials: 'same-origin' });
+      if (r.ok) { if (w) w.location.href = url + '#print'; else location.href = url; if (btn) btn.disabled = false; return; }
+    } catch (e) {}
+    if (w) w.close();
+  }
+  const year = new Date().getFullYear();
+  const refId = currentSessionId ? `MOC-${year}-${String(currentSessionId).padStart(4,'0')}` : 'MOC';
+  let LH = {};
+  try { LH = await fetch('/api/user/settings', {credentials:'same-origin'}).then(r => r.json()) || {}; } catch (e) {}
+  // Script missing or a jsPDF error → open the print view instead of failing silently
+  if (typeof window.AIX_MOC_PDF !== 'function') { if (btn) btn.disabled = false; return printMOMPDF(); }
+  try {
+    await window.AIX_MOC_PDF(currentMOM, { refId, letterhead: LH, fallback: printMOMPDF,
+      advisory: (document.getElementById('template-select')||{}).value === 'advisory' });
+  } catch (e) { console.error('[pdf]', e); printMOMPDF(); }
+  finally { if (btn) btn.disabled = false; }
+}
+
+/* ══ WORD ══ */
+// Client-ready .docx from the saved record (server builds it in the advisory MOC layout)
+async function downloadMOMWord(btn, view) {
+  if (!currentSessionId) { showToast('Word download', 'Open the MOC from Records to download Word.', 'warn'); return; }
+  const orig = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = 'Preparing…'; }
+  try {
+    const r = await fetch(`/api/history/${currentSessionId}/export/${view === 'transcript' ? 'transcript-docx' : 'docx?view=client'}`, { credentials: 'same-origin' });
+    if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || `HTTP ${r.status}`); }
+    const cd = r.headers.get('Content-Disposition') || '';
+    const name = (cd.match(/filename="([^"]+)"/) || [])[1] || `MOC-${currentSessionId}.docx`;
+    const url = URL.createObjectURL(await r.blob());
+    const a = document.createElement('a'); a.href = url; a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (e) { showToast('Word download failed', e.message, 'error'); }
+  finally { if (btn) { btn.disabled = false; btn.innerHTML = orig; } }
+}
+
+// Print view (browser "Save as PDF") — used when the MOC has characters the built-in PDF font cannot draw
+function printMOMPDF() {
   if (!currentMOM) return;
   const m = currentMOM; const arr = v => Array.isArray(v) ? v : [];
   // Advisory template — these are empty for a standard MOC
@@ -3562,7 +3724,7 @@ function resetTool(){
   document.getElementById("lang-detected-chip").style.display = "none";
   document.getElementById("language-select").value = "auto";
   document.getElementById("category-select").value = "";
-  var _ps = document.getElementById("project-select"); if (_ps) _ps.value = "";
+  var _ps = document.getElementById("project-select"); if (_ps) { _ps.value = ""; _ps.dispatchEvent(new Event("change")); }
   renderTags(); setStep(1); setPhase("phase-upload");
 
   // Reset tracker
@@ -3772,7 +3934,9 @@ loadSettings = async function() {
     var ff = document.getElementById('ft-fill');
     if (ff) ff.style.width = pct + '%';
     var fu = document.getElementById('free-tier-used');
-    if (fu) fu.textContent = left + ' of ' + total + ' free credits left · ' + rt.standard_per_min + ' cr/min standard · ' + rt.diarization_per_min + ' cr/min with diarization';
+    if (fu) fu.textContent = left + ' of ' + total + ' free credits left · ' + rt.standard_per_min + ' credits/min standard · ' + rt.diarization_per_min + ' credits/min with diarization';
+    var fx = document.getElementById('free-tier-explain');
+    if (fx) fx.textContent = total + ' credits = ' + Math.floor(total / rt.standard_per_min) + ' min standard MOC, or ' + Math.floor(total / rt.diarization_per_min) + ' min with speaker names';
     var sf = document.getElementById('sb-trial-fill'); if (sf) sf.style.width = pct + '%';
     var sl = document.getElementById('sb-trial-lbl');  if (sl) sl.textContent = 'Free trial · ' + left + ' credits left';
     var sr = document.getElementById('sb-trial-rem');  if (sr) sr.textContent = left + ' of ' + total + ' free credits';
@@ -3950,17 +4114,17 @@ async function loadTemplateChoice() {
    project several days running.                                              */
 var PROJECT_MEMORY_KEY = 'aix_last_project';
 
+var PROJECTS = [];
+
 async function loadProjects(keepValue) {
   var sel = document.getElementById('project-select');
   if (!sel) return;
   var wanted = keepValue || sel.value || localStorage.getItem(PROJECT_MEMORY_KEY) || '';
   try {
     var d = await fetch('/api/projects', { credentials: 'same-origin' }).then(function(r){ return r.json(); });
+    PROJECTS = d.projects || [];
     var opts = ['<option value="">— No project —</option>'];
-    (d.projects || []).forEach(function(p){
-      var count = p.session_count ? ' (' + p.session_count + ')' : '';
-      opts.push('<option value="' + p.id + '">' + esc(p.name) + count + '</option>');
-    });
+    PROJECTS.forEach(function(p){ opts.push('<option value="' + p.id + '">' + esc(p.name) + '</option>'); });
     sel.innerHTML = opts.join('');
     // The remembered project may have been deleted since
     sel.value = wanted;
@@ -3969,14 +4133,192 @@ async function loadProjects(keepValue) {
 
   sel.onchange = function(){
     try { localStorage.setItem(PROJECT_MEMORY_KEY, sel.value); } catch (e) {}
+    paintProjectButton();
+    showProjectContext(sel.value);
   };
+  paintProjectButton();
+  showProjectContext(sel.value);
+}
+
+/* ── Project picker: searchable dropdown with colour, count and last activity ── */
+function projectById(id) { return PROJECTS.find(function(p){ return String(p.id) === String(id); }); }
+function ppAgo(iso) {
+  if (!iso) return 'no conversations yet';
+  var d = Math.floor((Date.now() - new Date(iso)) / 86400000);
+  return d <= 0 ? 'active today' : d === 1 ? 'active yesterday' : 'active ' + d + ' days ago';
+}
+function paintProjectButton() {
+  var p = projectById(document.getElementById('project-select').value);
+  document.getElementById('pp-label').textContent = p ? p.name : 'No project';
+  document.getElementById('pp-sub').textContent = p ? (p.session_count || 0) + ' conv.' : 'optional';
+  document.getElementById('pp-dot').style.background = p ? (p.color || 'var(--gold,#E0621A)') : 'transparent';
+  document.getElementById('pp-dot').style.borderColor = p ? 'transparent' : 'var(--ink4,#ABABC0)';
+}
+function paintProjectMenu() {
+  var q = (document.getElementById('pp-search').value || '').trim().toLowerCase();
+  var cur = document.getElementById('project-select').value;
+  var rows = PROJECTS.filter(function(p){ return !q || p.name.toLowerCase().indexOf(q) >= 0 || String(p.auto_tags || '').toLowerCase().indexOf(q) >= 0; });
+  var html = q ? '' : '<div class="pp-item' + (cur ? '' : ' on') + '" onclick="pickProject(\'\')"><span class="pp-dot" style="border-color:var(--ink4,#ABABC0)"></span><div><b>No project</b><small>MOC is not filed — auto-file tags may still place it</small></div></div>';
+  html += rows.map(function(p){
+    return '<div class="pp-item' + (String(p.id) === cur ? ' on' : '') + '" onclick="pickProject(' + p.id + ')">' +
+      '<span class="pp-dot" style="background:' + esc(p.color || 'var(--gold,#E0621A)') + ';border-color:transparent"></span>' +
+      '<div><b>' + esc(p.name) + '</b><small>' + (p.session_count || 0) + ' conversation' + (p.session_count === 1 ? '' : 's') + ' · ' + esc(ppAgo(p.last_activity)) +
+      (p.context_notes ? ' · has instructions' : '') + '</small></div></div>';
+  }).join('');
+  if (!rows.length && q) html += '<div class="pp-empty">No project matches “' + esc(q) + '”.</div>';
+  document.getElementById('pp-list').innerHTML = html;
+}
+function toggleProjectPicker() {
+  var m = document.getElementById('pp-menu');
+  if (m.classList.contains('open')) return closeProjectPicker();
+  document.getElementById('pp-search').value = '';
+  paintProjectMenu();
+  m.classList.add('open');
+  document.getElementById('pp-btn').setAttribute('aria-expanded', 'true');
+  setTimeout(function(){ document.getElementById('pp-search').focus(); }, 20);
+}
+function closeProjectPicker() {
+  document.getElementById('pp-menu').classList.remove('open');
+  document.getElementById('pp-btn').setAttribute('aria-expanded', 'false');
+}
+function pickProject(id) {
+  var sel = document.getElementById('project-select');
+  sel.value = String(id);
+  sel.dispatchEvent(new Event('change'));
+  closeProjectPicker();
+}
+document.addEventListener('click', function(e){ var pp = document.getElementById('pp'); if (pp && !pp.contains(e.target)) closeProjectPicker(); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeProjectPicker(); });
+
+/* ── Project context, prefilled from the selected project ──
+   The instructions box is filled from the project and can be changed here.
+   Changes are saved to the project (as a new version) when the box loses
+   focus, so the MOC generated next uses exactly what is on screen. */
+var pcSaved = '';
+async function showProjectContext(id) {
+  var row = document.getElementById('project-ctx-row'), box = document.getElementById('project-ctx');
+  if (!row) return;
+  if (!id) { row.style.display = 'none'; box.innerHTML = ''; return; }
+  row.style.display = '';
+  box.innerHTML = '<div class="pc-hint">Loading project context…</div>';
+  try {
+    var r = await fetch('/api/projects/' + id + '/memory', { credentials: 'same-origin' });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Could not load project context.');
+    if (document.getElementById('project-select').value !== String(id)) return;
+    var p = projectById(id) || {};
+    pcSaved = d.instructions || '';
+    box.innerHTML =
+      '<div class="pc-head">' +
+        '<div class="setting-label" style="margin:0">Project context · ' + esc(d.name) + '</div>' +
+        '<span class="pc-badge">' + (d.carry_forward ? (d.earlier_mocs ? '↻ ' + d.earlier_mocs + ' earlier MOC' + (d.earlier_mocs === 1 ? '' : 's') + ' carried' : '↻ first MOC here') : 'carry-forward off') + '</span>' +
+      '</div>' +
+      '<textarea id="pc-ctx" rows="5" maxlength="8000" placeholder="Who the client is, recurring attendees, standing agenda, names and terms to spell correctly, how this MOC should read…" onblur="saveProjectContext(' + Number(id) + ')" oninput="pcDirty()">' + esc(pcSaved) + '</textarea>' +
+      '<div class="pc-row"><span class="pc-hint" id="pc-msg">Prefilled from the project. Edit if needed — changes save to the project and apply to this MOC.</span>' +
+        '<button type="button" class="pc-adv-btn" onclick="document.getElementById(\'pc-adv\').classList.toggle(\'open\');this.classList.toggle(\'open\')">Advanced <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button></div>' +
+      '<div class="pc-adv" id="pc-adv">' +
+        '<label class="pc-lbl" for="pc-desc">Description</label>' +
+        '<input type="text" id="pc-desc" maxlength="2000" value="' + esc(d.description) + '" placeholder="What this project covers">' +
+        '<label class="pc-lbl" for="pc-tags">Auto-file tags</label>' +
+        '<input type="text" id="pc-tags" maxlength="1000" value="' + esc(p.auto_tags || '') + '" placeholder="ABC, Audit-ABC, Board">' +
+        '<label class="pc-tog"><input type="checkbox" id="pc-carry"' + (d.carry_forward ? ' checked' : '') + '><span class="pc-sw"></span>' +
+          '<span><b>Carry context forward</b><small>Pass the last five MOCs in this project — decisions, open actions and tracker — to this one.</small></span></label>' +
+        '<div class="pc-row" style="margin-top:10px"><button type="button" class="btn-sm" onclick="saveProjectContext(' + Number(id) + ', true)">Save settings</button>' +
+          '<a href="/project?id=' + Number(id) + '" target="_blank" class="pc-link">Open project ↗</a></div>' +
+        (d.memory ? '<details class="pc-mem"><summary>What the earlier MOCs pass on</summary><pre>' + esc(d.memory.trim()) + '</pre></details>' : '') +
+      '</div>';
+  } catch (e) { box.innerHTML = '<div class="pc-hint">' + esc(e.message) + '</div>'; }
+}
+function pcDirty() { var m = document.getElementById('pc-msg'); if (m) m.textContent = 'Unsaved changes — saved when you click away.'; }
+
+async function saveProjectContext(id, withSettings) {
+  var ta = document.getElementById('pc-ctx'), msg = document.getElementById('pc-msg');
+  if (!ta) return;
+  var body = { context_notes: ta.value.trim() };
+  if (withSettings) {
+    body.description   = document.getElementById('pc-desc').value.trim();
+    body.auto_tags     = document.getElementById('pc-tags').value.trim();
+    body.carry_forward = document.getElementById('pc-carry').checked;
+  } else if (body.context_notes === pcSaved.trim()) return;
+  try {
+    var r = await fetch('/api/projects/' + id, { method: 'PATCH', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Could not save.');
+    pcSaved = body.context_notes;
+    var p = projectById(id); if (p) Object.assign(p, d.project);
+    if (msg) msg.textContent = 'Saved to project ✓ — kept as a new version.';
+    if (withSettings) showProjectContext(id);
+  } catch (e) { if (msg) msg.textContent = e.message; }
+}
+
+/* New Project dialog — name, instructions, auto-file tags and carry-forward in
+   one step, in place of the browser's plain prompt box */
+function projectDialog() {
+  return new Promise(function(resolve){
+    var css = document.getElementById('np-css');
+    if (!css) {
+      css = document.createElement('style'); css.id = 'np-css';
+      css.textContent =
+        '.np-ov{position:fixed;inset:0;background:rgba(10,8,14,.5);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}' +
+        '.np-box{background:var(--paper,#F0EDE6);color:var(--ink,#18182C);border:1px solid rgba(24,18,12,.18);border-radius:16px;width:100%;max-width:520px;max-height:92vh;overflow:auto;box-shadow:0 16px 48px rgba(0,0,0,.25)}' +
+        '.np-head{padding:20px 24px 12px;border-bottom:1px solid rgba(24,18,12,.09)}' +
+        '.np-eye{font:700 9px/1 var(--mono,monospace);letter-spacing:.14em;text-transform:uppercase;color:var(--gold,#E0621A);margin-bottom:6px}' +
+        '.np-title{font-size:22px;font-weight:500}' +
+        '.np-body{padding:18px 24px;display:flex;flex-direction:column;gap:14px}' +
+        '.np-body label.l{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2,#44445E);display:block;margin-bottom:6px}' +
+        '.np-body input[type=text],.np-body textarea{width:100%;padding:10px 12px;border:1px solid rgba(24,18,12,.18);border-radius:10px;background:var(--card,#fff);color:inherit;font:inherit;font-size:14px}' +
+        '.np-body input[type=text]:focus,.np-body textarea:focus{outline:none;border-color:var(--gold,#E0621A);box-shadow:0 0 0 3px rgba(224,98,26,.15)}' +
+        '.np-hint{font-size:11.5px;color:var(--ink3,#7878A0);margin-top:4px}' +
+        '.np-tog{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid rgba(24,18,12,.09);border-radius:12px;cursor:pointer;background:var(--card,#fff)}' +
+        '.np-tog input{display:none}' +
+        '.np-sw{flex:0 0 38px;height:22px;border-radius:11px;background:#C9C6BE;position:relative;transition:.2s;margin-top:1px}' +
+        '.np-sw::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}' +
+        '.np-tog input:checked+.np-sw{background:var(--gold,#E0621A)}' +
+        '.np-tog input:checked+.np-sw::after{left:19px}' +
+        '.np-tog b{font-size:13px;display:block}.np-tog span.t{font-size:12px;color:var(--ink3,#7878A0)}' +
+        '.np-foot{padding:12px 24px 20px;display:flex;gap:10px;justify-content:flex-end}' +
+        '.np-btn{padding:9px 18px;border-radius:999px;border:1px solid rgba(24,18,12,.18);background:transparent;color:inherit;font:inherit;font-size:13px;font-weight:600;cursor:pointer}' +
+        '.np-btn.p{background:var(--navy,#18182C);color:#fff;border-color:transparent}';
+      document.head.appendChild(css);
+    }
+    var ov = document.createElement('div'); ov.className = 'np-ov';
+    ov.innerHTML =
+      '<div class="np-box" role="dialog" aria-modal="true" aria-labelledby="np-t">' +
+        '<div class="np-head"><div class="np-eye">New project</div><div class="np-title" id="np-t">Create a project</div></div>' +
+        '<div class="np-body">' +
+          '<div><label class="l" for="np-name">Project name</label><input type="text" id="np-name" maxlength="120" placeholder="Daily Morning Meeting, ABC Ltd — Audit, Board"></div>' +
+          '<div><label class="l" for="np-ctx">Project instructions <span style="text-transform:none;font-weight:400;color:var(--ink4,#ABABC0)">(optional)</span></label>' +
+            '<textarea id="np-ctx" rows="4" maxlength="8000" placeholder="Who the client is, recurring attendees, standing agenda, names and terms to spell correctly…"></textarea>' +
+            '<div class="np-hint">Read before every MOC in this project. You can edit it any time; each change is kept as a version.</div></div>' +
+          '<div><label class="l" for="np-tags">Auto-file tags <span style="text-transform:none;font-weight:400;color:var(--ink4,#ABABC0)">(optional)</span></label>' +
+            '<input type="text" id="np-tags" maxlength="1000" placeholder="ABC, Audit-ABC, Board">' +
+            '<div class="np-hint">A conversation saved without a project, carrying any of these tags, is filed here automatically.</div></div>' +
+          '<label class="np-tog"><input type="checkbox" id="np-carry" checked><span class="np-sw"></span>' +
+            '<span><b>Carry context forward</b><span class="t">The last three MOCs in this project are passed to the next one, so decisions and open items follow through.</span></span></label>' +
+        '</div>' +
+        '<div class="np-foot"><button type="button" class="np-btn" data-x>Cancel</button><button type="button" class="np-btn p" data-ok>Create project</button></div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    var q = function(id){ return ov.querySelector('#' + id); };
+    setTimeout(function(){ q('np-name').focus(); }, 30);
+    function done(v){ document.removeEventListener('keydown', key); ov.remove(); resolve(v); }
+    function ok(){
+      var name = q('np-name').value.trim();
+      if (!name) { q('np-name').focus(); return; }
+      done({ name: name, context_notes: q('np-ctx').value.trim(), auto_tags: q('np-tags').value.trim(), carry_forward: q('np-carry').checked });
+    }
+    function key(e){ if (e.key === 'Escape') done(null); if (e.key === 'Enter' && e.target.id === 'np-name') { e.preventDefault(); ok(); } }
+    document.addEventListener('keydown', key);
+    ov.addEventListener('click', function(e){ if (e.target === ov) done(null); });
+    ov.querySelector('[data-x]').onclick = function(){ done(null); };
+    ov.querySelector('[data-ok]').onclick = ok;
+  });
 }
 
 async function createProjectInline() {
-  var name = prompt('Name this project\n\nFor example: Daily Morning Meeting, ABC Ltd — Audit, Board');
-  if (name === null) return;
-  name = name.trim();
-  if (!name) return;
+  var form = await projectDialog();
+  if (!form) return;
 
   var btn = document.getElementById('new-project-btn');
   if (btn) { btn.disabled = true; btn.textContent = '…'; }
@@ -3984,17 +4326,19 @@ async function createProjectInline() {
     var r = await fetch('/api/projects', {
       method: 'POST', credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name })
+      body: JSON.stringify(form)
     });
     var d = await r.json();
     if (!r.ok) throw new Error(d.error || 'Could not create the project.');
+    if (!form.carry_forward) await fetch('/api/projects/' + d.project.id, { method: 'PATCH', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ carry_forward: false }) });
     await loadProjects(String(d.project.id));
     try { localStorage.setItem(PROJECT_MEMORY_KEY, String(d.project.id)); } catch (e) {}
     showToast('Project created', '"' + d.project.name + '" — this conversation will be filed there.', 'success', 4000);
   } catch (e) {
     showToast('Could not create the project', e.message, 'error', 5000);
   }
-  if (btn) { btn.disabled = false; btn.textContent = '+ New'; }
+  if (btn) { btn.disabled = false; btn.textContent = '＋ New project'; }
 }
 
 /* ─── PATCH resetTool to reset MP panel ─── */
@@ -4329,7 +4673,7 @@ function recoverSavedRecording() {
     if (meta.category && document.getElementById('category-select'))
       document.getElementById('category-select').value = meta.category;
     if (meta.project_id && document.getElementById('project-select'))
-      document.getElementById('project-select').value = meta.project_id;
+      { document.getElementById('project-select').value = meta.project_id; document.getElementById('project-select').dispatchEvent(new Event('change')); }
 
     // Hide banner
     if (banner) banner.classList.remove('visible');
@@ -4445,9 +4789,17 @@ document.addEventListener('keydown', function(e) {
 .rec-btn.recording .rec-ico-mic{display:none}
 .rec-btn.recording .rec-ico-stop{display:block}
 .rec-caption{font-size:11px;color:var(--ink3);margin-bottom:2px}
+.rec-caption span{display:block}
 .rec-caption .rc-live{display:none}
 .recorder-card.recording-active .rec-caption .rc-idle{display:none}
-.recorder-card.recording-active .rec-caption .rc-live{display:inline}
+.recorder-card.recording-active .rec-caption .rc-live{display:block}
+.moc-flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:0 0 1rem}
+.moc-flow-step{display:flex;gap:8px;align-items:flex-start;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 10px}
+.moc-flow-step b{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--gold-tint);color:var(--gold);font:700 10px/20px var(--mono);text-align:center}
+.moc-flow-step span{font-size:11px;line-height:1.4;color:var(--ink3)}
+.moc-flow-step strong{display:block;font-size:12px;color:var(--ink);font-weight:600}
+@media(max-width:900px){.moc-flow{grid-template-columns:1fr 1fr}}
+.ft-explain{color:var(--ink3)}
 .rec-status-chip{margin-top:8px}
 
 /* Context panel — tidy header + compact tabs */

@@ -350,10 +350,10 @@ fetch('/api/config/rates').then(r => r.ok ? r.json() : null).then(x => { pubRate
 function creditRulesHTML(x) {
   if (!x) return '';
   const row = (k, v) => (v == null ? '' : `<div class="rate"><span>${k}</span><b>${v}</b></div>`);
-  return row('Regenerate a MOC', x.regenerate_per_min != null ? `${x.regenerate_per_min} cr / min` : null)
-    + row('Joining bonus', x.joining_bonus ? `${x.joining_bonus} cr` : null)
-    + row('Friend joins with your link', x.friend_bonus ? `They get ${x.friend_bonus} cr` : null)
-    + row('Friend creates first MOC', x.referrer_reward ? `You get ${x.referrer_reward} cr` : null);
+  return row('Regenerate a MOC', x.regenerate_per_min != null ? `${x.regenerate_per_min} credits / min` : null)
+    + row('Joining bonus', x.joining_bonus ? `${x.joining_bonus} credits` : null)
+    + row('Friend joins with your link', x.friend_bonus ? `They get ${x.friend_bonus} credits` : null)
+    + row('Friend creates first MOC', x.referrer_reward ? `You get ${x.referrer_reward} credits` : null);
 }
 function renderUser(d, viewingOther) {
   const u = d.user, p = d.period, a = d.all_time, ft = d.free_trial;
@@ -377,8 +377,8 @@ function renderUser(d, viewingOther) {
       </div>
       <div class="side">
         <h3>How credits work</h3>
-        <div class="rate"><span>Generate MOC</span><b>${d.rates.standard_per_min} cr / min</b></div>
-        <div class="rate"><span>Generate MOC + Diarization</span><b>${d.rates.diarization_per_min} cr / min</b></div>
+        <div class="rate"><span>Generate MOC</span><b>${d.rates.standard_per_min} credits / min</b></div>
+        <div class="rate"><span>Generate MOC + Diarization</span><b>${d.rates.diarization_per_min} credits / min</b></div>
         <div id="credit-rules">${creditRulesHTML(pubRates)}</div>
         <div class="rate"><span>Credits used (all time)</span><b>${nf(u.credits_used)}</b></div>
         ${trialHTML}

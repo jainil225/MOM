@@ -181,11 +181,16 @@ pre{white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size
     </div>
   </div>
 
-  <div class="section-title" style="margin-top:2rem">— Prompt log (per conversation)</div>
+  <div class="section-title" style="margin-top:2rem">— Prompt log (per conversation, grouped by project)</div>
+  <div class="row" style="margin:0 0 10px">
+    <select id="log-project" onchange="loadLogs()" aria-label="Filter by project" style="padding:7px 10px;border-radius:8px;border:1px solid var(--border,#ddd);background:var(--card,#fff);color:inherit">
+      <option value="">All projects</option><option value="none">Not in a project</option>
+    </select>
+  </div>
   <div class="card table-wrap" style="padding:0">
     <table>
-      <thead><tr><th>Log</th><th>When</th><th>Conversation</th><th>User</th><th>Flow</th><th>Type</th><th>Master</th><th></th></tr></thead>
-      <tbody id="log-body"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
+      <thead><tr><th>Log</th><th>When</th><th>Project</th><th>Conversation</th><th>User</th><th>Flow</th><th>Type</th><th>Master</th><th></th></tr></thead>
+      <tbody id="log-body"><tr><td colspan="9" class="empty">Loading…</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -263,19 +268,24 @@ async function viewVersion(id) {
 
 async function loadLogs() {
   try {
-    const d = await api('/api/admin/prompt-log?limit=100');
+    const sel = document.getElementById('log-project'), want = sel.value;
+    const d = await api('/api/admin/prompt-log?limit=200' + (want ? '&project=' + encodeURIComponent(want) : ''));
+    // Project filter fills itself from the projects seen in the log
+    const names = [...new Set(d.logs.map(l => l.project_name).filter(Boolean))];
+    names.forEach(n => { if (![...sel.options].some(o => o.value === n)) sel.add(new Option(n, n)); });
     document.getElementById('log-body').innerHTML = d.logs.length ? d.logs.map(l => `
       <tr>
         <td class="meta">#${l.id}</td>
         <td class="meta">${when(l.created_at)}</td>
+        <td>${l.project_name ? `<span class="badge">${esc(l.project_name)}</span>` : '<span class="meta">—</span>'}</td>
         <td>${l.session_id ? `${esc(l.meeting_title || 'Untitled')} <span class="meta">· #${l.session_id}</span>` : '<span class="meta">Not saved</span>'}</td>
         <td class="meta">${esc(l.user_email || '—')}</td>
         <td><span class="badge ${l.composer_error ? 'warn' : ''}">${esc(l.flow)}</span>${l.composer_error ? '<div class="meta" style="margin-top:3px">Composer failed</div>' : ''}</td>
         <td class="meta">${esc(l.meeting_type || '—')}</td>
         <td class="meta">${l.master_prompt_id ? '#' + l.master_prompt_id : 'file'}</td>
         <td><button class="btn ghost" style="padding:4px 10px" onclick="viewLog(${l.id})">View</button></td>
-      </tr>`).join('') : '<tr><td colspan="8" class="empty">No prompts logged yet. Generate an MOC to see its prompt here.</td></tr>';
-  } catch (e) { document.getElementById('log-body').innerHTML = `<tr><td colspan="8" class="empty">${esc(e.message)}</td></tr>`; }
+      </tr>`).join('') : '<tr><td colspan="9" class="empty">No prompts logged yet. Generate an MOC to see its prompt here.</td></tr>';
+  } catch (e) { document.getElementById('log-body').innerHTML = `<tr><td colspan="9" class="empty">${esc(e.message)}</td></tr>`; }
 }
 
 async function viewLog(id) {

@@ -91,9 +91,10 @@ Main table: `mom_sessions`.
 
 | Output | Route |
 |---|---|
-| Word (full MOC) | `GET /api/history/:id/export/docx` |
-| Word (client MOC) | `GET /api/history/:id/export/docx?view=client` — agenda business, confirmed decisions and agreed actions only |
-| PDF | Browser print from the UI (no server PDF route found — verify in code) |
+| Word (full MOC) | `GET /api/history/:id/export/docx` — one layout for all templates (`mocDocxKit` in `server.js`): centred letterhead, key-facts table, numbered sections, footer |
+| Word (client MOC) | `GET /api/history/:id/export/docx?view=client` — agenda business, confirmed decisions and agreed actions only. Also on the "MOC saved" screen. |
+| Word (transcript) | `GET /api/history/:id/export/transcript-docx` — speaker-wise when diarized. Records → Transcript tab, and "MOC saved" screen. |
+| PDF | Built in the browser by `public/js/moc-pdf.js` (jsPDF). Falls back to the print view if the script is missing, errors, or the text has Indian-script characters. `moc-pdf.js` must be in the live deploy FILES list. |
 | Share link | `POST /api/history/:id/share`, `DELETE ...share`, `GET /api/share/:token`, page `/s/:token` |
 | Email | `POST /api/history/:id/send-email`, `POST /api/history/:id/draft-email` |
 
@@ -199,3 +200,4 @@ Copy this list into the week's notes and tick as you go.
 | Date | Who | Change |
 |---|---|---|
 | 2026-10-21 | Dev | First version. |
+| 2026-10-27 | Dev | Word MOC restyled to firm format; transcript Word export; PDF script added to live deploy list with print fallback. |

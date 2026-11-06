@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <script src="/js/theme.js"></script>
+<script src="/js/moc-pdf.js"></script>
 <title>Shared MOC · AiX Track</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -149,6 +150,12 @@ table.meta-grid.trk th{width:auto;font-family:var(--mono);font-size:10px;letter-
   .card,.stat{box-shadow:none;backdrop-filter:none;break-inside:avoid}
   .hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+.btn-pdf{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;font:600 12.5px/1 inherit;color:#fff;
+  background:linear-gradient(135deg,#0F1B3D,#24366E);border:1px solid #B8912A;border-radius:999px;cursor:pointer;
+  box-shadow:0 2px 10px rgba(15,27,61,0.25);transition:transform .15s,box-shadow .15s}
+.btn-pdf:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(15,27,61,0.35)}
+.btn-pdf:disabled{opacity:.6;cursor:wait;transform:none}
+.btn-pdf svg{color:#E8C25A}
 </style>
 <link rel="stylesheet" href="/css/theme-dark.css">
 <link rel="stylesheet" href="/css/aix-uniform.css">
@@ -163,7 +170,7 @@ table.meta-grid.trk th{width:auto;font-family:var(--mono);font-size:10px;letter-
   </a>
   <div class="top-actions">
     <span class="chip-ro">View only</span>
-    <button class="icon-btn" onclick="window.print()" title="Print or save as PDF">⎙ <span class="lbl">Print / PDF</span></button>
+    <button class="btn-pdf" onclick="sharePdf()" title="Download as PDF"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span class="lbl">Download PDF</span></button>
     <button class="icon-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">◐</button>
   </div>
 </header>
@@ -223,7 +230,15 @@ function card(title, body, count){
   return `<section class="card"><div class="card-title">${title}${count != null ? `<span class="count">${count}</span>` : ''}</div>${body}</section>`;
 }
 
+let sharedMOM=null;
+function sharePdf(){
+  if(!sharedMOM) return;
+  if(typeof window.AIX_MOC_PDF!=='function') return window.print();
+  window.AIX_MOC_PDF(sharedMOM,{refId:sharedMOM.ref_id||('MOC-'+sharedMOM.id),advisory:sharedMOM.moc_template==='advisory',fallback:()=>window.print()});
+}
+
 function render(m){
+  sharedMOM = m;
   document.getElementById('loading-state').style.display = 'none';
   document.getElementById('main').style.display = 'block';
   document.title = `${m.meeting_title || 'MOC'} · AiX Track`;

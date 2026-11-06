@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <script src="/js/theme.js"></script>
 <script src="/js/rates.js"></script>
+<script src="/js/moc-pdf.js"></script>
 <title>Records · AiX Track</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1495,6 +1496,12 @@ tbody tr:hover{background:var(--gold-tint);}
   .plan-credits{font-size:1.8rem}
   .bottom-nav a{font-size:8px}
 }
+.modal-action-btns .btn-pdf,.btn-pdf{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;font:600 12.5px/1 var(--sans);color:#fff;
+  background:linear-gradient(135deg,#0F1B3D,#24366E);border:1px solid #B8912A;border-radius:999px;cursor:pointer;
+  box-shadow:0 2px 10px rgba(15,27,61,0.25);transition:transform .15s,box-shadow .15s}
+.btn-pdf:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(15,27,61,0.35)}
+.btn-pdf:disabled{opacity:.6;cursor:wait;transform:none}
+.btn-pdf svg{color:#E8C25A}
 </style>
 <link rel="stylesheet" href="/css/theme-dark.css">
 <style>
@@ -1503,6 +1510,7 @@ tbody tr:hover{background:var(--gold-tint);}
 </style>
 <link rel="stylesheet" href="/css/aix-uniform.css">
 <link rel="stylesheet" href="/css/aix-polish.css">
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#18182C"><script>if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(function(){});</script>
 </head>
 <body>
 
@@ -1698,8 +1706,8 @@ tbody tr:hover{background:var(--gold-tint);}
           <div style="font-family:var(--mono);font-size:9px;color:var(--ink3);line-height:1.4">Avg per<br><span style="color:var(--ink2)">MOC</span></div>
         </div>
         <div style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink3);line-height:1.6">
-          <span data-rate="standard">1</span> cr/min · <span data-rate="diarization">2</span> cr/min with diarization<br>
-          <span style="color:var(--ink4)">1-hr = <span data-rate="hour-standard">60</span> cr · with diarization = <span data-rate="hour-diarization">120</span> cr</span>
+          <span data-rate="standard">1</span> credits/min · <span data-rate="diarization">2</span> credits/min with diarization<br>
+          <span style="color:var(--ink4)">1-hr = <span data-rate="hour-standard">60</span> credits · with diarization = <span data-rate="hour-diarization">120</span> credits</span>
         </div>
       </div>
       <div class="table-wrap">
@@ -1766,11 +1774,12 @@ tbody tr:hover{background:var(--gold-tint);}
         <button class="tab-btn" id="tab-tx-btn" onclick="switchTab('tx')">Transcript</button>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span id="modal-credits-chip" style="display:none;font-family:var(--mono);font-size:10px;font-weight:700;background:var(--gold-tint);color:var(--gold);border:1px solid var(--gold);padding:3px 10px;border-radius:6px;white-space:nowrap">⬡ — cr</span>
+        <span id="modal-credits-chip" style="display:none;font-family:var(--mono);font-size:10px;font-weight:700;background:var(--gold-tint);color:var(--gold);border:1px solid var(--gold);padding:3px 10px;border-radius:6px;white-space:nowrap">⬡ — credits</span>
         <div class="modal-action-btns">
           <button class="btn-nav" id="modal-edit-btn" onclick="openEditModal()" title="Edit this MOC">✏️ Edit</button>
           <button class="btn-nav" id="modal-regen-btn" onclick="openRegenDialog('moc')" title="Rebuild this MOC from the saved transcript with the latest prompt pipeline">🔄 Regenerate MOC</button>
           <button class="btn-nav" id="modal-rediarize-btn" onclick="openRegenDialog('speakers')" title="Re-read the recording to identify who said what, then rebuild the MOC" style="display:none">🗣 Regenerate with Speakers</button>
+          <button class="btn-pdf" id="modal-pdf-btn" onclick="modalPrint(this)" title="Download this MOC as a PDF file"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download PDF</button>
           <button class="btn-nav" id="modal-share-btn" onclick="shareLink()" title="Copy shareable read-only link">🔗 Share</button>
           <button class="btn-nav" id="modal-followup-btn" onclick="openFollowupDraft()" title="AI-draft follow-up email for attendees">✉️ Follow-up</button>
           <button class="btn-nav" id="docx-internal-btn" onclick="downloadDOCX('internal')" title="Detailed MOC for internal reference — includes options raised, key figures and transcript evidence">📝 Word (Detailed MOC)</button>
@@ -1779,7 +1788,6 @@ tbody tr:hover{background:var(--gold-tint);}
           <button class="btn-nav" id="modal-email-other-btn" onclick="openEmailOthers()" title="Email this MOC to other people">➕ Send to…</button>
           <button class="btn-nav" onclick="modalDownloadTXT()">📄 TXT</button>
           <button class="btn-nav" onclick="modalShareWhatsApp()" title="Share on WhatsApp" style="background:#25D366;color:#fff;border-color:#25D366">📱 WA</button>
-          <button class="btn-nav" onclick="modalPrint()" title="Download as PDF">🖨 PDF</button>
 
         </div>
       </div>
@@ -2164,7 +2172,7 @@ function updateStats(rows){
   document.getElementById("s-week").textContent=week;
   document.getElementById("s-duration").innerHTML=totalMin+"<em>m</em>";
   document.getElementById("s-actions").textContent=totalAct;
-  // Credit consumption — use stored credits_deducted if available, else estimate (1 cr/min, 2 with diarization)
+  // Credit consumption — use stored credits_deducted if available, else estimate (1 credits/min, 2 with diarization)
   const totalCr=rows.reduce((s,r)=>{
     if(Number(r.credits_deducted)>0) return s+Number(r.credits_deducted);
     const d=Number(r.duration_seconds)||0;
@@ -2409,8 +2417,8 @@ function renderTable(){
         const c=stored>0?stored:(dur?Math.ceil(dur/60)*(row.with_diarization?window.AIX_RATES.diarization_per_min:window.AIX_RATES.standard_per_min):0);
         if(!c) return '<span style="color:var(--ink4);font-size:11px">—</span>';
         const dTag=row.with_diarization?'<sup style="font-size:7px;margin-left:1px;color:var(--gold)">D</sup>':'';
-        const tip=row.with_diarization?` title="${window.AIX_RATES.diarization_per_min} cr/min · Speaker diarization (who said what)"`:'';
-        return`<span style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--gold);background:var(--gold-tint);padding:2px 7px;border-radius:4px;white-space:nowrap"${tip}>${c} cr${dTag}</span>`;
+        const tip=row.with_diarization?` title="${window.AIX_RATES.diarization_per_min} credits/min · Speaker diarization (who said what)"`:'';
+        return`<span style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--gold);background:var(--gold-tint);padding:2px 7px;border-radius:4px;white-space:nowrap"${tip}>${c} credits${dTag}</span>`;
       })()}</td>
       <td>
         <div class="date-cell">${dStr}</div>
@@ -2515,7 +2523,7 @@ async function openModal(id){
     // ── Row 1: date · time · duration · language · credits · saved ──────
     const creditsConsumed = Number(m.credits_deducted)>0 ? Number(m.credits_deducted) : (dur ? Math.ceil(dur/60)*(m.with_diarization?window.AIX_RATES.diarization_per_min:window.AIX_RATES.standard_per_min) : 0);
     const chip = document.getElementById('modal-credits-chip');
-    if(chip){ if(creditsConsumed){ chip.textContent='⬡ '+creditsConsumed+' cr'+(m.with_diarization?' D':''); chip.style.display='inline-flex'; } else { chip.style.display='none'; } }
+    if(chip){ if(creditsConsumed){ chip.textContent='⬡ '+creditsConsumed+' credits'+(m.with_diarization?' D':''); chip.style.display='inline-flex'; } else { chip.style.display='none'; } }
     document.getElementById("modal-meta").innerHTML=[
       m.meeting_date?`${m.meeting_date}`:"",
       m.meeting_time?`${m.meeting_time}`:"",
@@ -2854,6 +2862,7 @@ function buildTranscriptTab(m){
     <div class="tx-copy-row">
       <span class="tx-label">Transcript</span>
       <button class="btn-nav" id="tx-copy-btn" onclick="copyTranscript()">📋 Copy</button>
+      <button class="btn-nav" id="tx-word-btn" onclick="downloadTranscriptDOCX()">📝 Download Word</button>
     </div>
     <div class="tx-full-box">${esc(tx)}</div>`}
     <div style="font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:10px;text-align:right;letter-spacing:.04em">${m.file_name?esc(m.file_name):""}</div>
@@ -2900,6 +2909,7 @@ function diarizedHTML(d){
     <div class="tx-copy-row">
       <span class="tx-label">Speakers · who said what</span>
       <button class="btn-nav" id="tx-copy-btn" onclick="copyTranscript()">📋 Copy</button>
+      <button class="btn-nav" id="tx-word-btn" onclick="downloadTranscriptDOCX()">📝 Download Word</button>
     </div>
     <div class="spk-grid">${cards}</div>
     <div class="turns">${turns}</div>`;
@@ -2981,7 +2991,27 @@ async function modalCopySummary(){
   } catch { alert(t); }
 }
 
-function modalPrint(){
+// Branded PDF file; the print view below is the fallback for Indian-script text
+// The Client-Ready MOC, when this MOC has one, opens as a print-ready page (every script renders)
+async function openClientMomPdf(id){
+  const url=`/api/history/${id}/client-mom.html`;
+  // The tab is opened inside the click so pop-up blockers allow it, then pointed at the page
+  const w=window.open('','_blank');
+  try{ const r=await fetch(url,{credentials:'same-origin'}); if(!r.ok){ if(w) w.close(); return false; } }catch(e){ if(w) w.close(); return false; }
+  if(w) w.location.href=url+'#print'; else location.href=url;
+  return true;
+}
+async function modalPrint(btn){
+  const m=currentModalData; if(!m) return;
+  if(btn) btn.disabled=true;
+  if(await openClientMomPdf(m.id)){ if(btn) btn.disabled=false; return; }
+  const refId=`MOC-${new Date(m.created_at).getFullYear()}-${String(m.id).padStart(4,"0")}`;
+  // Script missing or a jsPDF error → print view instead of failing silently
+  if(typeof window.AIX_MOC_PDF!=='function'){ if(btn) btn.disabled=false; return modalPrintView(); }
+  Promise.resolve().then(()=>window.AIX_MOC_PDF(m,{refId,advisory:isAdvisory(m),letterhead:LH,fallback:modalPrintView}))
+    .catch(e=>{ console.error('[pdf]',e); modalPrintView(); }).finally(()=>{ if(btn) btn.disabled=false; });
+}
+function modalPrintView(){
   const m=currentModalData; if(!m) return;
   const att=parse(m.attendees),ag=parse(m.agenda),dp=parse(m.discussion_points),
         dec=parse(m.decisions),ai=parse(m.action_items);
@@ -4333,6 +4363,27 @@ async function regenerateFollowup(){
 // ════════════════════════════════════════════════════════
 //  F03 — WORD (.docx) DOWNLOAD
 // ════════════════════════════════════════════════════════
+
+async function downloadTranscriptDOCX(){
+  const m = currentModalData; if(!m) return;
+  const btn = document.getElementById('tx-word-btn'), orig = btn?.innerHTML;
+  if(btn){ btn.disabled=true; btn.innerHTML='⏳'; }
+  try{
+    const r = await fetch(`/api/history/${m.id}/export/transcript-docx`,{credentials:'same-origin'});
+    if(!r.ok){ const d = await r.json().catch(()=>({})); throw new Error(d.error||`HTTP ${r.status}`); }
+    const url = URL.createObjectURL(await r.blob());
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Transcript_MOC-${new Date(m.created_at||Date.now()).getFullYear()}-${String(m.id).padStart(4,'0')}.docx`;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    showToast('Transcript downloaded!','success');
+  }catch(err){
+    showToast('Transcript Word export: '+err.message,'error');
+  }finally{
+    if(btn){ btn.disabled=false; btn.innerHTML=orig; }
+  }
+}
 
 async function downloadDOCX(view){
   const m = currentModalData; if(!m) return;

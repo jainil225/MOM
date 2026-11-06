@@ -307,6 +307,63 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;animation-delay:0s !important;transition-duration:.01ms !important;transition-delay:0s !important}
   .lg-circuit .pl{display:none}
 }
+/* Demo video + pricing link */
+.lg-cta-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:14px;position:relative;z-index:2}
+.lg-demo-btn{font:600 13px/1 var(--sans,inherit);padding:10px 16px;border-radius:999px;border:1px solid rgba(255,255,255,0.35);background:rgba(255,255,255,0.12);color:#fff;cursor:pointer}
+.lg-demo-btn:hover{background:rgba(255,255,255,0.22)}
+.lg-price-link{font-size:13px;font-weight:600;color:#fff;opacity:.85;text-decoration:underline;text-underline-offset:3px}
+.lg-price-link:hover{opacity:1}
+.lg-demo-btn{display:inline-flex;align-items:center;gap:8px;transition:background .2s,transform .2s}
+.lg-demo-btn:hover{transform:translateY(-1px)}
+.db-ic{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#E0621A;font-size:8px;padding-left:2px}
+
+/* Inline video in a browser-style frame */
+.lg-vframe{display:none;position:relative;width:100%;padding:0;border:1px solid rgba(255,255,255,0.14);border-radius:18px;overflow:hidden;cursor:pointer;
+  background:#12122A;box-shadow:0 30px 70px rgba(0,0,0,0.5),0 0 0 6px rgba(255,255,255,0.04);text-align:left;font:inherit;color:inherit;
+  animation:lgfloat 7s ease-in-out infinite;transition:box-shadow .3s,border-color .3s}
+.lg-vframe:hover,.lg-vframe:focus-visible{border-color:rgba(240,128,58,0.6);box-shadow:0 34px 80px rgba(0,0,0,0.55),0 0 0 6px rgba(224,98,26,0.18);outline:none}
+.vf-bar{display:flex;align-items:center;gap:6px;padding:9px 12px;background:rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.08)}
+.vf-bar i{width:9px;height:9px;border-radius:50%}
+.vf-bar i:nth-child(1){background:#E86A5A}.vf-bar i:nth-child(2){background:#E8B84A}.vf-bar i:nth-child(3){background:#4CC38A}
+.vf-url{margin-left:10px;flex:1;font-family:var(--mono);font-size:10px;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.06);padding:3px 10px;border-radius:999px;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vf-len{margin-left:auto;font-family:var(--mono);font-size:10px;font-weight:600;color:#fff;background:rgba(224,98,26,0.85);padding:2px 8px;border-radius:999px}
+.lg-vframe video{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#18182C}
+.vf-play{position:absolute;left:0;right:0;bottom:0;top:34px;display:flex;align-items:flex-end;justify-content:flex-start;gap:10px;padding:14px;
+  background:linear-gradient(180deg,rgba(18,18,42,0) 60%,rgba(18,18,42,0.55) 100%);transition:background .3s}
+.vf-ring{width:44px;height:44px;border-radius:50%;background:#E0621A;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 10px 30px rgba(224,98,26,0.55);animation:lgpulse 2.2s infinite;transition:transform .25s var(--ease-out)}
+.vf-play .vf-label{margin-bottom:7px}
+.vf-ring svg{width:20px;height:20px;fill:#fff;margin-left:3px}
+.vf-label{font-size:13px;font-weight:600;color:#fff;background:rgba(18,18,42,0.7);padding:6px 14px;border-radius:999px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.lg-vframe:hover .vf-ring{transform:scale(1.08)}
+.lg-vframe:hover .vf-play{background:linear-gradient(180deg,rgba(18,18,42,0) 40%,rgba(18,18,42,0.65) 100%)}
+.lg-preview.has-video .lg-vframe{display:block}
+.lg-preview.has-video .lg-demo{display:none}
+.lg-preview.has-video .lg-float{top:-22px}
+
+/* Full-screen player */
+.lg-video-modal{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;
+  background:rgba(10,10,24,0.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s}
+.lg-video-modal.open{opacity:1;visibility:visible}
+.lg-video-box{position:relative;width:min(960px,100%);background:#18182C;border:1px solid rgba(255,255,255,0.12);border-radius:20px;overflow:hidden;
+  box-shadow:0 40px 100px rgba(0,0,0,0.6);transform:translateY(20px) scale(.97);transition:transform .4s var(--ease-out)}
+.lg-video-modal.open .lg-video-box{transform:none}
+.lg-video-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;color:#fff}
+.lg-video-head b{display:block;font-size:16px}
+.lg-video-head span{font-size:12px;color:rgba(255,255,255,0.6)}
+.lg-video-box video{width:100%;aspect-ratio:16/9;background:#000;display:block}
+.lg-video-close{flex-shrink:0;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:14px;cursor:pointer;transition:background .2s}
+.lg-video-close:hover{background:rgba(255,255,255,0.2)}
+.lg-video-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 18px;color:rgba(255,255,255,0.8);font-size:13px}
+.lg-video-cta{border:0;border-radius:999px;padding:9px 18px;background:#E0621A;color:#fff;font:600 13px var(--sans);cursor:pointer}
+.lg-video-cta:hover{background:#C8540E}
+
+@media (max-width: 980px){
+  .lg-preview.has-video{display:block;margin:1.25rem 0 .5rem;max-width:100%}
+  .lg-preview.has-video .lg-float{display:none}
+  .lg-vframe{animation:none}
+  .lg-cta-row .lg-demo-btn{display:none}
+}
 </style>
 
 <link rel="stylesheet" href="/css/theme-dark.css">
@@ -358,9 +415,15 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
     </div>
 
     <!-- Live product demo: recording → writing → MOC ready (driven by the small script at the end) -->
-    <div class="lg-preview rise" style="--t:1.05s" aria-hidden="true">
-      <div class="lg-float"><b>60</b><span>free credits</span></div>
-      <div class="lg-demo" id="lg-demo" data-phase="listen">
+    <div class="lg-preview rise" id="lg-preview" style="--t:1.05s">
+      <div class="lg-float" aria-hidden="true"><b>60</b><span>free credits</span></div>
+      <!-- 30-sec product video, shown in place of the animated card once the file is found -->
+      <button type="button" class="lg-vframe" onclick="openDemoVideo()" aria-label="Play the 30-second AiX Track demo">
+        <span class="vf-bar" aria-hidden="true"><i></i><i></i><i></i><span class="vf-url">track.aiextensive.com</span><span class="vf-len">0:30</span></span>
+        <video id="lg-inline-video" muted loop playsinline preload="none" poster="/media/aix-track-demo-poster.jpg" aria-hidden="true"></video>
+        <span class="vf-play" aria-hidden="true"><span class="vf-ring"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span><span class="vf-label">Watch how it works · 30 sec</span></span>
+      </button>
+      <div class="lg-demo" id="lg-demo" data-phase="listen" aria-hidden="true">
         <div class="demo-top">
           <span class="demo-state"><i class="st-dot"></i><span class="st st-listen">Recording</span><span class="st st-skel">Writing your MOC</span><span class="st st-moc">MOC ready</span></span>
           <span class="demo-time" id="demo-time">00:00</span>
@@ -391,7 +454,23 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
     </div>
 
     <div class="lg-trust rise" style="--t:1.2s"><span>Passwordless sign-in</span><span>Data never sold</span><span>MOC in minutes</span></div>
+    <div class="lg-cta-row rise" style="--t:1.3s">
+      <button type="button" class="lg-demo-btn" id="lg-demo-btn" onclick="openDemoVideo()" hidden><span class="db-ic">▶</span>Watch 30-sec demo</button>
+      <a class="lg-price-link" href="/pricing">See pricing →</a>
+    </div>
   </section>
+
+  <!-- 30-second product demo video (file: public/media/aix-track-demo.mp4) -->
+  <div class="lg-video-modal" id="lg-video-modal" onclick="if(event.target===this)closeDemoVideo()" role="dialog" aria-modal="true" aria-label="AiX Track demo video">
+    <div class="lg-video-box">
+      <div class="lg-video-head">
+        <div><b>See AiX Track in 30 seconds</b><span>Record → speakers named → MOC ready → share</span></div>
+        <button type="button" class="lg-video-close" onclick="closeDemoVideo()" aria-label="Close">✕</button>
+      </div>
+      <video id="lg-video" controls playsinline preload="none" poster="/media/aix-track-demo-poster.jpg" src="/media/aix-track-demo.mp4"></video>
+      <div class="lg-video-foot"><span>🎁 60 free credits · no card needed</span><button type="button" class="lg-video-cta" onclick="startFromVideo()">Start free →</button></div>
+    </div>
+  </div>
 
   <!-- ══ RIGHT: sign in ══ -->
   <main class="lg-right login-right">
@@ -401,7 +480,7 @@ body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased
     <div class="lg-card login-pane">
       <div class="card-head">
         <div class="lg-logo card-logo"><img src="/aix-logo.png" alt="" onerror="this.style.display='none'"></div>
-        <span class="lg-free">🎁 Start free · 60 credits · no card needed</span>
+        <span class="lg-free">🎁 Start free · 60 credits (about 60 min of MOC) · no card needed</span>
       </div>
 
       <div class="mobile-brand">
@@ -543,6 +622,9 @@ let currentEmail="",resendInterval=null;
 const digits=()=>document.querySelectorAll(".otp-digit");
 
 const urlParams=new URLSearchParams(window.location.search);
+/* Referral code from an invite link (/r/CODE) — kept so it survives the Google redirect */
+const refCode=(()=>{let c=(urlParams.get("ref")||"").replace(/[^a-z0-9]/gi,"").slice(0,16).toUpperCase();
+  try{if(c)localStorage.setItem("aix_ref",c);else c=localStorage.getItem("aix_ref")||"";}catch(e){}return c;})();
 if(urlParams.get("error")==="consent") showError("Please tick both boxes before continuing with Google.");
 else if(urlParams.get("error")) showError("Sign-in failed. Please try again or use email OTP.");
 
@@ -592,7 +674,7 @@ function flagConsent(){
 function googleLogin(){
   if(!consentGiven()) return flagConsent();
   // The server refuses /auth/google without this flag
-  window.location.href='/auth/google?consent=1';
+  window.location.href='/auth/google?consent=1'+(refCode?'&ref='+encodeURIComponent(refCode):'');
 }
 
 /* ─── Resend countdown ──────────────────────────────────── */
@@ -681,7 +763,7 @@ async function verifyOTP(){
   try{
     const res=await fetch("/auth/otp/verify",{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({email:currentEmail,otp,remember:true,consent_terms:consentGiven(),consent_processing:consentGiven()})
+      body:JSON.stringify({email:currentEmail,otp,remember:true,ref:refCode,consent_terms:consentGiven(),consent_processing:consentGiven()})
     });
     const data=await res.json();
     if(!res.ok){
@@ -782,6 +864,35 @@ function openModal(type){ window.open('/' + (type === 'usage' ? 'usage-policy' :
 
   cycle();
 })();
+</script>
+<script>
+// Demo video: once public/media/aix-track-demo.mp4 is found it replaces the animated card
+// as a silent looping preview; a click opens the full player
+fetch('/media/aix-track-demo.mp4', { method: 'HEAD' }).then(function (r) {
+  if (!r.ok) return;
+  document.getElementById('lg-demo-btn').hidden = false;
+  document.getElementById('lg-preview').classList.add('has-video');
+  var iv = document.getElementById('lg-inline-video');
+  var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!calm) { iv.src = '/media/aix-track-demo.mp4'; iv.play().catch(function () {}); }
+}).catch(function () {});
+function openDemoVideo() {
+  var iv = document.getElementById('lg-inline-video'); if (iv) iv.pause();
+  document.getElementById('lg-video-modal').classList.add('open');
+  var v = document.getElementById('lg-video'); v.currentTime = 0; v.play().catch(function () {});
+}
+function closeDemoVideo() {
+  var m = document.getElementById('lg-video-modal');
+  if (!m.classList.contains('open')) return;
+  m.classList.remove('open');
+  document.getElementById('lg-video').pause();
+  var iv = document.getElementById('lg-inline-video'); if (iv && iv.src) iv.play().catch(function () {});
+}
+function startFromVideo() {
+  closeDemoVideo();
+  var e = document.getElementById('email-input'); if (e) e.focus();
+}
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDemoVideo(); });
 </script>
 </body>
 </html>

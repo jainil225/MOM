@@ -12,7 +12,7 @@ $remote = "rm -rf $stage && mkdir -p $stage && tar xzf - -C $stage && bash $stag
 
 Write-Host ''
 Write-Host 'Deploying AiX Track to LIVE: track.aiextensive.com' -ForegroundColor Red
-Write-Host 'Files: server.js, drive.js, moc-quality.js, public/index.html, public/history.html, public/js/rates.js, public/usage.html, public/cost.html, public/credits.html, public/activity.html, public/admin.html, login, profile, pricing, terms, privacy, usage-policy, terms-v1, privacy-v1, consent pages, public/js/theme.js, prompts/master-moc-prompt.md, ops/  (plus package files, for comparison only)' -ForegroundColor Cyan
+Write-Host 'Files: server.js, drive.js, moc-quality.js, public/index.html, public/history.html, public/js/rates.js, public/usage.html, public/cost.html, public/credits.html, public/activity.html, public/admin.html, public/logging.html, login, profile, pricing, terms, privacy, usage-policy, terms-v1, privacy-v1, consent pages, public/js/theme.js, public/js/moc-pdf.js, projects, project, prompts, manifest, sw.js, public/share.html, public/aix-logo.png, public/media/aix-track-demo.mp4 (demo video), prompts/master-moc-prompt.md, ops/  (plus package files, for comparison only)' -ForegroundColor Cyan
 Write-Host ''
 $answer = Read-Host 'Type LIVE to continue'
 if ($answer -ne 'LIVE') { Write-Host 'Cancelled.'; Read-Host 'Press Enter to close'; exit }
@@ -20,7 +20,7 @@ Write-Host 'Enter the server root password when asked (typing is hidden).' -Fore
 Write-Host ''
 
 # cmd /c keeps the tar → ssh pipe binary-safe (Windows PowerShell would corrupt it)
-cmd /c "tar -czf - server.js drive.js moc-quality.js public/index.html public/history.html public/js/rates.js public/usage.html public/cost.html public/credits.html public/activity.html public/admin.html public/login.html public/profile.html public/pricing.html public/terms.html public/privacy.html public/usage-policy.html public/terms-v1.html public/privacy-v1.html public/consent.html public/js/theme.js prompts/master-moc-prompt.md ops package.json package-lock.json | ssh -o StrictHostKeyChecking=accept-new $server `"$remote`""
+cmd /c "tar -czf - server.js drive.js moc-quality.js public/index.html public/history.html public/js/rates.js public/usage.html public/cost.html public/credits.html public/activity.html public/admin.html public/logging.html public/login.html public/profile.html public/pricing.html public/terms.html public/privacy.html public/usage-policy.html public/terms-v1.html public/privacy-v1.html public/consent.html public/js/theme.js public/js/moc-pdf.js public/projects.html public/project.html public/prompts.html public/manifest.webmanifest public/sw.js public/share.html public/aix-logo.png public/media/aix-track-demo.mp4 public/media/aix-track-demo-poster.jpg prompts/master-moc-prompt.md ops package.json package-lock.json | ssh -o StrictHostKeyChecking=accept-new $server `"$remote`""
 
 Write-Host ''
 if ($LASTEXITCODE -eq 0) {

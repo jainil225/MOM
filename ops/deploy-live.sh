@@ -15,7 +15,7 @@ APP=/root/mom-tool
 PM2_NAME=mom-tool
 PORT=3000
 # Everything the live app needs from this release. Local modules server.js requires must be listed here.
-FILES=(server.js drive.js moc-quality.js public/index.html public/history.html public/js/rates.js public/usage.html public/cost.html public/credits.html public/activity.html public/admin.html public/login.html public/profile.html public/pricing.html public/terms.html public/privacy.html public/usage-policy.html public/terms-v1.html public/privacy-v1.html public/consent.html public/js/theme.js prompts/master-moc-prompt.md ops)
+FILES=(server.js drive.js moc-quality.js public/index.html public/history.html public/js/rates.js public/usage.html public/cost.html public/credits.html public/activity.html public/admin.html public/logging.html public/login.html public/profile.html public/pricing.html public/terms.html public/privacy.html public/usage-policy.html public/terms-v1.html public/privacy-v1.html public/consent.html public/js/theme.js public/js/moc-pdf.js public/projects.html public/project.html public/prompts.html public/manifest.webmanifest public/sw.js public/share.html public/aix-logo.png public/media/aix-track-demo.mp4 public/media/aix-track-demo-poster.jpg prompts/master-moc-prompt.md ops)
 STAMP="$(date +%Y%m%d-%H%M%S)"
 CODE_BACKUP_DIR=/var/backups/aix/code
 CODE_BACKUP="$CODE_BACKUP_DIR/$PM2_NAME-$STAMP.tgz"

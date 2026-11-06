@@ -464,7 +464,7 @@ body{
     </div>
   </a>
   <div class="nav-right">
-    <span class="credit-pill" id="nav-credits">— cr</span>
+    <span class="credit-pill" id="nav-credits">— credits</span>
     <button class="btn-nav" onclick="toggleTheme()" id="theme-btn">◑</button>
     <a href="/" class="btn-nav nav-gen">← Generator</a>
     <button class="btn-signout" onclick="signOut()">
@@ -599,7 +599,7 @@ body{
             <div class="stat-chip"><div class="stat-chip-val"><em id="stat-mins2">—</em></div><div class="stat-chip-lbl">Audio Minutes</div></div>
             <div class="stat-chip"><div class="stat-chip-val" id="stat-week2">—</div><div class="stat-chip-lbl">This Week</div></div>
           </div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--ink3);text-align:center;padding:8px 0;letter-spacing:0.06em"><span data-rate="standard">1</span> cr/min · <span data-rate="diarization">2</span> cr/min with diarization (who said what)</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--ink3);text-align:center;padding:8px 0;letter-spacing:0.06em"><span data-rate="standard">1</span> credits/min · <span data-rate="diarization">2</span> credits/min with diarization (who said what)</div>
           <div class="divider"></div>
           <a href="/pricing" class="btn-secondary" style="text-decoration:none">View all credit packs →</a>
         </div>
@@ -949,7 +949,7 @@ async function loadPurchaseHistory(){
     body.innerHTML=orders.map(o=>{
       const amt=parseFloat(o.amount_inr||0);const date=o.paid_at||o.created_at;
       const dateStr=date?new Date(date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'—';
-      return `<div class="purchase-row"><div><div class="purchase-plan">${planLabel[o.plan]||o.plan||'—'}</div><div class="purchase-date">${dateStr}</div></div><div class="purchase-right"><div class="purchase-credits">+${(o.credits||0).toLocaleString('en-IN')} cr</div><div class="purchase-amount">₹${amt.toFixed(0)}</div><span class="purchase-status ${o.status==='paid'?'ps-paid':'ps-pending'}">${o.status}</span></div></div>`;
+      return `<div class="purchase-row"><div><div class="purchase-plan">${planLabel[o.plan]||o.plan||'—'}</div><div class="purchase-date">${dateStr}</div></div><div class="purchase-right"><div class="purchase-credits">+${(o.credits||0).toLocaleString('en-IN')} credits</div><div class="purchase-amount">₹${amt.toFixed(0)}</div><span class="purchase-status ${o.status==='paid'?'ps-paid':'ps-pending'}">${o.status}</span></div></div>`;
     }).join('')+`<a href="/pricing" class="btn-primary" style="text-decoration:none;margin-top:16px"><span>+ Buy More Credits</span></a>`;
   }catch(e){body.innerHTML=`<div style="color:var(--rust);font-size:12px;padding:1rem 0">Could not load purchase history.</div>`;}
 }

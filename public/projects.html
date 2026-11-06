@@ -242,7 +242,19 @@ tr:hover .action-cell{opacity:1}
   #toast-wrap{left:12px;right:12px;bottom:84px;max-width:none}
   .action-cell{opacity:1}
 }
+.cmp-pick{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.cmp-pick label{font-size:12px;color:var(--ink2);display:flex;flex-direction:column;gap:4px;flex:1;min-width:220px}
+.cmp-pick select{padding:7px 9px;border:1px solid var(--border-strong);border-radius:8px;background:var(--card);color:var(--ink);font-size:13px}
+.cmp-legend{font-size:11px;color:var(--ink3);margin-bottom:8px;display:flex;gap:8px;align-items:center}
+.diff{font-family:var(--mono);font-size:12px;line-height:1.6;border:1px solid var(--border);border-radius:10px;padding:10px 12px;max-height:52vh;overflow:auto;white-space:pre-wrap;word-break:break-word;background:var(--card)}
+.diff .row{padding:0 4px;border-radius:3px}
+.d-add,.diff .add{background:var(--sage-tint);color:var(--sage)}
+.d-del,.diff .del{background:var(--rust-tint);color:var(--rust);text-decoration:line-through}
+.d-add,.d-del{padding:1px 6px;border-radius:4px}
+.diff .sec{font-weight:700;color:var(--ink3);margin:8px 0 2px;text-transform:uppercase;font-size:10px;letter-spacing:.1em}
 </style>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#18182C">
 <link rel="stylesheet" href="/css/theme-dark.css">
 <link rel="stylesheet" href="/css/aix-uniform.css">
 <link rel="stylesheet" href="/css/aix-polish.css">
@@ -386,7 +398,18 @@ tr:hover .action-cell{opacity:1}
       <div class="field">
         <label class="field-label" for="f-ctx">Project context <span style="color:var(--ink4)">(optional)</span></label>
         <textarea id="f-ctx" rows="4" maxlength="8000" placeholder="Recurring attendees, standing agenda, names and terms the AI should spell correctly…"></textarea>
-        <div class="field-hint">Saved against the project. Stored ready for a later release that feeds project context into MOC generation — it does not change how MOCs are written today.</div>
+        <div class="field-hint">Fed into every MOC generated in this project. Each saved change is kept as a version — see 🕘 History.</div>
+      </div>
+      <div class="field">
+        <label class="field-label" for="f-tags">Auto-file tags <span style="color:var(--ink4)">(optional)</span></label>
+        <input type="text" id="f-tags" maxlength="1000" placeholder="ABC, Audit-ABC, Board">
+        <div class="field-hint">A conversation saved without a project, carrying any of these tags (or the project name as a tag), is filed here automatically.</div>
+      </div>
+      <div class="field">
+        <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--ink2);cursor:pointer">
+          <input type="checkbox" id="f-carry" checked style="margin-top:3px">
+          <span>Carry context forward — the last three MOCs in this project are passed to the next conversation, so open items and decisions follow through.</span>
+        </label>
       </div>
       <div class="field" style="margin-bottom:4px">
         <span class="field-label">Colour</span>
@@ -401,6 +424,28 @@ tr:hover .action-cell{opacity:1}
 </div>
 
 <!-- Confirm -->
+<!-- Context history and prompt comparison share one wide modal -->
+<div class="overlay" id="hist-overlay">
+  <div class="modal" style="max-width:860px">
+    <div class="modal-head">
+      <div class="modal-eyebrow" id="h-eyebrow">History</div>
+      <div class="modal-title" id="h-title">Context <em>history</em></div>
+    </div>
+    <div class="modal-body">
+      <div class="cmp-pick">
+        <label>Older <select id="h-a" onchange="paintDiff()"></select></label>
+        <label>Newer <select id="h-b" onchange="paintDiff()"></select></label>
+      </div>
+      <div class="cmp-legend"><span class="d-add">added</span> <span class="d-del">removed</span> <span id="h-count"></span></div>
+      <div class="diff" id="h-diff"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" id="h-restore" onclick="restoreVersion()" style="display:none">Restore older version</button>
+      <button class="btn-new" onclick="closeHist()">Close</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="confirm-overlay">
   <div class="modal" style="max-width:440px">
     <div class="modal-head">
@@ -577,8 +622,10 @@ function rowHTML(p){
     '<td><span class="lang-chip'+(p.archived?'':' live')+'">'+(p.archived?'Archived':'Active')+'</span></td>'+
     '<td onclick="event.stopPropagation()">'+
       '<div class="action-cell">'+
-        '<button class="icon-btn" title="Open in Records" onclick="openProject('+p.id+')">👁</button>'+
-        '<button class="icon-btn" title="Edit" onclick="openEdit('+p.id+')">✎</button>'+
+        '<button class="icon-btn" title="Open project" onclick="openProject('+p.id+')">👁</button>'+
+        '<button class="icon-btn" title="Edit context" onclick="openEdit('+p.id+')">✎</button>'+
+        '<button class="icon-btn" title="Context history — additions and deletions" onclick="openHistory('+p.id+')">🕘</button>'+
+        '<button class="icon-btn" title="Compare prompts across conversations" onclick="openPrompts('+p.id+')">⇄</button>'+
         '<button class="icon-btn" title="'+(p.archived?'Restore':'Archive')+'" onclick="toggleArchive('+p.id+')">'+(p.archived?'↩':'📥')+'</button>'+
         '<button class="icon-btn del" title="Delete" onclick="askDelete('+p.id+')">🗑</button>'+
       '</div>'+
@@ -600,7 +647,7 @@ function unfiledRowHTML(){
     '<td></td></tr>';
 }
 
-function openProject(id){ location.href='/history?project='+id; }
+function openProject(id){ location.href='/project?id='+id; }
 
 /* ── Create / edit ────────────────────────────────────────────────── */
 function paintSwatches(){
@@ -618,6 +665,8 @@ function openCreate(){
   document.getElementById('f-name').value='';
   document.getElementById('f-desc').value='';
   document.getElementById('f-ctx').value='';
+  document.getElementById('f-carry').checked=true;
+  document.getElementById('f-tags').value='';
   paintSwatches();
   document.getElementById('edit-overlay').classList.add('open');
   setTimeout(()=>document.getElementById('f-name').focus(),50);
@@ -632,6 +681,8 @@ function openEdit(id){
   document.getElementById('f-name').value=p.name||'';
   document.getElementById('f-desc').value=p.description||'';
   document.getElementById('f-ctx').value=p.context_notes||'';
+  document.getElementById('f-carry').checked=p.carry_forward!==false;
+  document.getElementById('f-tags').value=p.auto_tags||'';
   paintSwatches();
   document.getElementById('edit-overlay').classList.add('open');
   setTimeout(()=>document.getElementById('f-name').focus(),50);
@@ -647,6 +698,8 @@ async function saveProject(){
     name:name,
     description:document.getElementById('f-desc').value.trim(),
     context_notes:document.getElementById('f-ctx').value.trim(),
+    carry_forward:document.getElementById('f-carry').checked,
+    auto_tags:document.getElementById('f-tags').value.trim(),
     color:pickedColour
   };
   const btn=document.getElementById('save-btn');
@@ -704,17 +757,97 @@ function askDelete(id){
 function closeConfirm(){ document.getElementById('confirm-overlay').classList.remove('open'); confirmCb=null; }
 function runConfirm(){ if(confirmCb) confirmCb(); }
 
+/* ── History and prompt comparison ────────────────────────────────── */
+// Line diff (LCS) — enough for context notes and prompts of a few thousand characters
+function lineDiff(a,b){
+  const A=String(a||'').split('\n'), B=String(b||'').split('\n');
+  const n=A.length, m=B.length, T=Array.from({length:n+1},()=>new Int32Array(m+1));
+  for(let i=n-1;i>=0;i--) for(let j=m-1;j>=0;j--) T[i][j]=A[i]===B[j]?T[i+1][j+1]+1:Math.max(T[i+1][j],T[i][j+1]);
+  const out=[]; let i=0,j=0;
+  while(i<n&&j<m){ if(A[i]===B[j]){out.push(['same',A[i]]);i++;j++;} else if(T[i+1][j]>=T[i][j+1]) out.push(['del',A[i++]]); else out.push(['add',B[j++]]); }
+  while(i<n) out.push(['del',A[i++]]); while(j<m) out.push(['add',B[j++]]);
+  return out;
+}
+function diffHTML(a,b,label){
+  const d=lineDiff(a,b);
+  return (label?'<div class="sec">'+esc(label)+'</div>':'')+
+    d.map(([k,t])=>'<div class="row '+(k==='same'?'':k)+'">'+(k==='add'?'+ ':k==='del'?'− ':'  ')+(esc(t)||'&nbsp;')+'</div>').join('');
+}
+function countChanges(a,b){ const d=lineDiff(a,b); return {add:d.filter(x=>x[0]==='add').length, del:d.filter(x=>x[0]==='del').length}; }
+
+let histMode='', histItems=[], histProject=null;
+function fill(sel,items,idx){ document.getElementById(sel).innerHTML=items.map((x,i)=>'<option value="'+i+'"'+(i===idx?' selected':'')+'>'+esc(x.label)+'</option>').join(''); }
+
+async function openHistory(id){
+  histProject=projects.find(x=>x.id===id); histMode='context';
+  try{
+    const r=await fetch('/api/projects/'+id+'/versions',{credentials:'same-origin'}); const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'Could not load history.');
+    // Oldest first so "Older" sits on the left
+    histItems=d.versions.reverse().map((v,i)=>({label:'v'+(i+1)+' · '+new Date(v.created_at).toLocaleString(), a:v.description, b:v.context_notes}));
+    if(!histItems.length){ toast('No saved versions yet — edit and save the context to start the history.','error'); return; }
+    document.getElementById('h-eyebrow').textContent=histProject.name;
+    document.getElementById('h-title').innerHTML='Context <em>history</em>';
+    fill('h-a',histItems,Math.max(0,histItems.length-2)); fill('h-b',histItems,histItems.length-1);
+    paintDiff();
+    document.getElementById('hist-overlay').classList.add('open');
+  }catch(e){ toast(e.message,'error'); }
+}
+
+async function openPrompts(id){
+  histProject=projects.find(x=>x.id===id); histMode='prompt';
+  try{
+    const r=await fetch('/api/projects/'+id+'/prompts',{credentials:'same-origin'}); const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'Could not load prompts.');
+    histItems=d.conversations.map((c,i)=>({label:'C'+(i+1)+' · '+(c.meeting_title||c.file_name||'#'+c.id)+' · '+dateOnly(c.created_at), b:c.session_prompt||'(no meeting prompt — profile prompt used)'}));
+    if(histItems.length<1){ toast('No conversations in this project yet.','error'); return; }
+    document.getElementById('h-eyebrow').textContent=histProject.name;
+    document.getElementById('h-title').innerHTML='Prompt <em>comparison</em>';
+    fill('h-a',histItems,Math.max(0,histItems.length-2)); fill('h-b',histItems,histItems.length-1);
+    paintDiff();
+    document.getElementById('hist-overlay').classList.add('open');
+  }catch(e){ toast(e.message,'error'); }
+}
+
+function paintDiff(){
+  const A=histItems[+document.getElementById('h-a').value], B=histItems[+document.getElementById('h-b').value];
+  if(!A||!B) return;
+  let html='', c1={add:0,del:0}, c2;
+  if(histMode==='context'){
+    html=diffHTML(A.a,B.a,'Description')+diffHTML(A.b,B.b,'Project context');
+    c1=countChanges(A.a,B.a);
+  } else html=diffHTML(A.b,B.b,'');
+  c2=countChanges(A.b,B.b);
+  document.getElementById('h-diff').innerHTML=html;
+  document.getElementById('h-count').textContent=(c1.add+c2.add)+' line(s) added · '+(c1.del+c2.del)+' removed';
+  document.getElementById('h-restore').style.display=(histMode==='context'&&A!==B)?'':'none';
+}
+
+async function restoreVersion(){
+  const A=histItems[+document.getElementById('h-a').value];
+  if(!A||!histProject) return;
+  try{
+    const r=await fetch('/api/projects/'+histProject.id,{method:'PATCH',credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({description:A.a,context_notes:A.b})});
+    const d=await r.json(); if(!r.ok) throw new Error(d.error||'Could not restore.');
+    toast('Restored '+A.label.split(' ·')[0]+' — saved as a new version.','success');
+    closeHist(); load();
+  }catch(e){ toast(e.message,'error'); }
+}
+function closeHist(){ document.getElementById('hist-overlay').classList.remove('open'); }
+
 /* ── Wiring ───────────────────────────────────────────────────────── */
-['edit-overlay','confirm-overlay'].forEach(id=>{
-  document.getElementById(id).addEventListener('click',e=>{ if(e.target===e.currentTarget){ closeEdit(); closeConfirm(); } });
+['hist-overlay','edit-overlay','confirm-overlay'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{ if(e.target===e.currentTarget){ closeEdit(); closeConfirm(); closeHist(); } });
 });
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){ closeEdit(); closeConfirm(); }
+  if(e.key==='Escape'){ closeEdit(); closeConfirm(); closeHist(); }
   // Enter saves from the name field, which is the common case
   if(e.key==='Enter'&&e.target&&e.target.id==='f-name'){ e.preventDefault(); saveProject(); }
 });
 
 load();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 </script>
 </body>
 </html>

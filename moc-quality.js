@@ -246,10 +246,66 @@ function applyQualityGates(mom, transcript) {
     matters_discussed: mom.matters_discussed,
     // Directions the discussion converged on — shown as working conclusions, not formal approvals
     working_conclusions: arr(mom.working_conclusions).map(str).filter(Boolean),
+    // Client MOC header line and decisions the client still has to take
+    objective: str(mom.objective),
+    pending_decisions: arr(mom.pending_decisions).filter(p => p && str(p.area) && str(p.clarification))
+      .map(p => ({ area: str(p.area), clarification: str(p.clarification) })),
     key_figures: mom.key_figures,
+    // Client-Ready MOC — the short document shown to the client by default
+    client_mom: cleanClientMom(mom.client_mom, report, mom.action_items),
     report,
   };
   return mom;
+}
+
+// Keeps only well-formed client MOC content. Actions without a deliverable,
+// without evidence or below Medium confidence never reach the client document.
+function cleanClientMom(c, report, detailedActions) {
+  if (!c || typeof c !== 'object') return null;
+  const s = v => (typeof v === 'string' ? v.trim() : '');
+  const sides = ['client', 'advisor', 'joint', 'other', 'tbc'];
+  // The model may write "High (explicit task…)" or "medium" — read the leading word only
+  const level = a => (s(a.confidence).toLowerCase().match(/^(high|medium|low)/) || [])[1] || '';
+  // When the client action carries no quote, borrow the commitment quote of the
+  // matching action in the detailed record (most shared words wins)
+  const words = t => new Set(s(t).toLowerCase().match(/[a-z0-9ऀ-෿]{4,}/g) || []);
+  const detailed = arr(detailedActions).filter(d => d && s(d.task) && s(d.commitment_quote) && d.evidence !== 'not_found');
+  const borrow = a => {
+    const w = words(a.action); let best = null, score = 0;
+    detailed.forEach(d => { let k = 0; words(d.task).forEach(x => { if (w.has(x)) k++; }); if (k > score) { score = k; best = d; } });
+    return score >= 2 ? s(best.commitment_quote) : '';
+  };
+  const allActions = arr(c.actions).filter(a => a && s(a.action));
+  const actions = allActions
+    .map(a => Object.assign({}, a, { evidence: s(a.evidence) || borrow(a) }))
+    // Low confidence, or no supporting words anywhere, stays out of the client document
+    .filter(a => level(a) !== 'low' && a.evidence)
+    .map((a, i) => ({
+      action_id: s(a.action_id).replace(/\s*\(.*$/, '').slice(0, 12) || `A${i + 1}`,
+      action: s(a.action),
+      owner: s(a.owner) || 'Owner to be confirmed',
+      owner_side: sides.includes(s(a.owner_side).toLowerCase()) ? s(a.owner_side).toLowerCase() : 'tbc',
+      target_date: s(a.target_date) || 'Target date to be confirmed',
+      status: s(a.status) || 'Pending',
+      confidence: level(a) === 'high' ? 'High' : 'Medium',
+      evidence: a.evidence.slice(0, 400),
+    }));
+  const dropped = allActions.length - actions.length;
+  if (dropped && report) report.warnings.push(`${dropped} weakly evidenced action(s) kept out of the client MOC.`);
+  const out = {
+    executive_summary: s(c.executive_summary),
+    agenda: arr(c.agenda).filter(t => t && s(t.topic)).map(t => ({
+      topic: s(t.topic), discussion: s(t.discussion), outcome: s(t.outcome),
+      terms: arr(t.terms).filter(x => x && s(x.term)).slice(0, 8).map(x => ({ term: s(x.term), position: s(x.position) })),
+    })),
+    decisions: arr(c.decisions).filter(d => d && s(d.decision)).map(d => ({ decision: s(d.decision), status: s(d.status) || 'Agreed' })),
+    actions,
+    pending_decisions: arr(c.pending_decisions).filter(p => p && s(p.matter))
+      .map(p => ({ matter: s(p.matter), clarification: s(p.clarification) })),
+    next_meeting: s(c.next_meeting),
+    conclusion: s(c.conclusion),
+  };
+  return out.executive_summary || out.agenda.length ? out : null;
 }
 
 module.exports = { applyQualityGates, makeQuoteMatcher, decisionLine, GATE_VERSION };
