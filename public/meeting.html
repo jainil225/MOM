@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<script src="/js/theme.js"></script>
+<title>Meeting · AiX Track</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Every block below is the same one Records (history.html) uses — tokens, nav,
+   sidebar, banner, stats, toolbar, table, empty state — so the two pages read
+   as one product. theme-dark.css, aix-uniform.css and aix-polish.css load last
+   and have the final say, exactly as they do on Records. */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{background:#F0EDE6}
+:root{
+  --ink:#18182C;--ink2:#44445E;--ink3:#7878A0;--ink4:#ABABC0;
+  --paper:#F0EDE6;--paper2:#E8E4DA;--card:rgba(255,255,255,0.92);
+  --border:rgba(24,18,12,0.09);--border-strong:rgba(24,18,12,0.18);
+  --navy:#18182C;--navy-h:#2C2A44;
+  --gold:#E0621A;--gold-h:#C8540E;
+  --gold-tint:rgba(224,98,26,0.09);--gold-tint-strong:rgba(224,98,26,0.20);
+  --sage:#1A9A5A;--sage-tint:rgba(26,154,90,0.10);
+  --rust:#C03030;--rust-tint:rgba(192,48,48,0.10);
+  --violet:#7C5FA0;--violet-tint:rgba(124,95,160,0.10);
+  --sky:#2870C0;--sky-tint:rgba(40,112,192,0.10);
+  --shadow-1:0 1px 3px rgba(24,18,12,0.06),0 2px 12px rgba(24,18,12,0.05);
+  --shadow-2:0 4px 28px rgba(24,18,12,0.10),0 16px 48px rgba(24,18,12,0.08);
+  --shadow-lift:0 20px 60px -20px rgba(24,18,12,0.20),0 8px 24px -12px rgba(24,18,12,0.12);
+  --serif:'Roboto',Georgia,serif;
+  --sans:'Roboto',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'Roboto Mono',ui-monospace,monospace;
+}
+body{font-family:var(--sans);background:radial-gradient(ellipse 90% 56% at 50% -4%,#D05810 0%,#E88030 22%,rgba(232,128,48,0) 58%),radial-gradient(ellipse 58% 50% at 8% 90%,rgba(176,194,224,0.44) 0%,transparent 68%),#F0EDE6;background-attachment:fixed;color:var(--ink);min-height:100vh;transition:background .3s,color .3s}
+
+/* ─── Nav ────────────────────────────────────────────────── */
+.nav{background:rgba(240,237,230,0.86);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid rgba(24,18,12,0.08);height:60px;padding:0 1.75rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;transition:background .3s}
+.nav-brand{display:flex;align-items:center;gap:12px}
+.nav-title{font-family:var(--serif);font-size:20px;letter-spacing:-0.01em;color:var(--ink)}
+.nav-title em{font-style:italic;color:var(--gold)}
+.nav-sub{font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:0.14em;text-transform:uppercase;margin-top:1px}
+.nav-right{display:flex;align-items:center;gap:8px}
+.btn-nav{padding:6px 14px;font-size:12px;font-weight:500;background:rgba(255,255,255,0.80);color:var(--ink2);border:1px solid var(--border);border-radius:999px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all .15s}
+.btn-nav:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-tint)}
+
+/* ─── Sidebar rail ───────────────────────────────────────── */
+.app-layout{display:flex;min-height:calc(100vh - 60px)}
+.sidebar{width:56px;flex-shrink:0;background:rgba(240,237,230,0.76);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:60px;height:calc(100vh - 60px);overflow:hidden;transition:width .22s cubic-bezier(.4,0,.2,1);z-index:40}
+[data-theme="dark"] .sidebar{background:rgba(18,19,26,0.76)}
+.sidebar:hover{width:200px}
+.sidebar-section{padding:10px 6px 4px}
+.sidebar-nav-btn{display:flex;align-items:center;padding:5px 6px;margin:1px 2px;border-radius:8px;text-decoration:none;color:var(--ink3);width:calc(100% - 4px);white-space:nowrap;overflow:hidden;position:relative;transition:background .15s,color .15s}
+.sidebar-nav-btn:hover{background:var(--gold-tint);color:var(--gold)}
+.sidebar-nav-btn.active{color:var(--gold)}
+.sidebar-nav-btn.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;border-radius:0 3px 3px 0;background:linear-gradient(135deg,#E0621A,#F08030)}
+.sidebar-nav-btn .nav-icon{width:44px;height:38px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sidebar-nav-btn .nav-label{font-size:13px;font-weight:500;opacity:0;transition:opacity .12s .06s}
+.sidebar:hover .nav-label{opacity:1}
+.sidebar-main{flex:1;min-width:0}
+
+/* ─── Page ───────────────────────────────────────────────── */
+.page{max-width:100%;margin:0 auto;padding:1.5rem 1.5rem 3rem}
+.hero-eyebrow{font-family:var(--mono);font-size:10px;color:var(--gold);letter-spacing:.18em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.hero-eyebrow::before{content:"";width:22px;height:1px;background:var(--gold)}
+.hero-title{font-family:var(--serif);font-size:48px;line-height:1.02;letter-spacing:-.03em;color:var(--ink)}
+.hero-title em{font-style:italic;color:var(--gold)}
+.hero-sub{font-size:15px;color:var(--ink2);margin-top:10px;line-height:1.6;max-width:560px}
+
+/* ─── Stats ──────────────────────────────────────────────── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:2rem}
+.stat-card{
+  background:rgba(255,255,255,0.90);border:1px solid rgba(24,18,12,0.09);border-radius:18px;
+  padding:24px 26px;position:relative;overflow:hidden;
+  transition:border-color .2s,transform .2s,box-shadow .2s;
+}
+.stat-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--accent,var(--border)) 30%,var(--accent,var(--border)) 70%,transparent)}
+.stat-card::after{content:"";position:absolute;bottom:-24px;right:-24px;width:100px;height:100px;border-radius:50%;background:var(--accent-bg,transparent);pointer-events:none}
+.stat-card:hover{border-color:var(--accent,var(--gold));transform:translateY(-3px);box-shadow:var(--shadow-2)}
+.stat-card.c-open{--accent:var(--gold);--accent-bg:var(--gold-tint)}
+.stat-card.c-done{--accent:var(--sage);--accent-bg:var(--sage-tint)}
+.stat-card.c-high{--accent:var(--rust);--accent-bg:var(--rust-tint)}
+.stat-card.c-total{--accent:var(--gold);--accent-bg:var(--gold-tint)}
+.stat-label{font-family:var(--mono);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.16em;color:var(--ink3);margin-bottom:14px}
+.stat-val{font-family:var(--serif);font-size:30px;font-weight:400;color:var(--ink);line-height:1.1;letter-spacing:-.03em;word-break:break-word}
+.stat-val em{font-style:italic;color:var(--gold)}
+.stat-val.sm{font-size:19px;line-height:1.3}
+.stat-sub{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:8px;letter-spacing:.04em}
+.stat-ring-wrap{position:absolute;top:20px;right:20px;opacity:.18}
+.stat-ring-wrap svg{width:44px;height:44px}
+.stat-ring-track{fill:none;stroke:var(--border-strong);stroke-width:3}
+.stat-ring-fill{fill:none;stroke-width:3;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dasharray .8s cubic-bezier(.16,1,.3,1)}
+
+/* ─── Toolbar ────────────────────────────────────────────── */
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-1)}
+[data-theme="dark"] .toolbar{background:rgba(19,21,28,0.9)}
+.search-wrap{flex:1;min-width:240px;position:relative}
+.search-wrap input{
+  width:100%;border:1px solid var(--border-strong);
+  border-radius:9px;padding:9px 14px 9px 38px;
+  font-size:13px;font-family:inherit;outline:none;
+  background:var(--paper);color:var(--ink);transition:all 0.15s;
+}
+[data-theme="dark"] .search-wrap input{background:rgba(255,255,255,0.04)}
+.search-wrap input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-tint);background:var(--card)}
+.search-wrap input::placeholder{color:var(--ink3)}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--ink3)}
+.filter-input{
+  border:1px solid var(--border-strong);border-radius:9px;
+  padding:9px 12px;font-size:11px;font-family:var(--mono);
+  outline:none;background:var(--paper);color:var(--ink);
+  cursor:pointer;font-weight:600;
+}
+[data-theme="dark"] .filter-input{background:rgba(255,255,255,0.04)}
+.filter-input:focus{border-color:var(--gold)}
+.btn-new{
+  border:1px solid var(--navy);border-radius:9px;padding:9px 16px;
+  font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  background:var(--navy);color:#fff;cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.btn-new:hover{background:var(--navy-h)}
+.record-count{
+  font-family:var(--mono);font-size:11px;color:var(--ink3);
+  white-space:nowrap;letter-spacing:0.04em;
+  background:var(--paper2);padding:7px 14px;border-radius:8px;border:1px solid var(--border);font-weight:600;margin-left:auto;
+}
+
+/* ─── Table ──────────────────────────────────────────────── */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-2)}
+[data-theme="dark"] .table-wrap{background:rgba(19,21,28,0.92)}
+table{width:100%;border-collapse:collapse}
+thead th{
+  background:var(--paper2);
+  padding:13px 16px;text-align:left;
+  font-family:var(--mono);font-size:9px;font-weight:700;
+  text-transform:uppercase;letter-spacing:0.16em;color:var(--ink3);
+  border-bottom:1px solid var(--border);white-space:nowrap;
+  cursor:pointer;user-select:none;transition:all 0.15s;position:sticky;top:0;z-index:2;
+}
+thead th:hover{color:var(--gold);background:var(--gold-tint)}
+thead th:first-child{padding-left:22px}
+thead th .sort-arrow{margin-left:5px;opacity:0.3;font-size:9px}
+thead th.sort-asc .sort-arrow::after{content:"▲";opacity:1}
+thead th.sort-desc .sort-arrow::after{content:"▼";opacity:1}
+thead th.sorted{color:var(--gold)}
+thead th.no-sort{cursor:default}
+thead th.no-sort:hover{color:var(--ink3);background:var(--paper2)}
+tbody tr{border-bottom:1px solid var(--border);transition:background 0.12s,transform 0.12s;cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--gold-tint);transform:translateX(2px)}
+tbody td{padding:16px 16px;font-size:13px;color:var(--ink);vertical-align:middle}
+tbody td:first-child{padding-left:22px}
+tbody tr.archived-row{opacity:.6}
+
+.proj-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;display:inline-block}
+.title-cell{
+  font-family:var(--serif);font-size:17px;font-weight:400;
+  max-width:320px;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;letter-spacing:-0.015em;color:var(--ink);
+  transition:color 0.15s;display:flex;align-items:center;gap:8px;
+}
+tr:hover .title-cell{color:var(--navy)}
+[data-theme="dark"] tr:hover .title-cell{color:var(--gold)}
+.meta-line{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:3px;letter-spacing:0.02em;max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.count-chip{
+  font-family:var(--mono);font-size:10px;font-weight:600;
+  padding:3px 9px;background:var(--gold-tint);color:var(--gold);
+  border:1px solid var(--gold-tint-strong);border-radius:4px;letter-spacing:0.02em;
+}
+.count-chip.zero{background:var(--paper2);color:var(--ink3);border-color:var(--border)}
+.date-cell{font-family:var(--sans);font-size:13px;color:var(--ink)}
+.date-meta{font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:2px}
+.lang-chip{
+  font-family:var(--mono);font-size:9px;font-weight:500;
+  padding:3px 8px;background:var(--paper2);
+  border:1px solid var(--border);border-radius:4px;
+  color:var(--ink2);letter-spacing:0.06em;text-transform:uppercase;
+}
+.lang-chip.live{background:var(--sage-tint);color:var(--sage);border-color:var(--sage-tint)}
+.action-cell{display:flex;gap:5px;opacity:0;transition:opacity 0.12s}
+tr:hover .action-cell{opacity:1}
+.icon-btn{
+  width:30px;height:30px;border-radius:6px;
+  border:1px solid var(--border);background:var(--card);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:13px;transition:all 0.12s;color:var(--ink2);
+}
+.icon-btn:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-tint)}
+.icon-btn.del:hover{border-color:var(--rust);color:var(--rust);background:var(--rust-tint)}
+
+/* ─── Empty / loading ────────────────────────────────────── */
+.empty{padding:5rem 2rem;text-align:center;color:var(--ink3)}
+.empty-icon{font-family:var(--serif);font-style:italic;font-size:60px;margin-bottom:16px;color:var(--gold);opacity:0.5}
+.empty h3{font-family:var(--serif);font-size:22px;font-weight:400;margin-bottom:6px;color:var(--ink)}
+.empty p{font-size:13px;max-width:430px;margin:0 auto}
+.empty .btn-new{margin-top:20px}
+.loading{padding:4rem;text-align:center;color:var(--ink3);font-family:var(--mono);font-size:12px;letter-spacing:0.06em}
+
+/* ─── Modal ──────────────────────────────────────────────── */
+.overlay{position:fixed;inset:0;background:rgba(10,8,14,0.46);backdrop-filter:blur(4px);z-index:300;display:none;align-items:center;justify-content:center;padding:1.5rem}
+.overlay.open{display:flex}
+.modal{background:var(--paper);border:1px solid var(--border-strong);border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow:auto;box-shadow:var(--shadow-lift)}
+.modal-head{padding:22px 26px 16px;border-bottom:1px solid var(--border);position:relative}
+.modal-eyebrow{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.modal-title{font-family:var(--serif);font-size:24px;font-weight:400;letter-spacing:-.02em}
+.modal-title em{font-style:italic;color:var(--gold)}
+.modal-body{padding:22px 26px}
+.modal-foot{padding:16px 26px 22px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.field{margin-bottom:18px}
+.field-label{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);margin-bottom:7px;display:block}
+.field-hint{font-size:11px;color:var(--ink3);margin-top:6px;line-height:1.5}
+.field input[type=text],.field textarea{width:100%;padding:10px 13px;font-family:inherit;font-size:14px;background:var(--paper);border:1px solid var(--border-strong);border-radius:9px;color:var(--ink);outline:none;transition:all .15s;resize:vertical}
+[data-theme="dark"] .field input[type=text],[data-theme="dark"] .field textarea{background:rgba(255,255,255,0.04)}
+.field input[type=text]:focus,.field textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-tint)}
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.swatch{width:30px;height:30px;border-radius:7px;cursor:pointer;border:2px solid transparent;transition:transform .12s}
+.swatch:hover{transform:scale(1.1)}
+.swatch.on{border-color:var(--ink);box-shadow:0 0 0 2px var(--paper)}
+.btn-ghost{padding:9px 16px;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:transparent;color:var(--ink3);border:1px solid var(--border-strong);border-radius:9px;cursor:pointer;transition:all .15s}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ─── Toast ──────────────────────────────────────────────── */
+#toast-wrap{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:340px}
+.toast{padding:12px 16px;border-radius:10px;color:#fff;font-size:13px;line-height:1.5;box-shadow:var(--shadow-2);animation:tin .2s ease}
+@keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ─── Bottom nav (phones) ────────────────────────────────── */
+.bottom-nav{display:none}
+@media(max-width:1080px){ .stats{grid-template-columns:repeat(2,1fr)} }
+@media(max-width:767px){
+  .page{padding-bottom:92px}
+  .sidebar{display:none!important}
+  .app-layout{display:block}
+  .table-wrap{overflow-x:auto}
+  table{min-width:620px}
+  .bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(240,237,230,0.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid rgba(24,18,12,0.08);height:68px;align-items:stretch;padding-bottom:env(safe-area-inset-bottom,0px)}
+  [data-theme="dark"] .bottom-nav{background:rgba(16,18,24,0.97)}
+  .bottom-nav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:var(--ink3);font-size:9px;font-family:var(--mono);letter-spacing:.06em;padding:6px 0;transition:color .15s}
+  .bottom-nav a.active{color:var(--gold)}
+  .bottom-nav a svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  #toast-wrap{left:12px;right:12px;bottom:84px;max-width:none}
+  .action-cell{opacity:1}
+}
+.cmp-pick{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.cmp-pick label{font-size:12px;color:var(--ink2);display:flex;flex-direction:column;gap:4px;flex:1;min-width:220px}
+.cmp-pick select{padding:7px 9px;border:1px solid var(--border-strong);border-radius:8px;background:var(--card);color:var(--ink);font-size:13px}
+.cmp-legend{font-size:11px;color:var(--ink3);margin-bottom:8px;display:flex;gap:8px;align-items:center}
+.diff{font-family:var(--mono);font-size:12px;line-height:1.6;border:1px solid var(--border);border-radius:10px;padding:10px 12px;max-height:52vh;overflow:auto;white-space:pre-wrap;word-break:break-word;background:var(--card)}
+.diff .row{padding:0 4px;border-radius:3px}
+.d-add,.diff .add{background:var(--sage-tint);color:var(--sage)}
+.d-del,.diff .del{background:var(--rust-tint);color:var(--rust);text-decoration:line-through}
+.d-add,.d-del{padding:1px 6px;border-radius:4px}
+.diff .sec{font-weight:700;color:var(--ink3);margin:8px 0 2px;text-transform:uppercase;font-size:10px;letter-spacing:.1em}
+</style>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#18182C">
+<link rel="stylesheet" href="/css/theme-dark.css">
+<link rel="stylesheet" href="/css/aix-uniform.css">
+<link rel="stylesheet" href="/css/aix-polish.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">
+    <a href="/" style="display:flex;align-items:center;gap:12px;text-decoration:none">
+      <img src="/aix-logo.png" alt="AiX" style="height:36px;width:36px;object-fit:contain;border-radius:6px"/>
+      <div>
+        <div class="nav-title" style="color:var(--ink)">AiX <em>Track</em></div>
+        <div class="nav-sub">Meeting · AiExtensive</div>
+      </div>
+    </a>
+  </div>
+  <div class="nav-right">
+    <button class="btn-nav theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle dark/light">◐</button>
+    <a href="/" class="btn-nav">← Generator</a>
+    <a href="/history" class="btn-nav">Records</a>
+    <a href="/actions" class="btn-nav" style="background:var(--navy);color:var(--gold);border-color:var(--navy);font-weight:600">✦ Action Items</a>
+  </div>
+</nav>
+
+<div class="app-layout">
+<aside class="sidebar">
+  <div class="sidebar-section" style="padding-top:12px">
+    <a href="/" class="sidebar-nav-btn" title="New MOC"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span><span class="nav-label">New MOC</span></a>
+    <a href="/history" class="sidebar-nav-btn active" title="Records"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span><span class="nav-label">Records</span></a>
+    <a href="/projects" class="sidebar-nav-btn" title="Projects"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="nav-label">Projects</span></a>
+    <a href="/actions" class="sidebar-nav-btn" title="Action Items"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span class="nav-label">Action Items</span></a>
+    <a href="/pricing" class="sidebar-nav-btn" title="Credits"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><span class="nav-label">Credits</span></a>
+    <a href="/logging" class="sidebar-nav-btn" title="Usage"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="nav-label">Usage</span></a>
+    <a href="/profile.html" class="sidebar-nav-btn" title="Profile"><span class="nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="nav-label">Profile</span></a>
+  </div>
+</aside>
+<div class="sidebar-main">
+<div class="page">
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <a href="/history" class="btn-nav">← Records</a>
+    <a class="btn-nav" id="mt-proj" style="display:none"></a>
+  </div>
+  <div class="pw-head">
+    <div>
+      <div class="hero-eyebrow" id="mt-eyebrow">Meeting</div>
+      <div class="pw-title" id="mt-title">Loading…</div>
+      <div class="pw-desc" id="mt-meta"></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a class="btn-ghost" id="mt-edit">Edit in Records</a>
+      <a class="btn-ghost" id="mt-docx">MOC (Word)</a>
+      <a class="btn-new" id="mt-tdocx">Transcript (Word)</a>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button data-t="moc" class="on">MOC</button>
+    <button data-t="conversation">Conversation</button>
+    <button data-t="transcript">Transcript</button>
+    <button data-t="glossary">Glossary &amp; context</button>
+    <button data-t="prompt">Prompt &amp; context</button>
+  </div>
+
+  <section class="tab" id="t-moc"><div id="moc"></div></section>
+
+  <section class="tab" id="t-conversation" hidden>
+    <div class="toolbar"><div id="spk-legend" class="legend"></div><span class="record-count" id="conv-count"></span></div>
+    <div id="chat" class="chat"></div>
+  </section>
+
+  <section class="tab" id="t-transcript" hidden>
+    <div class="toolbar">
+      <div class="search-wrap"><span class="search-icon">⌕</span><input id="tx-q" placeholder="Search the transcript" oninput="renderTranscript()"></div>
+      <span class="record-count" id="tx-count"></span>
+      <button class="btn-ghost" onclick="copyTranscript()">Copy</button>
+    </div>
+    <div class="pw-card"><div id="tx" class="tx"></div></div>
+  </section>
+
+  <section class="tab" id="t-glossary" hidden>
+    <div class="pw-card gl-intro">
+      <div><b>Make this MOC exact.</b> Correct the names and terms the transcript got wrong, add background, then regenerate. Wrong spellings listed under <i>Heard as</i> are fixed in the text the MOC engine reads (your saved transcript is not changed).</div>
+      <div class="gl-acts">
+        <button class="btn-ghost" id="gl-sug" onclick="suggestGlossary()">✦ Suggest from transcript</button>
+        <button class="btn-ghost" onclick="saveContext(false)">Save</button>
+        <button class="btn-new" id="gl-regen" onclick="saveContext(true)">Save &amp; regenerate MOC</button>
+      </div>
+      <div class="gl-msg" id="gl-msg"></div>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="pw-card">
+          <div class="gl-h"><span class="sec-h" style="margin:0">People</span><button class="pw-link" onclick="addRow('people')">+ Add person</button></div>
+          <table class="gl"><thead><tr><th>Correct name</th><th>Role</th><th>Heard as (comma separated)</th><th></th></tr></thead><tbody id="gl-people"></tbody></table>
+        </div>
+        <div class="pw-card">
+          <div class="gl-h"><span class="sec-h" style="margin:0">Glossary — terms, companies, products, abbreviations</span><button class="pw-link" onclick="addRow('glossary')">+ Add term</button></div>
+          <table class="gl"><thead><tr><th>Correct term</th><th>Meaning</th><th>Heard as (comma separated)</th><th></th></tr></thead><tbody id="gl-terms"></tbody></table>
+        </div>
+      </div>
+      <aside>
+        <div class="pw-card">
+          <div class="sec-h">Meeting background</div>
+          <textarea id="gl-ctx" class="gl-ta" rows="9" maxlength="6000" placeholder="Who the client is, what this meeting was for, earlier commitments, figures to watch, how the MOC should read…"></textarea>
+          <div class="why" style="margin-top:6px">Used to understand the discussion. The MOC still records only what was said.</div>
+        </div>
+        <div class="pw-card" id="gl-proj" style="display:none">
+          <div class="sec-h">Project glossary</div>
+          <div id="gl-proj-list" class="why"></div>
+          <label class="gl-chk"><input type="checkbox" id="gl-to-proj" checked> Also save my people and terms to the project, so every later MOC uses them</label>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="tab" id="t-prompt" hidden><div id="prompt"></div></section>
+
+</div>
+</div>
+</div>
+<div id="toast-wrap"></div>
+
+<style>
+.pw-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.pw-title{font-family:var(--serif);font-size:28px;letter-spacing:-.02em;line-height:1.2}
+.pw-desc{color:var(--ink3);font-size:13px;margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--border);margin-bottom:14px}
+.tabs button{background:none;border:none;border-bottom:2px solid transparent;padding:10px 12px;font:inherit;font-size:13px;font-weight:500;color:var(--ink3);cursor:pointer;white-space:nowrap}
+.tabs button.on{color:var(--gold);border-bottom-color:var(--gold)}
+.pw-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 18px;margin-bottom:14px;box-shadow:var(--shadow-1)}
+.sec-h{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.prose{font-size:14px;line-height:1.7;color:var(--ink2)}
+.prose ul{margin:4px 0 4px 18px}.prose li{margin:3px 0}
+.chip-s{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:999px;background:var(--paper2);color:var(--ink2)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.topic{padding:10px 0;border-bottom:1px solid var(--border)}.topic:last-child{border-bottom:none}
+.topic b{font-size:14px}.topic p{font-size:13.5px;line-height:1.65;color:var(--ink2);margin-top:4px;white-space:pre-wrap}
+table.mt{width:100%;border-collapse:collapse;font-size:13px}
+table.mt th{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);text-align:left;padding:8px;border-bottom:1px solid var(--border);background:var(--paper2)}
+table.mt td{padding:8px;border-bottom:1px solid var(--border);vertical-align:top}
+table.mt tr{cursor:default}
+.pill{font-family:var(--mono);font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--gold-tint);color:var(--gold);text-transform:uppercase}
+.pill.done{background:var(--sage-tint);color:var(--sage)}
+/* conversation */
+.legend{display:flex;gap:10px;flex-wrap:wrap;flex:1}
+.legend span{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--ink2)}
+.legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.chat{display:flex;flex-direction:column;gap:10px;max-width:900px}
+.msg{display:flex;gap:10px;align-items:flex-start}
+.msg.right{flex-direction:row-reverse}
+.av{flex:0 0 34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px}
+.bubble{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:9px 13px;max-width:min(680px,82%);box-shadow:var(--shadow-1)}
+.msg.right .bubble{background:var(--gold-tint)}
+.bubble .who{font-size:11.5px;font-weight:600;display:flex;gap:8px;align-items:baseline}
+.bubble .who time{font-family:var(--mono);font-weight:400;color:var(--ink3);font-size:10.5px}
+.bubble .t{font-size:13.5px;line-height:1.6;margin-top:2px;white-space:pre-wrap}
+/* transcript */
+.tx{font-size:13.5px;line-height:1.75;color:var(--ink);max-height:none}
+.tx .ln{display:flex;gap:12px;padding:3px 0}
+.tx .ln time{font-family:var(--mono);font-size:11px;color:var(--ink3);flex:0 0 58px;padding-top:2px}
+.tx .ln b{flex:0 0 auto;min-width:90px}
+.tx mark{background:var(--gold-tint-strong);color:inherit;border-radius:3px;padding:0 1px}
+.tx p{margin:0 0 10px;white-space:pre-wrap}
+/* prompt */
+.blk{margin-bottom:14px}
+.blk .hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.blk .hd b{font-size:13.5px}
+.blk .why{font-size:12px;color:var(--ink3);margin-bottom:6px}
+.pre{white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:11.5px;line-height:1.55;background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:10px 12px;max-height:420px;overflow:auto}
+.pw-link{background:none;border:none;color:var(--gold);cursor:pointer;font:inherit;font-size:12px;text-decoration:none}
+.flow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--ink2);margin-bottom:12px}
+.flow span{background:var(--paper2);border-radius:8px;padding:5px 10px}
+.flow i{color:var(--ink4);font-style:normal}
+.empty-s{padding:20px;text-align:center;color:var(--ink3);border:1px dashed var(--border-strong);border-radius:12px;font-size:13px}
+.gl-intro{display:flex;flex-direction:column;gap:10px;font-size:13.5px;line-height:1.6;color:var(--ink2)}
+.gl-acts{display:flex;gap:8px;flex-wrap:wrap}
+.gl-msg{font-size:12.5px;color:var(--ink3)}
+.gl-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px}
+table.gl{width:100%;border-collapse:collapse;font-size:13px}
+table.gl th{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);text-align:left;padding:6px;border-bottom:1px solid var(--border)}
+table.gl td{padding:4px;border-bottom:1px solid var(--border)}
+table.gl tr{cursor:default}
+table.gl input{width:100%;font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:7px;background:var(--paper);color:var(--ink)}
+table.gl input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-tint)}
+table.gl tr.new td{background:var(--sage-tint)}
+.gl-x{background:none;border:none;color:var(--ink4);cursor:pointer;font-size:16px}
+.gl-x:hover{color:var(--rust)}
+.gl-ta{width:100%;padding:10px 12px;border:1px solid var(--border-strong);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;font-size:13.5px;line-height:1.55;resize:vertical}
+.gl-ta:focus{outline:none;border-color:var(--gold)}
+.grid2>div,.grid2>aside{min-width:0}
+table.mt{display:block;overflow-x:auto;min-width:0!important}
+table.gl{table-layout:fixed;min-width:0!important}
+table.gl input{min-width:0}
+table.gl th:last-child,table.gl td:last-child{width:32px}
+.tabs{max-width:100%}
+@media(max-width:640px){
+  table.mt{display:block;overflow-x:auto;white-space:normal}
+  table.gl thead{display:none}
+  table.gl,table.gl tbody{display:block}
+  table.gl tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:4px;padding:6px 0;border-bottom:1px solid var(--border)}
+  table.gl td{border:none;padding:0;min-width:0}
+  table.gl td:nth-child(3){grid-column:1/3;grid-row:2}
+  table.gl td:nth-child(4){grid-row:1/3;align-self:center}
+}
+.gl-chk{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;margin-top:10px;color:var(--ink2)}
+.toast.error{background:var(--rust)}.toast.success{background:var(--sage)}.toast{background:var(--navy)}
+</style>
+
+<script>
+const ID=parseInt(new URLSearchParams(location.search).get('id'),10);
+let M=null, P=null, names={};
+const COLORS=['#E0621A','#2870C0','#1A9A5A','#7C5FA0','#C03030','#B8860B','#0E8C8C','#8A4FBF'];
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function arr(v){ if(!v) return []; if(Array.isArray(v)) return v; try{ const p=JSON.parse(v); return Array.isArray(p)?p:[]; }catch(e){ return []; } }
+function obj(v){ if(!v) return {}; if(typeof v==='object') return v; try{ return JSON.parse(v)||{}; }catch(e){ return {}; } }
+function txt(x){ return typeof x==='string'?x:(x&&(x.task||x.decision||x.requirement||x.item||x.text||x.point||x.topic||x.clarification||x.name))||''; }
+function clock(t){ t=Math.floor(t||0); const h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60; return (h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
+function toast(msg,type){ const w=document.getElementById('toast-wrap'), t=document.createElement('div'); t.className='toast '+(type||''); t.textContent=msg; w.appendChild(t); setTimeout(()=>t.remove(),3500); }
+async function getJSON(u){ const r=await fetch(u,{credentials:'same-origin'}); const d=await r.json().catch(()=>({})); if(!r.ok) throw new Error(d.error||'Request failed'); return d; }
+
+document.getElementById('tabs').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) showTab(b.dataset.t); });
+function showTab(t){
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x.dataset.t===t));
+  document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!=='t-'+t);
+  try{ history.replaceState(null,'','?id='+ID+'#'+t); }catch(e){}
+}
+
+async function load(){
+  try{
+    [M,P]=await Promise.all([getJSON('/api/history/'+ID), getJSON('/api/history/'+ID+'/prompt-trail').catch(()=>null)]);
+  }catch(e){ document.getElementById('mt-title').textContent=e.message; return; }
+  arr(M.speakers).forEach(s=>{ if(s&&s.label) names[s.label]=s.name||s.label; });
+  document.title=(M.meeting_title||'Meeting')+' · AiX Track';
+  document.getElementById('mt-title').textContent=M.meeting_title||M.file_name||'Conversation #'+M.id;
+  const dur=Number(M.duration_seconds)||0;
+  document.getElementById('mt-meta').innerHTML=[M.meeting_date, M.meeting_time, dur?Math.round(dur/60)+' min':'', M.detected_language||M.language, 'S'+M.id]
+    .filter(Boolean).map(x=>'<span class="chip-s">'+esc(x)+'</span>').join('')+(M.tags?' <span style="font-size:12px">'+esc(M.tags)+'</span>':'');
+  document.getElementById('mt-edit').href='/history?new='+M.id;
+  document.getElementById('mt-docx').href='/api/history/'+M.id+'/export/docx';
+  document.getElementById('mt-tdocx').href='/api/history/'+M.id+'/export/transcript-docx';
+  if(P&&P.project){ const a=document.getElementById('mt-proj'); a.style.display=''; a.href='/project?id='+P.project.id; a.innerHTML='<span class="proj-dot" style="background:'+esc(P.project.color||'var(--gold)')+'"></span> '+esc(P.project.name); }
+  renderMoc(); renderChat(); renderTranscript(); renderPrompt(); loadContext();
+  const h=location.hash.slice(1); if(h&&document.getElementById('t-'+h)) showTab(h);
+}
+
+/* ── MOC ── */
+function renderMoc(){
+  const done=obj(M.action_items_done);
+  const exec=arr(M.executive_summary);
+  const att=arr(M.attendees).map(a=>typeof a==='string'?a:(a.name?(a.name+(a.role?' — '+a.role:'')):txt(a)));
+  const dec=arr(M.decisions), act=arr(M.action_items), dp=arr(M.discussion_points), trk=arr(M.pending_tracker), nx=arr(M.next_agenda);
+  let h='<div class="grid2"><div>';
+  h+='<div class="pw-card"><div class="sec-h">Summary</div><div class="prose">'+(exec.length?'<ul>'+exec.map(x=>'<li>'+esc(txt(x))+'</li>').join('')+'</ul>':esc(M.summary||'MOC not generated yet.'))+'</div></div>';
+  if(dp.length) h+='<div class="pw-card"><div class="sec-h">Matters discussed</div>'+dp.map(d=>'<div class="topic"><b>'+esc(d.topic||txt(d))+'</b>'+(d.details?'<p>'+esc(d.details)+'</p>':'')+'</div>').join('')+'</div>';
+  if(act.length) h+='<div class="pw-card"><div class="sec-h">Action items</div><table class="mt"><tr><th>#</th><th>Task</th><th>Owner</th><th>Due</th><th>Status</th></tr>'+
+    act.map((a,i)=>{ const d=!!done[String(i)]||/^(done|closed|completed)$/i.test(a.status||''); return '<tr><td>'+(i+1)+'</td><td>'+esc(txt(a))+'</td><td>'+esc(a.owner||a.responsibility||'')+'</td><td>'+esc(a.due_date||a.due||a.timeline||'')+'</td><td><span class="pill '+(d?'done':'')+'">'+(d?'done':'open')+'</span></td></tr>'; }).join('')+'</table></div>';
+  if(trk.length) h+='<div class="pw-card"><div class="sec-h">Pending tracker</div><table class="mt"><tr><th>Area</th><th>Requirement</th><th>Responsible</th><th>Status</th></tr>'+
+    trk.map(t=>'<tr><td>'+esc(t.area||'')+'</td><td>'+esc(t.requirement||txt(t))+'</td><td>'+esc(t.responsible||'')+'</td><td>'+esc(t.status||'')+'</td></tr>').join('')+'</table></div>';
+  h+='</div><aside>';
+  if(att.length) h+='<div class="pw-card"><div class="sec-h">Attendees</div><div class="prose"><ul>'+att.map(a=>'<li>'+esc(a)+'</li>').join('')+'</ul></div></div>';
+  if(dec.length) h+='<div class="pw-card"><div class="sec-h">Decisions</div><div class="prose"><ul>'+dec.map(d=>'<li>'+esc(txt(d))+'</li>').join('')+'</ul></div></div>';
+  if(nx.length) h+='<div class="pw-card"><div class="sec-h">Next agenda</div><div class="prose"><ul>'+nx.map(d=>'<li>'+esc(txt(d))+'</li>').join('')+'</ul></div></div>';
+  if(M.next_meeting) h+='<div class="pw-card"><div class="sec-h">Next meeting</div><div class="prose">'+esc(M.next_meeting)+'</div></div>';
+  h+='</aside></div>';
+  document.getElementById('moc').innerHTML=h;
+}
+
+/* ── Conversation (speaker bubbles) ── */
+function segments(){
+  const segs=arr(M.diarized_segments).filter(s=>s&&s.text);
+  if(segs.length){
+    const out=[]; segs.forEach(s=>{ const l=out[out.length-1]; if(l&&l.speaker===s.speaker&&(s.start||0)-(l.end||0)<4){ l.text+=' '+s.text; l.end=s.end; } else out.push({...s}); });
+    return out;
+  }
+  // Transcript with "[mm:ss] Name: text" or "Name: text" lines
+  const lines=String(M.transcript||'').split('\n').filter(l=>l.trim()), out=[];
+  for(const l of lines){
+    const m=l.match(/^\s*(?:\[([\d:]+)\]\s*)?([^:\[\]]{1,40}):\s+(.*)$/);
+    if(m) out.push({speaker:m[2].trim(),text:m[3],start:m[1]?m[1].split(':').reduce((a,b)=>a*60+(+b),0):null});
+    else if(out.length) out[out.length-1].text+=' '+l.trim();
+  }
+  return out.length>=2?out:[];
+}
+function renderChat(){
+  const segs=segments(), el=document.getElementById('chat');
+  if(!segs.length){ el.innerHTML='<div class="empty-s">No speaker separation for this recording. Use <b>Re-run with speaker identification</b> in Records to get the conversation view. The full text is in the Transcript tab.</div>'; document.getElementById('conv-count').textContent=''; return; }
+  const spk=[...new Set(segs.map(s=>s.speaker))], col={};
+  spk.forEach((s,i)=>col[s]=COLORS[i%COLORS.length]);
+  document.getElementById('spk-legend').innerHTML=spk.map(s=>'<span><i style="background:'+col[s]+'"></i>'+esc(names[s]||s)+' · '+segs.filter(x=>x.speaker===s).length+'</span>').join('');
+  document.getElementById('conv-count').textContent=segs.length+' turns';
+  el.innerHTML=segs.map(s=>{ const n=names[s.speaker]||s.speaker, right=spk.indexOf(s.speaker)%2===1;
+    return '<div class="msg '+(right?'right':'')+'"><div class="av" style="background:'+col[s.speaker]+'">'+esc(String(n).trim().charAt(0).toUpperCase()||'?')+'</div>'+
+      '<div class="bubble"><div class="who" style="color:'+col[s.speaker]+'">'+esc(n)+(s.start!=null?'<time>'+clock(s.start)+'</time>':'')+'</div><div class="t">'+esc(s.text)+'</div></div></div>'; }).join('');
+}
+
+/* ── Transcript ── */
+function renderTranscript(){
+  const q=document.getElementById('tx-q').value.trim(), el=document.getElementById('tx');
+  const re=q?new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'):null;
+  const hl=s=>re?esc(s).replace(new RegExp(esc(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),m=>'<mark>'+m+'</mark>'):esc(s);
+  const segs=arr(M.diarized_segments).filter(s=>s&&s.text);
+  let hits=0;
+  if(segs.length){
+    const rows=segs.filter(s=>!re||(re.lastIndex=0,re.test(s.text)||re.test(names[s.speaker]||s.speaker)));
+    hits=rows.length;
+    el.innerHTML=rows.map(s=>'<div class="ln"><time>'+clock(s.start)+'</time><b>'+esc(names[s.speaker]||s.speaker)+'</b><span>'+hl(s.text)+'</span></div>').join('')||'<div class="empty-s">No match.</div>';
+  } else {
+    const t=String(M.transcript||'');
+    if(!t){ el.innerHTML='<div class="empty-s">No transcript saved.</div>'; return; }
+    const paras=t.split(/\n+/).filter(Boolean).filter(p=>!re||(re.lastIndex=0,re.test(p)));
+    hits=paras.length;
+    el.innerHTML=paras.map(p=>'<p>'+hl(p)+'</p>').join('')||'<div class="empty-s">No match.</div>';
+  }
+  const words=String(M.transcript||'').split(/\s+/).filter(Boolean).length;
+  document.getElementById('tx-count').textContent=q?hits+' match(es)':words.toLocaleString('en-IN')+' words';
+}
+function copyTranscript(){ navigator.clipboard.writeText(M.transcript||'').then(()=>toast('Transcript copied.','success')); }
+
+/* ── Prompt & context ── */
+function block(title,why,body,open){
+  if(!body) return '';
+  const id='b'+Math.random().toString(36).slice(2,8);
+  return '<div class="pw-card blk"><div class="hd"><b>'+title+'</b><span><button class="pw-link" onclick="navigator.clipboard.writeText(document.getElementById(\''+id+'\').textContent);toast(\'Copied.\',\'success\')">Copy</button></span></div>'+
+    (why?'<div class="why">'+why+'</div>':'')+'<details'+(open?' open':'')+'><summary class="pw-link">'+(open?'Hide':'Show')+' ('+body.length.toLocaleString('en-IN')+' characters)</summary><div class="pre" id="'+id+'">'+esc(body)+'</div></details></div>';
+}
+function renderPrompt(){
+  const el=document.getElementById('prompt');
+  if(!P){ el.innerHTML='<div class="empty-s">Prompt details are not available.</div>'; return; }
+  const run=(P.runs||[])[0];
+  let h='<div class="flow"><span>Your meeting prompt</span><i>+</i><span>Project instructions &amp; brief</span><i>+</i><span>Transcript</span><i>→</i><span>Customised prompt</span><i>→</i><span>MOC</span></div>';
+  if(run) h+='<div class="pw-desc" style="margin:-4px 0 14px">Generated '+new Date(run.created_at).toLocaleString('en-IN')+((P.runs||[]).length>1?' · '+P.runs.length+' runs (latest shown)':'')+'</div>';
+  h+=block('Your meeting prompt','What you typed for this meeting. Empty means your profile prompt was used.',P.session_prompt||(run&&run.user_instructions)||'',true);
+  h+=block('Project context passed in','Project details, the approved project brief and earlier MOCs from the project that were read before writing this MOC.',run&&run.context_input,false);
+  h+=block('Customised prompt for this meeting','Written for this specific conversation before the MOC was drafted.',run&&run.composer_prompt,false);
+  if(P.admin) h+=block('Final system prompt (admin only)','Full instructions sent to the MOC engine.',run&&run.final_system_prompt,false);
+  if(run&&run.composer_error) h+='<div class="pw-card"><b>Note</b><div class="why">The customised prompt step did not complete: '+esc(run.composer_error)+'. The MOC was written with the standard prompt.</div></div>';
+  if(!run) h+='<div class="empty-s">This MOC was created before prompt records were kept.</div>';
+  el.innerHTML=h;
+  el.querySelectorAll('details').forEach(d=>d.addEventListener('toggle',()=>{ const s=d.querySelector('summary'); s.textContent=s.textContent.replace(/^(Show|Hide)/,d.open?'Hide':'Show'); }));
+}
+
+/* ── Glossary & context ── */
+let GL={people:[],glossary:[]};
+async function loadContext(){
+  try{
+    const d=await getJSON('/api/history/'+ID+'/context');
+    GL.people=d.people.length?d.people:arr(M.attendees).map(a=>{
+      const s=typeof a==='string'?a:(a&&a.name)||'';
+      const parts=s.split(/\s+[—–-]\s+/);
+      return {name:parts[0].trim(),role:(typeof a==='object'&&a&&a.role)||parts.slice(1).join(' - '),heard_as:[]};
+    }).filter(p=>p.name);
+    GL.glossary=d.glossary;
+    document.getElementById('gl-ctx').value=d.context||'';
+    if(d.project){
+      document.getElementById('gl-proj').style.display='';
+      const pg=d.project.glossary||[], pp=d.project.people||[];
+      document.getElementById('gl-proj-list').innerHTML=(pp.length||pg.length)
+        ? 'Already used for every MOC in <b>'+esc(d.project.name)+'</b>:<br>'+pp.map(p=>esc(p.name)).join(' · ')+(pg.length?'<br>'+pg.map(g=>'<b>'+esc(g.term)+'</b>'+(g.meaning?' = '+esc(g.meaning):'')).join(' · '):'')
+        : 'Project <b>'+esc(d.project.name)+'</b> has no glossary yet.';
+    } else document.getElementById('gl-proj').style.display='none';
+    paintGL();
+  }catch(e){ document.getElementById('gl-msg').textContent=e.message; }
+}
+function glSet(kind,i,key,el){
+  if(key==='heard_as') GL[kind][i].heard_as=el.value.split(',').map(s=>s.trim()).filter(Boolean);
+  else GL[kind][i][key]=el.value;
+}
+function paintGL(){
+  const row=(kind,x,i)=>{
+    const a=kind==='people'?['name','role']:['term','meaning'];
+    const inp=(key,v,ph)=>'<input value="'+esc(v)+'"'+(ph?' placeholder="'+ph+'"':'')+' oninput="glSet(\''+kind+'\','+i+',\''+key+'\',this)">';
+    return '<tr class="'+(x._new?'new':'')+'"><td>'+inp(a[0],x[a[0]])+'</td><td>'+inp(a[1],x[a[1]])+'</td>'+
+      '<td>'+inp('heard_as',(x.heard_as||[]).join(', '),kind==='people'?'e.g. Jenil, Jainil bhai':'e.g. GST R2B, two B')+'</td>'+
+      '<td><button class="gl-x" title="Remove" onclick="GL.'+kind+'.splice('+i+',1);paintGL()">×</button></td></tr>';
+  };
+  document.getElementById('gl-people').innerHTML=GL.people.map((x,i)=>row('people',x,i)).join('')||'<tr><td colspan="4" class="why" style="padding:10px">No people yet.</td></tr>';
+  document.getElementById('gl-terms').innerHTML=GL.glossary.map((x,i)=>row('glossary',x,i)).join('')||'<tr><td colspan="4" class="why" style="padding:10px">No terms yet — click <b>Suggest from transcript</b>.</td></tr>';
+}
+function addRow(kind){ GL[kind].push(kind==='people'?{name:'',role:'',heard_as:[],_new:1}:{term:'',meaning:'',heard_as:[],_new:1}); paintGL(); }
+async function suggestGlossary(){
+  const b=document.getElementById('gl-sug'); b.disabled=true; b.textContent='Reading transcript…';
+  try{
+    const r=await fetch('/api/history/'+ID+'/context/suggest',{method:'POST',credentials:'same-origin'});
+    const d=await r.json(); if(!r.ok) throw new Error(d.error||'Could not suggest.');
+    let added=0;
+    const merge=(kind,key,list)=>list.forEach(x=>{
+      const hit=GL[kind].find(y=>String(y[key]).toLowerCase()===String(x[key]).toLowerCase());
+      const k2=kind==='people'?'role':'meaning';
+      if(hit){ hit.heard_as=[...new Set([...(hit.heard_as||[]),...x.heard_as])]; if(!hit[k2]&&x[k2]) hit[k2]=x[k2]; }
+      else { GL[kind].push(Object.assign({},x,{_new:1})); added++; }
+    });
+    merge('people','name',d.people); merge('glossary','term',d.glossary);
+    paintGL();
+    document.getElementById('gl-msg').textContent=added+' new suggestion(s), highlighted in green. Check them, fix anything wrong, then save.';
+  }catch(e){ toast(e.message,'error'); }
+  b.disabled=false; b.textContent='✦ Suggest from transcript';
+}
+async function saveContext(regen){
+  const clean=l=>l.map(x=>{ const y=Object.assign({},x); delete y._new; return y; });
+  const body={people:clean(GL.people),glossary:clean(GL.glossary),context:document.getElementById('gl-ctx').value,
+    save_to_project:document.getElementById('gl-proj').style.display!=='none'&&document.getElementById('gl-to-proj').checked};
+  const msg=document.getElementById('gl-msg'), rb=document.getElementById('gl-regen');
+  try{
+    const r=await fetch('/api/history/'+ID+'/context',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json(); if(!r.ok) throw new Error(d.error||'Could not save.');
+    GL.people=d.people; GL.glossary=d.glossary; paintGL();
+    msg.textContent='Saved'+(d.saved_to_project?' — '+d.saved_to_project+' item(s) added to the project glossary':'')+'.';
+    if(!regen){ toast('Saved.','success'); return; }
+    const mins=Math.max(1,Math.ceil((Number(M.duration_seconds)||0)/60));
+    if(!confirm('Regenerate the MOC for this '+mins+'-minute meeting using this glossary and context? Regeneration uses credits and replaces the current MOC.')) return;
+    rb.disabled=true; rb.textContent='Regenerating… (1–2 min)'; msg.textContent='Regenerating with your glossary and context…';
+    const g=await fetch('/api/history/'+ID+'/regenerate',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:'{}'});
+    const gd=await g.json(); if(!g.ok) throw new Error(gd.error||'Regeneration failed.');
+    M=await getJSON('/api/history/'+ID); P=await getJSON('/api/history/'+ID+'/prompt-trail').catch(()=>P);
+    renderMoc(); renderPrompt();
+    msg.textContent='MOC regenerated'+(gd.credits_deducted?' ('+gd.credits_deducted+' credits)':'')+'. See the MOC tab.';
+    toast('MOC regenerated with your glossary.','success'); showTab('moc');
+  }catch(e){ toast(e.message,'error'); msg.textContent=e.message; }
+  rb.disabled=false; rb.textContent='Save & regenerate MOC';
+}
+
+load();
+</script>
+</body>
+</html>

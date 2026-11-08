@@ -619,9 +619,11 @@ input.native::placeholder{color:var(--ink4)}
 .pp-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pp-sub{font-family:var(--mono,monospace);font-size:10px;color:var(--ink3,#7878A0)}
 .pp-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:1.5px dashed transparent}
-.pp-menu{display:none;position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:60;background:var(--paper,#F0EDE6);border:1px solid var(--border-strong,rgba(24,18,12,.18));border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.18);padding:8px;min-width:280px}
+.pp-menu{display:none;position:fixed;z-index:1000;background:var(--paper,#F0EDE6);border:1px solid var(--border-strong,rgba(24,18,12,.18));border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.18);padding:8px;min-width:280px}
 .pp-menu.open{display:block}
-.pp-search{width:100%;padding:8px 10px;border:1px solid var(--border,rgba(24,18,12,.09));border-radius:9px;background:var(--card,#fff);color:inherit;font:inherit;font-size:13px;margin-bottom:6px}
+.pp-x{position:absolute;top:10px;right:10px;width:28px;height:28px;border:none;border-radius:8px;background:transparent;color:var(--ink3,#7878A0);font-size:20px;line-height:1;cursor:pointer}
+.pp-x:hover{background:rgba(224,98,26,.10);color:var(--gold,#E0621A)}
+.pp-search{width:calc(100% - 36px);padding:8px 10px;border:1px solid var(--border,rgba(24,18,12,.09));border-radius:9px;background:var(--card,#fff);color:inherit;font:inherit;font-size:13px;margin-bottom:6px}
 .pp-search:focus{outline:none;border-color:var(--gold,#E0621A)}
 .pp-list{max-height:280px;overflow:auto}
 .pp-item{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:9px;cursor:pointer}
@@ -634,6 +636,14 @@ input.native::placeholder{color:var(--ink4)}
 .pp-foot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border,rgba(24,18,12,.09));margin-top:6px;padding:8px 4px 2px}
 .pp-foot button{background:var(--navy,#18182C);color:#fff;border:none;border-radius:999px;padding:7px 14px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
 .pp-foot a{font-size:12px;color:var(--gold,#E0621A);text-decoration:none}
+.pb{border:1px solid rgba(26,154,90,.25);background:rgba(26,154,90,.05);border-radius:12px;padding:10px 12px;margin:0 0 10px}
+.pb-head{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:13px;color:var(--sage,#1A9A5A)}
+.pb-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.pb-chip{font-size:12px;background:var(--card,#fff);border:1px solid var(--border,rgba(24,18,12,.09));border-radius:8px;padding:3px 8px}
+.pb-chip small{color:var(--ink3,#7878A0);font-size:10.5px}
+.pb-stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--ink2,#44445E)}
+.pb-warn{font-size:12.5px;background:rgba(224,98,26,.09);border-radius:8px;padding:7px 10px;margin-bottom:8px}
+.pb-btn{border:none;background:var(--navy,#18182C);color:#fff;border-radius:999px;padding:4px 11px;font:inherit;font-size:11.5px;cursor:pointer;margin-left:4px}
 .pc-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
 .pc-badge{font-family:var(--mono,monospace);font-size:10px;padding:3px 9px;border-radius:999px;background:rgba(26,154,90,.10);color:var(--sage,#1A9A5A);white-space:nowrap}
 .pc textarea,.pc input[type=text]{width:100%;padding:10px 12px;border:1px solid var(--border-strong,rgba(24,18,12,.18));border-radius:10px;background:var(--card,#fff);color:inherit;font:inherit;font-size:13.5px;line-height:1.55;resize:vertical}
@@ -1095,6 +1105,7 @@ input.native::placeholder{color:var(--ink4)}
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
             <div class="pp-menu" id="pp-menu" role="listbox">
+              <button type="button" class="pp-x" onclick="closeProjectPicker()" title="Close" aria-label="Close">×</button>
               <input type="text" class="pp-search" id="pp-search" placeholder="Search projects…" oninput="paintProjectMenu()">
               <div class="pp-list" id="pp-list"></div>
               <div class="pp-foot">
@@ -4171,12 +4182,28 @@ function paintProjectMenu() {
 function toggleProjectPicker() {
   var m = document.getElementById('pp-menu');
   if (m.classList.contains('open')) return closeProjectPicker();
+  if (m.parentNode !== document.body) document.body.appendChild(m);   // escape clipping / transformed cards
   document.getElementById('pp-search').value = '';
   paintProjectMenu();
   m.classList.add('open');
+  placeProjectPicker();
   document.getElementById('pp-btn').setAttribute('aria-expanded', 'true');
   setTimeout(function(){ document.getElementById('pp-search').focus(); }, 20);
 }
+/* The menu floats above the page (fixed) so card edges can never clip it */
+function placeProjectPicker() {
+  var m = document.getElementById('pp-menu');
+  if (!m.classList.contains('open')) return;
+  var r = document.getElementById('pp-btn').getBoundingClientRect();
+  var w = Math.max(r.width, 320);
+  m.style.width = w + 'px';
+  m.style.left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8) + 'px';
+  var below = window.innerHeight - r.bottom;
+  if (below < 380 && r.top > below) { m.style.top = 'auto'; m.style.bottom = (window.innerHeight - r.top + 6) + 'px'; }
+  else { m.style.bottom = 'auto'; m.style.top = (r.bottom + 6) + 'px'; }
+}
+window.addEventListener('resize', placeProjectPicker);
+window.addEventListener('scroll', placeProjectPicker, true);
 function closeProjectPicker() {
   document.getElementById('pp-menu').classList.remove('open');
   document.getElementById('pp-btn').setAttribute('aria-expanded', 'false');
@@ -4187,7 +4214,7 @@ function pickProject(id) {
   sel.dispatchEvent(new Event('change'));
   closeProjectPicker();
 }
-document.addEventListener('click', function(e){ var pp = document.getElementById('pp'); if (pp && !pp.contains(e.target)) closeProjectPicker(); });
+document.addEventListener('click', function(e){ var pp = document.getElementById('pp'), m = document.getElementById('pp-menu'); if (pp && !pp.contains(e.target) && !(m && m.contains(e.target))) closeProjectPicker(); });
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeProjectPicker(); });
 
 /* ── Project context, prefilled from the selected project ──
@@ -4204,6 +4231,7 @@ async function showProjectContext(id) {
   try {
     var r = await fetch('/api/projects/' + id + '/memory', { credentials: 'same-origin' });
     var d = await r.json();
+    var bi = await fetch('/api/projects/' + id + '/brief', { credentials: 'same-origin' }).then(function(x){ return x.ok ? x.json() : null; }).catch(function(){ return null; });
     if (!r.ok) throw new Error(d.error || 'Could not load project context.');
     if (document.getElementById('project-select').value !== String(id)) return;
     var p = projectById(id) || {};
@@ -4214,6 +4242,7 @@ async function showProjectContext(id) {
         '<span class="pc-badge">' + (d.carry_forward ? (d.earlier_mocs ? '↻ ' + d.earlier_mocs + ' earlier MOC' + (d.earlier_mocs === 1 ? '' : 's') + ' carried' : '↻ first MOC here') : 'carry-forward off') + '</span>' +
       '</div>' +
       '<textarea id="pc-ctx" rows="5" maxlength="8000" placeholder="Who the client is, recurring attendees, standing agenda, names and terms to spell correctly, how this MOC should read…" onblur="saveProjectContext(' + Number(id) + ')" oninput="pcDirty()">' + esc(pcSaved) + '</textarea>' +
+      briefPanel(bi, id) +
       '<div class="pc-row"><span class="pc-hint" id="pc-msg">Prefilled from the project. Edit if needed — changes save to the project and apply to this MOC.</span>' +
         '<button type="button" class="pc-adv-btn" onclick="document.getElementById(\'pc-adv\').classList.toggle(\'open\');this.classList.toggle(\'open\')">Advanced <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button></div>' +
       '<div class="pc-adv" id="pc-adv">' +
@@ -4225,9 +4254,42 @@ async function showProjectContext(id) {
           '<span><b>Carry context forward</b><small>Pass the last five MOCs in this project — decisions, open actions and tracker — to this one.</small></span></label>' +
         '<div class="pc-row" style="margin-top:10px"><button type="button" class="btn-sm" onclick="saveProjectContext(' + Number(id) + ', true)">Save settings</button>' +
           '<a href="/project?id=' + Number(id) + '" target="_blank" class="pc-link">Open project ↗</a></div>' +
-        (d.memory ? '<details class="pc-mem"><summary>What the earlier MOCs pass on</summary><pre>' + esc(d.memory.trim()) + '</pre></details>' : '') +
+        (d.memory ? '<details class="pc-mem"><summary>Exact project context this MOC will receive</summary><pre>' + esc(d.memory.trim()) + '</pre></details>' : '') +
       '</div>';
   } catch (e) { box.innerHTML = '<div class="pc-hint">' + esc(e.message) + '</div>'; }
+}
+/* What the approved project brief contributes to this MOC */
+function briefPanel(bi, id) {
+  if (!bi) return '';
+  var b = bi.approved && bi.approved.brief, h = '<div class="pb">';
+  if (bi.pending) h += '<div class="pb-warn">A newer brief draft is waiting for review and is <b>not</b> used yet. <button type="button" class="pb-btn" onclick="approveBrief(' + Number(id) + ',' + Number(bi.pending.id) + ')">Approve now</button> <a class="pc-link" href="/project?id=' + Number(id) + '" target="_blank">Review ↗</a></div>';
+  if (bi.unmerged && bi.unmerged.length) h += '<div class="pb-warn">' + bi.unmerged.length + ' meeting(s) not yet in the brief. <button type="button" class="pb-btn" onclick="updateBrief(' + Number(id) + ', this)">Update brief</button></div>';
+  if (!b) return h + '<div class="pc-hint" style="margin:6px 0">No approved project brief yet — this MOC uses the instructions below and the recent MOCs only.</div></div>';
+  var pf = b.profile || {}, live = (b.actions || []).filter(function(a){ return a.status === 'open' || a.status === 'in_progress'; });
+  var chips = [['Client', pf.client_name], ['Engagement', pf.engagement], ['Period', pf.period]].filter(function(x){ return x[1]; })
+    .map(function(x){ return '<span class="pb-chip"><small>' + x[0] + '</small> ' + esc(x[1]) + '</span>'; }).join('');
+  var stat = [[(b.stakeholders || []).length, 'people'], [(b.glossary || []).length, 'terms'], [live.length, 'open actions'],
+    [(b.decisions || []).filter(function(d){ return d.status === 'active'; }).length, 'decisions'], [(b.open_questions || []).filter(function(q){ return q.status === 'open'; }).length, 'open questions'], [(b.contradictions || []).length, 'to reconcile']]
+    .map(function(x){ return '<span><b>' + x[0] + '</b> ' + x[1] + '</span>'; }).join('');
+  h += '<div class="pb-head"><b>✓ Project brief will be used</b><span class="pc-hint" style="margin:0">approved ' + new Date(bi.approved.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + '</span></div>' +
+    (chips ? '<div class="pb-chips">' + chips + '</div>' : '') + '<div class="pb-stats">' + stat + '</div>' +
+    ((b.stakeholders || []).length ? '<div class="pc-hint" style="margin-top:6px">Names: ' + b.stakeholders.slice(0, 10).map(function(p){ return esc(p.name); }).join(' · ') + '</div>' : '');
+  return h + '</div>';
+}
+async function approveBrief(id, vid) {
+  try {
+    var r = await fetch('/api/projects/' + id + '/brief/' + vid + '/decide', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ decision: 'approve' }) });
+    if (!r.ok) throw new Error((await r.json()).error || 'Could not approve.');
+    showProjectContext(id);
+  } catch (e) { alert(e.message); }
+}
+async function updateBrief(id, btn) {
+  btn.disabled = true; btn.textContent = 'Updating…';
+  try {
+    var r = await fetch('/api/projects/' + id + '/brief/rebuild', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    if (!r.ok) throw new Error((await r.json()).error || 'Could not update.');
+    showProjectContext(id);
+  } catch (e) { alert(e.message); btn.disabled = false; btn.textContent = 'Update brief'; }
 }
 function pcDirty() { var m = document.getElementById('pc-msg'); if (m) m.textContent = 'Unsaved changes — saved when you click away.'; }
 

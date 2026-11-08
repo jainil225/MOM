@@ -681,6 +681,7 @@
       up.rows.forEach(r => console.log(`[db] Unlimited credits enabled for ${r.email}`));
     }
 
+    await projectIntel.ensureTables();
     console.log('[db] Tables ready');
   }
 
@@ -2638,12 +2639,12 @@ ${TRANSCRIPT_SLOT}`;
     try {
       const r = await pool.query(
         `INSERT INTO moc_prompt_log (session_id, user_email, flow, master_prompt_id, composer_model, composer_system_prompt,
-           composer_output, composer_error, user_instructions, final_system_prompt, moc_model, composer_prompt, composer_input)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
+           composer_output, composer_error, user_instructions, final_system_prompt, moc_model, composer_prompt, composer_input, context_input)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
         [row.sessionId || null, row.email || null, row.flow, row.masterPromptId || null, row.composerModel || null,
          row.composerSystemPrompt || null, row.composerOutput ? JSON.stringify(row.composerOutput) : null,
          row.composerError || null, row.userInstructions || null, row.finalSystemPrompt || null, row.mocModel || null,
-         row.composerPrompt || null, row.composerInput || null]
+         row.composerPrompt || null, row.composerInput || null, row.contextInput ? String(row.contextInput).slice(0, 60000) : null]
       );
       return r.rows[0].id;
     } catch (err) {
@@ -3118,7 +3119,8 @@ Rules:
             (p.description ? `\nDescription: ${p.description}` : '') +
             (p.context_notes ? `\nProject instructions (set by the user for every MOC in this project — follow them, and treat the names and terms here as the correct spellings):\n${p.context_notes}` : '');
           const earlier = p.carry_forward === false ? '' : await earlierProjectMocs(user.email, pid, sessionId);
-          contextStr = block + earlier + (contextStr ? `\n\n${contextStr}` : '');
+          const briefCtx = p.carry_forward === false ? '' : await projectIntel.briefContextFor(pid);
+          contextStr = block + briefCtx + earlier + (contextStr ? `\n\n${contextStr}` : '');
         }
       } catch (e) { console.warn('[moc] Project details unavailable:', e.message); }
     }
@@ -3194,6 +3196,7 @@ Rules:
       composerInput:        composed?.composerInput || null,
       composerError, userInstructions, finalSystemPrompt,
       mocModel:             result.servedModel || mocModel,
+      contextInput:         contextStr || null,
     });
 
     // Evidence gates: no decision, action, owner, date or priority survives without support in the transcript
@@ -4562,7 +4565,10 @@ Rules:
     const tplKey = mocTemplateKey(template || m.moc_template || 'standard');
     const email  = m.user_email;
     const hasSpeakers = !!diarized || !!m.diarized_segments || !!m.with_diarization;
-    const annotated = (hasSpeakers ? DIARIZATION_NOTE : '') + transcript;
+    // The user's meeting glossary corrects misheard names and terms in what the engine reads
+    const fixed = projectIntel.applyHeardAs(transcript, m);
+    if (fixed.replaced) console.log(`[regenerate] MOC #${m.id}: ${fixed.replaced} spelling correction(s) from the meeting glossary`);
+    const annotated = (hasSpeakers ? DIARIZATION_NOTE : '') + fixed.transcript;
 
     // Anything the user typed, plus their own edits to the current MOC, rides along as authorised instructions
     const parts = [];
@@ -4572,7 +4578,9 @@ Rules:
     }
     const sessionPrompt = parts.length ? parts.join('\n\n') : null;
 
-    const { contextStr } = await buildMeetingContext(email);
+    const { contextStr: baseCtx } = await buildMeetingContext(email);
+    const sessCtx = projectIntel.sessionContextBlock(m);
+    const contextStr = [sessCtx, baseCtx].filter(Boolean).join(String.fromCharCode(10, 10)) || null;
     const { mom, inputTokens, outputTokens, promptLogId } = await generateMOM(
       annotated, m.file_name || 'meeting', user, contextStr, m.id, null, null, sessionPrompt, tplKey, m.project_id
     );
@@ -4603,6 +4611,7 @@ Rules:
       await pool.query('UPDATE mom_sessions SET speakers = $1 WHERE id = $2', [JSON.stringify(mom.speakers), m.id]);
     }
     await linkPromptLog(promptLogId, m.id);
+    if (m.project_id) projectIntel.scheduleMerge(m.project_id, email);
     if (inputTokens || outputTokens) {
       await logUsage({
         service: 'claude', userEmail: email, sessionId: m.id, detail: 'MOC regeneration (sonnet-5-5)',
@@ -5136,6 +5145,7 @@ Rules:
       if (!hit) return;
       await pool.query('UPDATE mom_sessions SET project_id = $1 WHERE id = $2 AND user_email = $3 AND project_id IS NULL', [hit.id, sessionId, email]);
       await pool.query('UPDATE projects SET updated_at = NOW() WHERE id = $1', [hit.id]);
+      projectIntel.scheduleMerge(hit.id, email);
       console.log(`[projects] Session #${sessionId} auto-filed into project #${hit.id} by tag`);
     } catch (err) { console.warn('[projects] Auto-file by tag failed:', err.message); }
   }
@@ -5158,15 +5168,19 @@ Rules:
       await pool.query('UPDATE mom_sessions SET project_id = $1 WHERE id = $2 AND user_email = $3',
         [pid, sessionId, email]);
       await pool.query('UPDATE projects SET updated_at = NOW() WHERE id = $1', [pid]);
+      projectIntel.scheduleMerge(pid, email);
       console.log(`[projects] Session #${sessionId} filed into project #${pid}`);
     } catch (err) { console.warn('[projects] Could not file session:', err.message); }
   }
+
+  // Project brief, registers, ask, reports, exports and share view (project-intel.js)
+  const projectIntel = require('./project-intel')(app, { pool, requireAuth, ownedProject, safeArr, safeObj, logUsage, COST, axios });
 
   app.get('/api/projects', requireAuth, async (req, res) => {
     try {
       const includeArchived = req.query.archived === '1';
       const r = await pool.query(`
-        SELECT p.id, p.name, p.description, p.context_notes, p.color, p.archived, p.carry_forward, p.auto_tags,
+        SELECT p.id, p.name, p.description, p.context_notes, p.color, p.archived, p.carry_forward, p.auto_tags, p.project_type, p.brief_review, (p.share_token <> '') AS shared,
                p.created_at, p.updated_at,
                COUNT(s.id)::int AS session_count,
                MAX(s.created_at) AS last_activity
@@ -5191,13 +5205,14 @@ Rules:
       if (!name) return res.status(400).json({ error: 'Give the project a name.' });
 
       const r = await pool.query(`
-        INSERT INTO projects (user_email, name, description, context_notes, color, auto_tags)
-        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+        INSERT INTO projects (user_email, name, description, context_notes, color, auto_tags, project_type)
+        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
         [req.session.user.email, name,
          String(req.body?.description   || '').slice(0, 2000),
          String(req.body?.context_notes || '').slice(0, 8000),
          String(req.body?.color || '').slice(0, 20),
-         String(req.body?.auto_tags || '').slice(0, 1000)]);
+         String(req.body?.auto_tags || '').slice(0, 1000),
+         projectIntel.PROJECT_TYPES[req.body?.project_type] ? req.body.project_type : 'general']);
 
       await snapshotProjectContext(r.rows[0]);
       console.log(`[projects] ${req.session.user.email} created "${name}"`);
@@ -5229,6 +5244,7 @@ Rules:
       if (req.body?.archived      !== undefined) put('archived',      !!req.body.archived);
       if (req.body?.carry_forward !== undefined) put('carry_forward', !!req.body.carry_forward);
       if (req.body?.auto_tags     !== undefined) put('auto_tags',     String(req.body.auto_tags).slice(0, 1000));
+      if (req.body?.project_type  !== undefined) put('project_type',  projectIntel.PROJECT_TYPES[req.body.project_type] ? req.body.project_type : 'general');
       if (!sets.length) return res.status(400).json({ error: 'Nothing to update.' });
 
       sets.push('updated_at = NOW()');
@@ -5262,7 +5278,7 @@ Rules:
       const email = req.session.user.email;
       const p = await ownedProject(email, req.params.id);
       if (!p) return res.status(404).json({ error: 'Project not found.' });
-      const memory = p.carry_forward === false ? '' : await earlierProjectMocs(email, p.id, null);
+      const memory = p.carry_forward === false ? '' : (await projectIntel.briefContextFor(p.id)) + await earlierProjectMocs(email, p.id, null);
       const n = await pool.query(
         `SELECT COUNT(*)::int AS n FROM mom_sessions WHERE project_id = $1 AND user_email = $2 AND COALESCE(summary, '') <> ''`, [p.id, email]);
       res.json({ name: p.name, instructions: p.context_notes || '', description: p.description || '',
@@ -5319,12 +5335,16 @@ Rules:
         if (!(await ownedProject(email, pid))) return res.status(404).json({ error: 'Project not found.' });
       }
 
+      const before = await pool.query('SELECT project_id FROM mom_sessions WHERE id = $1 AND user_email = $2', [req.params.id, email]);
       const r = await pool.query(
         'UPDATE mom_sessions SET project_id = $1 WHERE id = $2 AND user_email = $3 RETURNING id, project_id',
         [pid, req.params.id, email]);
       if (!r.rows.length) return res.status(404).json({ error: 'Conversation not found.' });
 
       if (pid !== null) await pool.query('UPDATE projects SET updated_at = NOW() WHERE id = $1', [pid]).catch(() => {});
+      // Both the project it joined and the one it left need their brief brought up to date
+      if (pid !== null) projectIntel.scheduleMerge(pid, email);
+      if (before.rows[0]?.project_id && before.rows[0].project_id !== pid) projectIntel.scheduleMerge(before.rows[0].project_id, email);
       res.json({ success: true, project_id: r.rows[0].project_id });
     } catch (err) { res.status(500).json({ error: err.message }); }
   });
@@ -5341,10 +5361,14 @@ Rules:
       if (pid !== null && !(await ownedProject(email, pid)))
         return res.status(404).json({ error: 'Project not found.' });
 
+      const prev = await pool.query(
+        'SELECT DISTINCT project_id FROM mom_sessions WHERE id = ANY($1::int[]) AND user_email = $2 AND project_id IS NOT NULL', [ids, email]);
       const r = await pool.query(
         'UPDATE mom_sessions SET project_id = $1 WHERE id = ANY($2::int[]) AND user_email = $3',
         [pid, ids, email]);
       if (pid !== null) await pool.query('UPDATE projects SET updated_at = NOW() WHERE id = $1', [pid]).catch(() => {});
+      if (pid !== null) projectIntel.scheduleMerge(pid, email);
+      prev.rows.forEach(x => { if (x.project_id !== pid) projectIntel.scheduleMerge(x.project_id, email); });
 
       res.json({ success: true, moved: r.rowCount });
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -5732,6 +5756,7 @@ Rules:
   app.get('/actions', requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'actions.html')));
   app.get('/projects', requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'projects.html')));
   app.get('/project',  requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'project.html')));
+  app.get('/meeting',  requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'meeting.html')));
   app.get('/profile.html',requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'profile.html')));
   // Old links and bookmarks used /login
   app.get('/login', (req, res) => {

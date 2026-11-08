@@ -298,26 +298,106 @@ tr:hover .action-cell{opacity:1}
   <div class="pw-head">
     <div>
       <div class="hero-eyebrow" id="pw-eyebrow">Project</div>
-      <div class="pw-title"><span class="proj-dot" id="pw-dot"></span><span id="pw-name">Loading…</span></div>
+      <div class="pw-title"><span class="proj-dot" id="pw-dot"></span><span id="pw-name">Loading…</span><span class="st-pill" id="pw-status" style="display:none"></span></div>
       <div class="pw-desc" id="pw-desc"></div>
     </div>
-    <a class="btn-new" id="pw-new" href="/">+ New conversation</a>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a class="btn-ghost" id="pw-print" target="_blank">Print brief</a>
+      <a class="btn-new" id="pw-new" href="/">+ New conversation</a>
+    </div>
   </div>
 
-  <div class="pw-grid">
-    <!-- Left: conversations in this project, oldest to newest -->
-    <section class="pw-main">
-      <div class="pw-sec-title">Conversations <span class="count-chip" id="pw-count">0</span></div>
-      <div id="pw-convs"><div class="pw-empty">Loading…</div></div>
-    </section>
+  <div class="kpis" id="pw-kpis"></div>
 
-    <!-- Right: what the AI reads before every MOC in this project -->
-    <aside class="pw-side">
+  <div class="tabs" id="tabs">
+    <button data-t="brief" class="on">Brief</button>
+    <button data-t="actions">Actions</button>
+    <button data-t="decisions">Decisions</button>
+    <button data-t="timeline">Timeline</button>
+    <button data-t="ask">Ask the project</button>
+    <button data-t="reports">Reports</button>
+    <button data-t="meetings">Meetings <span class="count-chip" id="pw-count">0</span></button>
+    <button data-t="settings">Settings</button>
+  </div>
+
+  <div id="brief-banner"></div>
+
+  <!-- BRIEF -->
+  <section class="tab" id="t-brief">
+    <div class="pw-grid">
+      <div>
+        <div class="pw-card"><div class="pw-card-head"><b>Project profile</b><button class="pw-link" onclick="editProfile()">Edit</button></div>
+          <div id="b-profile"></div>
+          <div class="pw-hint">Read before every MOC in this project. Fields you edit are locked against automatic updates.</div></div>
+        <div class="pw-card"><div class="pw-card-head"><b>Overview</b><button class="pw-link" onclick="editOverview()">Edit</button></div>
+          <div id="b-overview" class="prose"></div><div id="b-status-reason" class="pw-hint"></div></div>
+        <div class="pw-card warn-card" id="b-contra-card"><div class="pw-card-head"><b>⚠ Points needing reconciliation</b></div><div id="b-contra"></div></div>
+        <div class="pw-card"><div class="pw-card-head"><b>Risks</b></div><div id="b-risks"></div></div>
+        <div class="pw-card"><div class="pw-card-head"><b>Open questions</b></div><div id="b-questions"></div></div>
+        <div class="pw-card"><div class="pw-card-head"><b>Key figures</b></div><div id="b-figures"></div></div>
+      </div>
+      <aside>
+        <div class="pw-card"><div class="pw-card-head"><b>People</b><button class="pw-link" onclick="addPerson()">+ Add</button></div><div id="b-people"></div>
+          <div class="pw-hint">Spellings here are used in every MOC of this project.</div></div>
+        <div class="pw-card"><div class="pw-card-head"><b>Glossary</b><button class="pw-link" onclick="addTerm()">+ Add</button></div><div id="b-glossary"></div></div>
+        <div class="pw-card"><div class="pw-card-head"><b>Brief versions</b><button class="pw-link" onclick="openVersions()">History</button></div>
+          <div id="b-version" class="pw-hint"></div>
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+            <button class="btn-ghost" onclick="rebuild(false)">Update brief</button>
+            <button class="btn-ghost" onclick="rebuild(true)">Rebuild from all meetings</button>
+          </div></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ACTIONS -->
+  <section class="tab" id="t-actions" hidden>
+    <div class="toolbar">
+      <select class="filter-input" id="a-status" onchange="renderActions()">
+        <option value="live">Open + in progress</option><option value="">All</option><option value="open">Open</option>
+        <option value="in_progress">In progress</option><option value="overdue">Overdue</option><option value="done">Done</option><option value="dropped">Dropped</option></select>
+      <select class="filter-input" id="a-owner" onchange="renderActions()"></select>
+      <div class="search-wrap"><span class="search-icon">⌕</span><input id="a-q" placeholder="Search actions" oninput="renderActions()"></div>
+      <button class="btn-ghost" onclick="addAction()">+ Add action</button>
+      <a class="btn-new" id="a-csv">Export Excel (CSV)</a>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th class="no-sort">ID</th><th class="no-sort">Task</th><th class="no-sort">Owner</th><th class="no-sort">Due</th><th class="no-sort">Status</th><th class="no-sort">Source</th></tr></thead>
+      <tbody id="a-body"></tbody></table></div>
+  </section>
+
+  <!-- DECISIONS -->
+  <section class="tab" id="t-decisions" hidden><div id="d-list"></div></section>
+
+  <!-- TIMELINE -->
+  <section class="tab" id="t-timeline" hidden><div class="tl" id="tl"></div></section>
+
+  <!-- ASK -->
+  <section class="tab" id="t-ask" hidden>
+    <div class="pw-card">
+      <div class="ask-row"><input id="ask-q" placeholder="e.g. What did the client commit on GST reconciliation, and is it done?" onkeydown="if(event.key==='Enter')ask()">
+        <button class="btn-new" id="ask-btn" onclick="ask()">Ask</button></div>
+      <div class="pw-hint">Answers come only from this project's meetings, with the meeting cited for every point.</div>
+      <div class="chips" id="ask-sugg"></div>
+    </div>
+    <div id="ask-list"></div>
+  </section>
+
+  <!-- REPORTS -->
+  <section class="tab" id="t-reports" hidden>
+    <div class="pw-card"><div class="pw-card-head"><b>Draft a document from the approved brief</b></div>
+      <div class="chips" id="r-kinds"></div>
+      <div class="pw-hint">Drafts for your review. Verify figures, dates and regulatory points before sending.</div></div>
+    <div id="r-list"></div>
+  </section>
+
+  <!-- MEETINGS -->
+  <section class="tab" id="t-meetings" hidden><div id="pw-convs"><div class="pw-empty">Loading…</div></div></section>
+
+  <!-- SETTINGS -->
+  <section class="tab" id="t-settings" hidden>
+    <div class="pw-grid">
       <div class="pw-card">
-        <div class="pw-card-head">
-          <b>Project instructions</b>
-          <button class="pw-link" onclick="openHistory()">🕘 History</button>
-        </div>
+        <div class="pw-card-head"><b>Project instructions</b><button class="pw-link" onclick="openHistory()">🕘 History</button></div>
         <textarea id="pw-ctx" rows="8" maxlength="8000" placeholder="Who the client is, recurring attendees, standing agenda, names and terms to spell correctly, how the MOC should read…"></textarea>
         <div class="pw-hint">Read before every MOC in this project. Each save is kept as a version.</div>
         <div class="pw-card-head" style="margin-top:12px"><b>Description</b></div>
@@ -326,22 +406,48 @@ tr:hover .action-cell{opacity:1}
         <input type="text" id="pw-tags" maxlength="1000" placeholder="ABC, Audit-ABC, Board">
         <div class="pw-hint">Conversations saved without a project, tagged with any of these or the project name, land here automatically.</div>
         <label class="pw-tog"><input type="checkbox" id="pw-carry"><span class="pw-sw"></span>
-          <span><b>Carry context forward</b><span class="pw-hint" style="display:block;margin:2px 0 0">The last three MOCs here are passed to the next one.</span></span></label>
+          <span><b>Carry context forward</b><span class="pw-hint" style="display:block;margin:2px 0 0">The approved brief and recent MOCs are passed to the next MOC.</span></span></label>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
           <span class="pw-hint" id="pw-saved" style="margin:auto auto auto 0"></span>
           <button class="btn-new" id="pw-save" onclick="saveContext()">Save</button>
         </div>
       </div>
+      <aside>
+        <div class="pw-card">
+          <div class="pw-card-head"><b>Project type</b></div>
+          <select class="filter-input" id="s-type" style="width:100%" onchange="saveIntel({project_type:this.value})"></select>
+          <div class="pw-hint" id="s-type-guide"></div>
+          <label class="pw-tog"><input type="checkbox" id="s-review" onchange="saveIntel({brief_review:this.checked})"><span class="pw-sw"></span>
+            <span><b>Review brief updates before use</b><span class="pw-hint" style="display:block;margin:2px 0 0">New meetings create a draft brief you approve. Off: updates are used straight away.</span></span></label>
+        </div>
+        <div class="pw-card">
+          <div class="pw-card-head"><b>Client share link</b></div>
+          <div class="pw-hint">A read-only page with overview, actions, decisions, open questions and timeline. Risks, reconciliation points, glossary and prompts are not shown.</div>
+          <div id="s-share" style="margin-top:10px"></div>
+        </div>
+        <div class="pw-card">
+          <div class="pw-card-head"><b>Exports</b></div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <a class="pw-link" id="x-brief" target="_blank">Project brief (print / PDF)</a>
+            <a class="pw-link" id="x-client" target="_blank">Client version (print / PDF)</a>
+            <a class="pw-link" id="x-csv">Action register (Excel CSV)</a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
 
-      <div class="pw-card">
-        <div class="pw-card-head"><b>Carried into the next MOC</b></div>
-        <div id="pw-carry-list" class="pw-hint">—</div>
-      </div>
-    </aside>
+</div>
+</div>
+</div>
+
+<!-- Generic modal -->
+<div class="overlay" id="m-overlay">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-head"><div class="modal-eyebrow" id="m-eyebrow"></div><div class="modal-title" id="m-title"></div></div>
+    <div class="modal-body" id="m-body"></div>
+    <div class="modal-foot" id="m-foot"></div>
   </div>
-
-</div>
-</div>
 </div>
 
 <!-- Context history and prompt comparison -->
@@ -369,62 +475,138 @@ tr:hover .action-cell{opacity:1}
 <div id="toast-wrap"></div>
 
 <style>
-.pw-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
-.pw-title{font-family:var(--serif);font-size:30px;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+.pw-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.pw-title{font-family:var(--serif);font-size:30px;letter-spacing:-.02em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .pw-title .proj-dot{width:12px;height:12px}
+@media(max-width:600px){.pw-title{font-size:24px}.pw-title .proj-dot{display:none}}
 .pw-desc{color:var(--ink3);font-size:14px;margin-top:4px}
-.pw-grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}
-@media (max-width:900px){.pw-grid{grid-template-columns:1fr}.pw-side{order:-1}}
-.pw-sec-title{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px;display:flex;gap:8px;align-items:center}
+.pw-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+@media (max-width:900px){.pw-grid{grid-template-columns:1fr}}
 .pw-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow-1)}
-.pw-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:13px}
-.pw-card textarea,.pw-card input[type=text]{width:100%;padding:9px 11px;border:1px solid var(--border-strong);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;font-size:13px;resize:vertical}
-.pw-card textarea:focus,.pw-card input[type=text]:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-tint)}
+.warn-card{border-color:var(--gold-tint-strong);background:linear-gradient(0deg,var(--gold-tint),var(--gold-tint)),var(--card)}
+.pw-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:13px;gap:8px}
+.pw-card textarea,.pw-card input[type=text],.ask-row input,.m-in{width:100%;padding:9px 11px;border:1px solid var(--border-strong);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;font-size:13px;resize:vertical}
+.pw-card textarea:focus,.pw-card input:focus,.m-in:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-tint)}
 .pw-hint{font-size:11.5px;color:var(--ink3);margin-top:4px;line-height:1.5}
-.pw-link{background:none;border:none;color:var(--gold);cursor:pointer;font:inherit;font-size:12px}
+.pw-link{background:none;border:none;color:var(--gold);cursor:pointer;font:inherit;font-size:12px;text-decoration:none}
+.pw-link:hover{text-decoration:underline}
 .pw-tog{display:flex;gap:10px;align-items:flex-start;margin-top:12px;cursor:pointer;font-size:13px}
 .pw-tog input{display:none}
 .pw-sw{flex:0 0 36px;height:20px;border-radius:10px;background:var(--ink4);position:relative;transition:.2s;margin-top:1px}
 .pw-sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 .pw-tog input:checked+.pw-sw{background:var(--gold)}
 .pw-tog input:checked+.pw-sw::after{left:18px}
-.pw-conv{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;position:relative}
-.pw-conv::before{content:attr(data-n);position:absolute;left:-10px;top:12px;font:700 10px/1 var(--mono);background:var(--navy);color:var(--gold);border-radius:6px;padding:4px 5px}
-.pw-conv-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.pw-empty{padding:24px;text-align:center;color:var(--ink3);border:1px dashed var(--border-strong);border-radius:12px;font-size:13px}
+.prose{font-size:14px;line-height:1.65;color:var(--ink2);white-space:pre-wrap}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(3,1fr)}}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.kpi b{display:block;font-family:var(--serif);font-size:22px;font-weight:400}
+.kpi span{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+.kpi.warn b{color:var(--rust)}
+.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--border);margin-bottom:14px}
+.tabs button{background:none;border:none;border-bottom:2px solid transparent;padding:10px 12px;font:inherit;font-size:13px;font-weight:500;color:var(--ink3);cursor:pointer;white-space:nowrap;display:flex;gap:6px;align-items:center}
+.tabs button.on{color:var(--gold);border-bottom-color:var(--gold)}
+.banner{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px 16px;border-radius:12px;margin-bottom:14px;font-size:13px;border:1px solid var(--border)}
+.banner.pending{background:var(--sky-tint);border-color:rgba(40,112,192,.3)}
+.banner.info{background:var(--gold-tint);border-color:var(--gold-tint-strong)}
+.banner .acts{display:flex;gap:8px;flex-wrap:wrap}
+.st-pill,.pill{font-family:var(--mono);font-size:10px;font-weight:600;padding:3px 9px;border-radius:999px;letter-spacing:.04em;text-transform:uppercase;background:var(--paper2);color:var(--ink2);white-space:nowrap}
+.pill.open,.st-pill.at_risk,.pill.medium{background:var(--gold-tint);color:var(--gold)}
+.pill.in_progress{background:var(--sky-tint);color:var(--sky)}
+.pill.done,.st-pill.on_track,.pill.active,.pill.low,.pill.answered,.pill.mitigated,.pill.closed{background:var(--sage-tint);color:var(--sage)}
+.pill.overdue,.st-pill.off_track,.pill.high,.pill.reversed{background:var(--rust-tint);color:var(--rust)}
+.pill.revised{background:var(--violet-tint);color:var(--violet)}
+.src{display:inline-flex;font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:5px;background:var(--sky-tint);color:var(--sky);text-decoration:none;margin:2px 3px 0 0;white-space:nowrap}
+.src:hover{background:var(--sky);color:#fff}
+.src.user{background:var(--violet-tint);color:var(--violet)}
+.item{padding:9px 0;border-bottom:1px solid var(--border);font-size:13.5px;line-height:1.55}
+.item:last-child{border-bottom:none}
+.item .meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:3px}
+.item .id{font-family:var(--mono);font-size:11px;color:var(--ink3);margin-right:6px}
+.row-x{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+.row-x:last-child{border-bottom:none}
+.row-x small{color:var(--ink3)}
+.x{background:none;border:none;color:var(--ink4);cursor:pointer;font-size:14px}
+.x:hover{color:var(--rust)}
+tbody td select,tbody td input{font:inherit;font-size:12.5px;border:1px solid transparent;background:transparent;color:var(--ink);border-radius:6px;padding:4px 6px;width:100%}
+tbody td select:hover,tbody td input:hover,tbody td input:focus{border-color:var(--border-strong);background:var(--paper)}
+tbody tr{cursor:default}
+tbody tr:hover{transform:none}
+tr.ov td:first-child{box-shadow:inset 3px 0 var(--rust)}
+.upd{font-size:11.5px;color:var(--ink3);margin-top:3px}
+.dec{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:10px}
+.dec.revised,.dec.reversed{opacity:.72}
+.dec .hist{font-size:12px;color:var(--ink3);margin-top:6px;border-left:2px solid var(--border-strong);padding-left:10px}
+.tl{position:relative;padding-left:26px}
+.tl::before{content:"";position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:var(--border-strong)}
+.tl-i{position:relative;margin-bottom:14px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 14px}
+.tl-i::before{content:"";position:absolute;left:-23px;top:14px;width:12px;height:12px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 3px var(--paper)}
+.tl-d{font-family:var(--mono);font-size:11px;color:var(--gold);font-weight:600}
+.ask-row{display:flex;gap:8px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chip{border:1px solid var(--border-strong);background:var(--paper);border-radius:999px;padding:5px 11px;font-size:12px;cursor:pointer;color:var(--ink2)}
+.chip:hover{border-color:var(--gold);color:var(--gold)}
+.qa{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:10px}
+.qa .q{font-weight:600;font-size:14px;margin-bottom:6px}
+.qa .a{font-size:13.5px;line-height:1.65;color:var(--ink2)}
+.md h1,.md h2,.md h3{font-family:var(--serif);font-weight:500;margin:12px 0 6px}
+.md h1{font-size:20px}.md h2{font-size:17px}.md h3{font-size:15px}
+.md p{margin:6px 0}.md ul{margin:6px 0 6px 20px}.md li{margin:2px 0}
+.md table{border-collapse:collapse;margin:8px 0;font-size:12.5px}.md td,.md th{border:1px solid var(--border-strong);padding:4px 8px}
+.pw-conv{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;position:relative;margin-left:12px}
+.pw-conv::before{content:attr(data-n);position:absolute;left:-12px;top:12px;font:700 10px/1 var(--mono);background:var(--navy);color:var(--gold);border-radius:6px;padding:4px 5px}
+.pw-conv-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
 .pw-conv-top a{color:var(--ink);font-weight:600;text-decoration:none}
 .pw-conv-top a:hover{color:var(--gold)}
 .pw-conv-meta{font-size:11.5px;color:var(--ink3)}
 .pw-conv-sum{font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.55}
 .pw-conv details{margin-top:8px}
 .pw-conv summary{cursor:pointer;font-size:12px;color:var(--gold)}
-.pw-conv pre{white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:11.5px;background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-top:6px;max-height:260px;overflow:auto}
+.pw-conv pre,.pre{white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:11.5px;background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-top:6px;max-height:300px;overflow:auto}
 .pw-cmp{font-size:11.5px;margin-left:8px}
-.pw-empty{padding:24px;text-align:center;color:var(--ink3);border:1px dashed var(--border-strong);border-radius:12px}
-.cmp-pick{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px}
-.cmp-pick label{font-size:12px;color:var(--ink2);display:flex;flex-direction:column;gap:4px;flex:1;min-width:220px}
-.cmp-pick select{padding:7px 9px;border:1px solid var(--border-strong);border-radius:8px;background:var(--card);color:var(--ink);font-size:13px}
-.cmp-legend{font-size:11px;color:var(--ink3);margin-bottom:8px;display:flex;gap:8px;align-items:center}
-.diff{font-family:var(--mono);font-size:12px;line-height:1.6;border:1px solid var(--border);border-radius:10px;padding:10px 12px;max-height:52vh;overflow:auto;white-space:pre-wrap;word-break:break-word;background:var(--card)}
-.diff .row{padding:0 4px;border-radius:3px}
-.d-add,.diff .add{background:var(--sage-tint);color:var(--sage)}
-.d-del,.diff .del{background:var(--rust-tint);color:var(--rust);text-decoration:line-through}
-.d-add,.d-del{padding:1px 6px;border-radius:4px}
-.diff .sec{font-weight:700;color:var(--ink3);margin:8px 0 2px;text-transform:uppercase;font-size:10px;letter-spacing:.1em}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.toast.error{background:var(--rust)}.toast.success{background:var(--sage)}.toast{background:var(--navy)}
 </style>
 
 <script>
 const PID = parseInt(new URLSearchParams(location.search).get('id'), 10);
-let project = null, convs = [];
+let project=null, convs=[], B=null, view=null, info=null, meetingsById={};
 
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function dateOnly(iso){ return iso ? new Date(iso).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : ''; }
-function toast(msg,type){
-  const w=document.getElementById('toast-wrap'), t=document.createElement('div');
-  t.className='toast '+(type||''); t.textContent=msg; w.appendChild(t);
-  setTimeout(()=>t.remove(),3500);
-}
+function toast(msg,type){ const w=document.getElementById('toast-wrap'), t=document.createElement('div'); t.className='toast '+(type||''); t.textContent=msg; w.appendChild(t); setTimeout(()=>t.remove(),4000); }
 async function getJSON(url,opts){ const r=await fetch(url,Object.assign({credentials:'same-origin'},opts||{})); const d=await r.json().catch(()=>({})); if(!r.ok) throw new Error(d.error||'Request failed'); return d; }
+const post=(url,body,method)=>getJSON(url,{method:method||'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});
 
+/* Citation chips → open the meeting */
+function srcChips(list){
+  return (list||[]).map(s=>{
+    if(s==='USER') return '<span class="src user">you</span>';
+    const id=String(s).replace(/^S/i,''), m=meetingsById[id];
+    return '<a class="src" href="/meeting?id='+esc(id)+'" title="'+esc(m?m.title:'Meeting '+s)+'">'+esc(m?(m.date||dateOnly(m.created_at)):s)+'</a>';
+  }).join('');
+}
+function linkCites(html){ return html.replace(/\[(S\d+(?:\s*,\s*S\d+)*)\]/g,(_,g)=>srcChips(g.split(/\s*,\s*/))); }
+function isOverdue(a){
+  if(a.status!=='open'&&a.status!=='in_progress') return false;
+  const d=Date.parse(a.due); return !isNaN(d) && d < Date.now()-86400000;
+}
+
+/* ── Tabs ── */
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return; showTab(b.dataset.t);
+});
+function showTab(t){
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x.dataset.t===t));
+  document.querySelectorAll('.tab').forEach(x=>x.hidden=x.id!=='t-'+t);
+  try{ history.replaceState(null,'','?id='+PID+'#'+t); }catch(e){}
+  if(t==='ask') loadQuestions();
+  if(t==='reports') loadReports();
+}
+
+/* ── Load ── */
 async function load(){
   if(!PID){ document.getElementById('pw-name').textContent='Project not found'; return; }
   try{
@@ -440,60 +622,354 @@ async function load(){
     document.getElementById('pw-desc-in').value=project.description||'';
     document.getElementById('pw-tags').value=project.auto_tags||'';
     document.getElementById('pw-carry').checked=project.carry_forward!==false;
-    // Upload screen opens with this project already picked
     document.getElementById('pw-new').onclick=()=>{ try{ localStorage.setItem('aix_last_project',String(PID)); }catch(e){} };
+    const base='/api/projects/'+PID+'/export/';
+    document.getElementById('pw-print').href=document.getElementById('x-brief').href=base+'brief.html';
+    document.getElementById('x-client').href=base+'brief.html?client=1';
+    document.getElementById('x-csv').href=document.getElementById('a-csv').href=base+'actions.csv';
     const c=await getJSON('/api/projects/'+PID+'/prompts');
     convs=c.conversations||[];
     renderConvs();
-  }catch(e){ document.getElementById('pw-name').textContent=e.message; document.getElementById('pw-convs').innerHTML=''; }
+    await loadTypes();
+    await loadBrief();
+  }catch(e){ document.getElementById('pw-name').textContent=e.message; }
+  const h=location.hash.slice(1); if(h && document.getElementById('t-'+h)) showTab(h);
 }
 
+let pollTimer=null;
+async function loadBrief(){
+  info=await getJSON('/api/projects/'+PID+'/brief');
+  meetingsById={}; info.meetings.forEach(m=>meetingsById[m.id]=m);
+  view = info.pending || info.approved;
+  B = view ? view.brief : null;
+  document.getElementById('s-review').checked=info.project.brief_review;
+  renderBanner(); renderBrief(); renderActions(); renderDecisions(); renderTimeline(); renderKpis(); renderShare();
+  clearTimeout(pollTimer);
+  if(info.updating) pollTimer=setTimeout(loadBrief,6000);
+}
+
+function renderBanner(){
+  const el=document.getElementById('brief-banner'); let h='';
+  if(info.updating) h+='<div class="banner info"><span><span class="spin"></span> Updating the project brief from new meetings…</span></div>';
+  if(info.pending){
+    h+='<div class="banner pending"><span><b>Draft brief waiting for your review.</b> '+esc(info.pending.note||'')+' · '+dateOnly(info.pending.created_at)+
+      '. It is not used in MOCs until you approve it.'+(info.approved?' <a href="#" class="pw-link" onclick="event.preventDefault();showChanges()">See what changed</a>':'')+'</span>'+
+      '<span class="acts"><button class="btn-ghost" onclick="decide(\'reject\')">Discard</button><button class="btn-new" onclick="decide(\'approve\')">Approve</button></span></div>';
+  }
+  if(!info.updating && (info.unmerged.length || info.removed_count)){
+    h+='<div class="banner info"><span>'+(info.unmerged.length?'<b>'+info.unmerged.length+' meeting(s)</b> not yet in the brief: '+info.unmerged.slice(0,4).map(m=>esc(m.title)).join(', ')+(info.unmerged.length>4?'…':''):'')+
+      (info.removed_count?' '+info.removed_count+' meeting(s) moved out — the brief will be rebuilt.':'')+'</span>'+
+      '<span class="acts"><button class="btn-new" onclick="rebuild(false)">Update brief</button></span></div>';
+  }
+  if(!B && !info.unmerged.length && !info.updating) h+='<div class="banner info"><span>No brief yet. Add meetings with a MOC to this project and the combined brief is built automatically.</span></div>';
+  el.innerHTML=h;
+}
+
+function renderKpis(){
+  const a=(B&&B.actions)||[], live=a.filter(x=>x.status==='open'||x.status==='in_progress');
+  const k=[
+    ['Meetings',info.meetings.length],
+    ['Open actions',live.length],
+    ['Overdue',a.filter(isOverdue).length,'warn'],
+    ['Done',a.filter(x=>x.status==='done').length],
+    ['Decisions',((B&&B.decisions)||[]).filter(d=>d.status==='active').length],
+    ['To reconcile',((B&&B.contradictions)||[]).length,'warn'],
+  ];
+  document.getElementById('pw-kpis').innerHTML=k.map(([l,v,c])=>'<div class="kpi '+(c&&v?c:'')+'"><b>'+v+'</b><span>'+l+'</span></div>').join('');
+  const st=document.getElementById('pw-status');
+  if(B&&B.status&&B.status!=='unknown'){ st.style.display=''; st.className='st-pill '+B.status; st.textContent=B.status.replace('_',' '); } else st.style.display='none';
+}
+
+function list(arr,fn,empty){ return (arr&&arr.length)?arr.map(fn).join(''):'<div class="pw-hint">'+(empty||'None recorded.')+'</div>'; }
+const PF=[['client_name','Client'],['engagement','Engagement'],['period','Period'],['scope','Scope'],['our_team','Our team'],['client_team','Client team'],['standing_notes','Standing notes']];
+function renderBrief(){
+  const b=B||{};
+  const pf=b.profile||{}, lk=new Set(pf.user_edited_fields||[]);
+  document.getElementById('b-profile').innerHTML=PF.some(([k])=>pf[k])
+    ? PF.filter(([k])=>pf[k]).map(([k,l])=>'<div class="row-x"><small style="min-width:96px">'+l+'</small><span style="flex:1;text-align:left">'+esc(pf[k])+(lk.has(k)?' <span class="src user" title="Set by you">✎</span>':'')+'</span></div>').join('')
+    : '<div class="pw-hint">Not filled yet. Click Edit to add client, engagement, period and teams — this makes every MOC more accurate.</div>';
+  document.getElementById('b-overview').textContent=b.overview||'Not documented yet.';
+  document.getElementById('b-status-reason').textContent=b.status_reason||'';
+  const contra=b.contradictions||[];
+  document.getElementById('b-contra-card').style.display=contra.length?'':'none';
+  document.getElementById('b-contra').innerHTML=list(contra,c=>'<div class="item"><b>'+esc(c.topic)+'</b> — '+esc(c.detail)+'<div class="meta">'+srcChips(c.sources)+'</div></div>');
+  document.getElementById('b-risks').innerHTML=list(b.risks,r=>'<div class="item"><span class="id">'+esc(r.id)+'</span>'+esc(r.text)+'<div class="meta"><span class="pill '+esc(r.severity)+'">'+esc(r.severity)+'</span><span class="pill '+esc(r.status)+'">'+esc(r.status)+'</span>'+srcChips(r.sources)+'</div></div>');
+  document.getElementById('b-questions').innerHTML=list(b.open_questions,q=>'<div class="item"><span class="id">'+esc(q.id)+'</span>'+esc(q.text)+(q.answer?'<div class="upd">Answer: '+esc(q.answer)+'</div>':'')+'<div class="meta"><span class="pill '+esc(q.status)+'">'+esc(q.status)+'</span>'+srcChips(q.sources)+'</div></div>');
+  document.getElementById('b-figures').innerHTML=list(b.key_figures,k=>'<div class="row-x"><span>'+esc(k.label)+(k.date?' <small>('+esc(k.date)+')</small>':'')+'</span><span><b>'+esc(k.value)+'</b> '+srcChips(k.sources)+'</span></div>');
+  document.getElementById('b-people').innerHTML=list(b.stakeholders,p=>'<div class="row-x"><span><b>'+esc(p.name)+'</b>'+(p.role?' · '+esc(p.role):'')+(p.side&&p.side!=='unknown'?' <small>['+esc(p.side.replace('_',' '))+']</small>':'')+'</span><button class="x" title="Remove" onclick="delPerson(\''+esc(p.name).replace(/'/g,"\\'")+'\')">×</button></div>');
+  document.getElementById('b-glossary').innerHTML=list(b.glossary,g=>'<div class="row-x"><span><b>'+esc(g.term)+'</b> <small>'+esc(g.meaning)+'</small></span><button class="x" title="Remove" onclick="delTerm(\''+esc(g.term).replace(/'/g,"\\'")+'\')">×</button></div>');
+  document.getElementById('b-version').innerHTML = view
+    ? (info.pending?'Showing the <b>draft</b> from ':'Approved version from ')+dateOnly(view.created_at)+' · '+esc(view.note||view.source)
+    : 'No brief yet.';
+}
+
+/* ── Actions ── */
+function renderActions(){
+  const all=(B&&B.actions)||[];
+  const ownerSel=document.getElementById('a-owner'), cur=ownerSel.value;
+  const owners=[...new Set(all.map(a=>a.owner||'To be confirmed'))].sort();
+  ownerSel.innerHTML='<option value="">All owners</option>'+owners.map(o=>'<option'+(o===cur?' selected':'')+'>'+esc(o)+'</option>').join('');
+  const st=document.getElementById('a-status').value, ow=ownerSel.value, q=document.getElementById('a-q').value.toLowerCase();
+  const rows=all.filter(a=>{
+    if(st==='live'&&!(a.status==='open'||a.status==='in_progress')) return false;
+    if(st==='overdue'&&!isOverdue(a)) return false;
+    if(st&&st!=='live'&&st!=='overdue'&&a.status!==st) return false;
+    if(ow&&(a.owner||'To be confirmed')!==ow) return false;
+    if(q&&!(a.task+' '+a.owner+' '+a.id).toLowerCase().includes(q)) return false;
+    return true;
+  });
+  document.getElementById('a-body').innerHTML = rows.length ? rows.map(a=>{
+    const ov=isOverdue(a), last=(a.updates||[]).slice(-1)[0];
+    return '<tr class="'+(ov?'ov':'')+'"><td><span class="id">'+esc(a.id)+'</span>'+(a.user_edited?'<span class="src user" title="Edited by you">✎</span>':'')+'</td>'+
+      '<td style="min-width:260px"><input value="'+esc(a.task)+'" onchange="saveAction(\''+a.id+'\',{task:this.value})">'+(last?'<div class="upd">↳ '+esc(last.note)+'</div>':'')+'</td>'+
+      '<td><input value="'+esc(a.owner)+'" placeholder="To be confirmed" onchange="saveAction(\''+a.id+'\',{owner:this.value})"></td>'+
+      '<td><input value="'+esc(a.due)+'" placeholder="—" onchange="saveAction(\''+a.id+'\',{due:this.value})">'+(ov?'<span class="pill overdue">overdue</span>':'')+'</td>'+
+      '<td><select onchange="saveAction(\''+a.id+'\',{status:this.value})">'+['open','in_progress','done','dropped'].map(s=>'<option value="'+s+'"'+(s===a.status?' selected':'')+'>'+s.replace('_',' ')+'</option>').join('')+'</select></td>'+
+      '<td>'+srcChips(a.sources)+'</td></tr>';
+  }).join('') : '<tr><td colspan="6"><div class="pw-empty">'+(B?'No actions match this filter.':'Actions appear here once the brief is built.')+'</div></td></tr>';
+}
+async function patchBrief(ops){
+  try{ const d=await post('/api/projects/'+PID+'/brief',{ops},'PATCH'); await loadBrief(); return d; }
+  catch(e){ toast(e.message,'error'); }
+}
+async function saveAction(id,fields){ await patchBrief([{type:'action',id,fields}]); toast('Saved — your change is kept on future updates.','success'); }
+function addAction(){
+  modal('Action register','Add <em>action</em>',
+    '<div class="field"><label class="field-label">Task</label><input class="m-in" id="n-task"></div>'+
+    '<div class="field"><label class="field-label">Owner</label><input class="m-in" id="n-owner"></div>'+
+    '<div class="field"><label class="field-label">Due</label><input class="m-in" id="n-due" placeholder="e.g. 2026-11-30"></div>',
+    async()=>{ const t=val('n-task'); if(!t) return toast('Enter the task.','error'); await patchBrief([{type:'action',id:'new',fields:{task:t,owner:val('n-owner'),due:val('n-due'),status:'open'}}]); return true; });
+}
+
+/* ── Decisions ── */
+function renderDecisions(){
+  const d=(B&&B.decisions)||[];
+  const order={active:0,revised:1,reversed:2};
+  document.getElementById('d-list').innerHTML = d.length ? [...d].sort((a,b)=>order[a.status]-order[b.status]).map(x=>
+    '<div class="dec '+esc(x.status)+'"><div class="pw-card-head" style="margin:0"><span><span class="id">'+esc(x.id)+'</span><b>'+esc(x.text)+'</b></span><span class="pill '+esc(x.status)+'">'+esc(x.status)+'</span></div>'+
+    '<div class="meta" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px">'+(x.date&&!(x.sources||[]).some(s=>{const m=meetingsById[String(s).replace(/^S/,'')];return m&&m.date===x.date;})?'<span class="pw-hint" style="margin:0">'+esc(x.date)+'</span>':'')+(x.supersedes?'<span class="pw-hint" style="margin:0">replaces '+esc(x.supersedes)+'</span>':'')+srcChips(x.sources)+
+    ' <select class="filter-input" style="padding:3px 6px" onchange="patchBrief([{type:\'decision\',id:\''+x.id+'\',fields:{status:this.value}}])">'+['active','revised','reversed'].map(s=>'<option'+(s===x.status?' selected':'')+'>'+s+'</option>').join('')+'</select></div>'+
+    ((x.history||[]).length?'<div class="hist">'+x.history.map(h=>'↳ '+esc(h.note)+' '+srcChips([h.source].filter(Boolean))).join('<br>')+'</div>':'')+
+    '</div>').join('') : '<div class="pw-empty">Decisions appear here once the brief is built.</div>';
+}
+
+/* ── Timeline ── */
+function renderTimeline(){
+  const t=(B&&B.timeline)||[];
+  const items = t.length ? t : info.meetings.map(m=>({date:m.date||dateOnly(m.created_at),source:'S'+m.id,event:m.title}));
+  document.getElementById('tl').innerHTML = items.length ? items.map(x=>{
+    const id=String(x.source||'').replace(/^S/,''), m=meetingsById[id];
+    return '<div class="tl-i"><div class="tl-d">'+esc(x.date)+'</div><div style="font-size:13.5px;margin-top:2px">'+esc(x.event)+'</div>'+
+      (m?'<a class="pw-link" href="/meeting?id='+id+'">'+esc(m.title)+' →</a>':'')+'</div>';
+  }).join('') : '<div class="pw-empty">No meetings yet.</div>';
+}
+
+/* ── Brief ops ── */
+async function rebuild(full){
+  if(full && !confirm('Rebuild the brief from every meeting? Your manual corrections are kept.')) return;
+  info.updating=true; renderBanner();
+  try{ const d=await post('/api/projects/'+PID+'/brief/rebuild',{full}); toast(d.changed?(d.status==='pending'?'Draft brief ready for review.':'Brief updated.'):'Brief is already up to date.','success'); }
+  catch(e){ toast(e.message,'error'); }
+  await loadBrief();
+}
+async function decide(decision){
+  try{ await post('/api/projects/'+PID+'/brief/'+info.pending.id+'/decide',{decision}); toast(decision==='approve'?'Approved — used from the next MOC.':'Draft discarded.','success'); await loadBrief(); }
+  catch(e){ toast(e.message,'error'); }
+}
+function itemsText(b){
+  if(!b) return '';
+  const L=[];
+  L.push('OVERVIEW\n'+(b.overview||''));
+  [['ACTIONS','actions',a=>a.id+' ['+a.status+'] '+a.task+(a.owner?' — '+a.owner:'')+(a.due?' — '+a.due:'')],
+   ['DECISIONS','decisions',d=>d.id+' ['+d.status+'] '+d.text],
+   ['RISKS','risks',r=>r.id+' ['+r.severity+'/'+r.status+'] '+r.text],
+   ['OPEN QUESTIONS','open_questions',q=>q.id+' ['+q.status+'] '+q.text],
+   ['RECONCILE','contradictions',c=>c.topic+': '+c.detail],
+   ['PEOPLE','stakeholders',p=>p.name+(p.role?' ('+p.role+')':'')],
+   ['GLOSSARY','glossary',g=>g.term+' = '+g.meaning]].forEach(([h,k,f])=>L.push('\n'+h+'\n'+(b[k]||[]).map(f).join('\n')));
+  return L.join('\n');
+}
+function showChanges(){
+  histMode='prompt';
+  histItems=[{label:'Approved · '+dateOnly(info.approved.created_at),text:itemsText(info.approved.brief)},{label:'Draft · '+dateOnly(info.pending.created_at),text:itemsText(info.pending.brief)}];
+  showHist('Brief <em>changes</em>',0,1);
+}
+async function openVersions(){
+  try{
+    const d=await getJSON('/api/projects/'+PID+'/brief/versions');
+    if(!d.versions.length) return toast('No brief versions yet.','error');
+    histMode='brief';
+    histItems=d.versions.reverse().map((v,i)=>({id:v.id,label:'v'+(i+1)+' · '+v.status+' · '+new Date(v.created_at).toLocaleString('en-IN')+' · '+(v.note||v.source),text:itemsText(v.brief)}));
+    showHist('Brief <em>versions</em>',Math.max(0,histItems.length-2),histItems.length-1);
+  }catch(e){ toast(e.message,'error'); }
+}
+function editProfile(){
+  if(!B) return toast('Build the brief first (add a meeting with a MOC), then edit the profile.','error');
+  const pf=B.profile||{};
+  modal('Project brief','Project <em>profile</em>',PF.map(([k,l])=>'<div class="field"><label class="field-label">'+l+'</label>'+
+    (k==='standing_notes'||k==='scope'?'<textarea class="m-in" rows="3" id="pf-'+k+'">'+esc(pf[k]||'')+'</textarea>':'<input class="m-in" id="pf-'+k+'" value="'+esc(pf[k]||'')+'">')+'</div>').join(''),
+    async()=>{ const fields={}; PF.forEach(([k])=>{ const v=val('pf-'+k); if(v!==(pf[k]||'')) fields[k]=v; }); if(Object.keys(fields).length) await patchBrief([{type:'profile',fields}]); return true; });
+}
+function editOverview(){
+  if(!B) return toast('Build the brief first.','error');
+  modal('Project brief','Edit <em>overview</em>','<textarea class="m-in" id="n-ov" rows="7">'+esc(B.overview||'')+'</textarea>',
+    async()=>{ await patchBrief([{type:'overview',text:val('n-ov')}]); return true; });
+}
+function addPerson(){
+  if(!B) return toast('Build the brief first.','error');
+  modal('People','Add <em>person</em>','<div class="field"><label class="field-label">Name (correct spelling)</label><input class="m-in" id="n-name"></div>'+
+    '<div class="field"><label class="field-label">Role</label><input class="m-in" id="n-role"></div>'+
+    '<div class="field"><label class="field-label">Side</label><select class="m-in" id="n-side"><option value="client">Client</option><option value="firm">Our firm</option><option value="third_party">Third party</option><option value="unknown">Not stated</option></select></div>',
+    async()=>{ const n=val('n-name'); if(!n) return toast('Enter a name.','error'); await patchBrief([{type:'stakeholder',fields:{name:n,role:val('n-role'),side:val('n-side')}}]); return true; });
+}
+function delPerson(n){ if(confirm('Remove '+n+'?')) patchBrief([{type:'stakeholder',delete:true,fields:{name:n}}]); }
+function addTerm(){
+  if(!B) return toast('Build the brief first.','error');
+  modal('Glossary','Add <em>term</em>','<div class="field"><label class="field-label">Term / acronym</label><input class="m-in" id="n-term"></div><div class="field"><label class="field-label">Meaning</label><input class="m-in" id="n-mean"></div>',
+    async()=>{ const t=val('n-term'); if(!t) return toast('Enter a term.','error'); await patchBrief([{type:'glossary',fields:{term:t,meaning:val('n-mean')}}]); return true; });
+}
+function delTerm(t){ if(confirm('Remove '+t+'?')) patchBrief([{type:'glossary',delete:true,fields:{term:t}}]); }
+
+/* ── Ask ── */
+const SUGG=['What is still pending from the client?','Which decisions changed over time?','Summarise the last meeting in 5 points','Who owns the most open actions?'];
+document.getElementById('ask-sugg').innerHTML=SUGG.map(s=>'<button class="chip" onclick="document.getElementById(\'ask-q\').value=this.textContent;ask()">'+esc(s)+'</button>').join('');
+function qaHTML(x){
+  return '<div class="qa"><div class="q">'+esc(x.question)+'</div><div class="a md">'+linkCites(md(x.answer||''))+'</div>'+
+    '<div class="pw-hint">'+dateOnly(x.created_at)+(x.confidence?' · confidence '+esc(x.confidence):'')+'</div></div>';
+}
+async function ask(){
+  const q=document.getElementById('ask-q').value.trim(); if(!q) return;
+  const btn=document.getElementById('ask-btn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  try{ const d=await post('/api/projects/'+PID+'/ask',{question:q}); document.getElementById('ask-list').insertAdjacentHTML('afterbegin',qaHTML(d)); document.getElementById('ask-q').value=''; }
+  catch(e){ toast(e.message,'error'); }
+  btn.disabled=false; btn.textContent='Ask';
+}
+let qLoaded=false;
+async function loadQuestions(){
+  if(qLoaded) return; qLoaded=true;
+  try{ const d=await getJSON('/api/projects/'+PID+'/questions'); document.getElementById('ask-list').innerHTML=d.questions.map(qaHTML).join(''); }catch(e){}
+}
+
+/* ── Reports ── */
+let rLoaded=false;
+function repHTML(r){
+  return '<div class="qa"><div class="pw-card-head"><b>'+esc(r.label)+'</b><span><span class="pw-hint">'+dateOnly(r.created_at)+'</span> '+
+    '<button class="pw-link" onclick="copyText(this)">Copy</button></span></div><div class="a md">'+md(r.body)+'</div><textarea hidden>'+esc(r.body)+'</textarea></div>';
+}
+async function loadReports(){
+  if(rLoaded) return; rLoaded=true;
+  try{
+    const d=await getJSON('/api/projects/'+PID+'/reports');
+    document.getElementById('r-kinds').innerHTML=d.kinds.map(k=>'<button class="chip" onclick="makeReport(\''+k.key+'\',this)">'+esc(k.label)+'</button>').join('');
+    document.getElementById('r-list').innerHTML=d.reports.map(repHTML).join('');
+  }catch(e){ toast(e.message,'error'); }
+}
+async function makeReport(kind,btn){
+  const old=btn.innerHTML; btn.disabled=true; btn.innerHTML='<span class="spin"></span> Drafting…';
+  try{ const r=await post('/api/projects/'+PID+'/report',{kind}); document.getElementById('r-list').insertAdjacentHTML('afterbegin',repHTML(r)); }
+  catch(e){ toast(e.message,'error'); }
+  btn.disabled=false; btn.innerHTML=old;
+}
+function copyText(btn){ const t=btn.closest('.qa').querySelector('textarea').value; navigator.clipboard.writeText(t).then(()=>toast('Copied.','success')); }
+
+/* Small, safe Markdown renderer (escapes first) */
+function md(src){
+  const lines=esc(src).split('\n'); let out='', inList=false, inTable=false;
+  const inline=s=>s.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/(^|\W)\*(\S.+?)\*(?=\W|$)/g,'$1<i>$2</i>');
+  for(const raw of lines){
+    const l=raw.trimEnd();
+    if(/^\|/.test(l)){ if(/^\|[\s\-:|]+\|$/.test(l)) continue; if(!inTable){ out+='<table>'; inTable=true; } out+='<tr>'+l.replace(/^\||\|$/g,'').split('|').map(c=>'<td>'+inline(c.trim())+'</td>').join('')+'</tr>'; continue; }
+    if(inTable){ out+='</table>'; inTable=false; }
+    const li=l.match(/^\s*(?:[-*•]|\d+\.)\s+(.*)/);
+    if(li){ if(!inList){ out+='<ul>'; inList=true; } out+='<li>'+inline(li[1])+'</li>'; continue; }
+    if(inList){ out+='</ul>'; inList=false; }
+    const h=l.match(/^(#{1,3})\s+(.*)/);
+    if(h) out+='<h'+h[1].length+'>'+inline(h[2])+'</h'+h[1].length+'>';
+    else if(l.trim()) out+='<p>'+inline(l)+'</p>';
+  }
+  if(inList) out+='</ul>'; if(inTable) out+='</table>';
+  return out;
+}
+
+/* ── Meetings ── */
 function renderConvs(){
   document.getElementById('pw-count').textContent=convs.length;
   document.getElementById('pw-convs').innerHTML = convs.length ? convs.map((c,i)=>
-    '<div class="pw-conv" data-n="C'+(i+1)+'">'+
-      '<div class="pw-conv-top"><a href="/history?project='+PID+'&open='+c.id+'">'+esc(c.meeting_title||c.file_name||'Conversation #'+c.id)+'</a>'+
-        '<span class="pw-conv-meta">'+esc(c.meeting_date||dateOnly(c.created_at))+'</span></div>'+
+    '<div class="pw-conv" data-n="S'+c.id+'">'+
+      '<div class="pw-conv-top"><a href="/meeting?id='+c.id+'">'+esc(c.meeting_title||c.file_name||'Conversation #'+c.id)+'</a>'+
+        '<span class="pw-conv-meta">'+esc(c.meeting_date||dateOnly(c.created_at))+' · <a class="pw-link" href="/meeting?id='+c.id+'#transcript">Transcript</a> · <a class="pw-link" href="/meeting?id='+c.id+'#prompt">Prompt</a></span></div>'+
       (c.tags?'<div class="pw-conv-meta" style="margin-top:2px">'+esc(c.tags)+'</div>':'')+
-      (c.summary?'<div class="pw-conv-sum">'+esc(String(c.summary).slice(0,320))+(c.summary.length>320?'…':'')+'</div>':'')+
-      '<details><summary>Prompts for this conversation'+(i?'<a href="#" class="pw-cmp" onclick="event.preventDefault();openCompare('+(i-1)+','+i+')">⇄ compare with C'+i+'</a>':'')+'</summary>'+
-        '<div class="pw-hint" style="margin-top:6px">Your meeting prompt</div><pre>'+esc(c.session_prompt||'(none — profile prompt used)')+'</pre>'+
-        (c.composed_prompt?'<div class="pw-hint" style="margin-top:6px">Customised prompt written for this conversation</div><pre>'+esc(c.composed_prompt)+'</pre>':'')+
-      '</details>'+
+      (c.summary?'<div class="pw-conv-sum">'+esc(String(c.summary).slice(0,320))+(c.summary.length>320?'…':'')+'</div>':'<div class="pw-conv-sum pw-hint">MOC not generated yet.</div>')+
+      (i?'<a href="#" class="pw-link" style="font-size:11.5px" onclick="event.preventDefault();openCompare('+(i-1)+','+i+')">⇄ Compare prompt with previous meeting</a>':'')+
     '</div>').join('')
-    : '<div class="pw-empty">No conversations yet. Start one with <b>+ New conversation</b> — it will be filed here.</div>';
-  // What feeds the next MOC: the last three with a summary
-  const last=convs.filter(c=>c.summary).slice(-3);
-  document.getElementById('pw-carry-list').innerHTML = project.carry_forward===false
-    ? 'Carry forward is off — only the instructions above are used.'
-    : (last.length ? last.map(c=>'• '+esc(c.meeting_title||c.file_name||'#'+c.id)).join('<br>') : 'Nothing yet — the first MOC here starts the chain.');
+    : '<div class="pw-empty">No conversations yet. Start one with <b>+ New conversation</b>, or move records here from Records.</div>';
 }
+
+/* ── Settings ── */
+let TYPES=[];
+async function loadTypes(){
+  try{ TYPES=(await getJSON('/api/project-types')).types; }catch(e){ TYPES=[]; }
+  const sel=document.getElementById('s-type');
+  sel.innerHTML=TYPES.map(t=>'<option value="'+t.key+'"'+(t.key===(project.project_type||'general')?' selected':'')+'>'+esc(t.label)+'</option>').join('');
+  showGuide();
+}
+function showGuide(){ const t=TYPES.find(x=>x.key===document.getElementById('s-type').value); document.getElementById('s-type-guide').textContent=t&&t.guide?t.guide:'No special tracking — general meetings.'; }
+async function saveIntel(body){
+  try{ await post('/api/projects/'+PID+'/intel-settings',body,'PATCH'); if(body.project_type) project.project_type=body.project_type; showGuide(); toast('Saved.','success'); }
+  catch(e){ toast(e.message,'error'); }
+}
+function renderShare(){
+  const el=document.getElementById('s-share');
+  el.innerHTML = info.project.shared
+    ? '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-new" onclick="share()">Copy link</button><button class="btn-ghost" onclick="unshare()">Turn off</button></div>'
+    : '<button class="btn-new" onclick="share()">Create share link</button>';
+}
+async function share(){
+  if(!info.project.shared && !confirm('Anyone with the link can view the client version of this brief. Create it?')) return;
+  try{ const d=await post('/api/projects/'+PID+'/share'); const url=d.url.startsWith('http')?d.url:location.origin+d.url;
+    await navigator.clipboard.writeText(url).catch(()=>{}); toast('Link copied: '+url,'success'); info.project.shared=true; renderShare(); }
+  catch(e){ toast(e.message,'error'); }
+}
+async function unshare(){ try{ await post('/api/projects/'+PID+'/share',{},'DELETE'); info.project.shared=false; renderShare(); toast('Link turned off.','success'); }catch(e){ toast(e.message,'error'); } }
 
 async function saveContext(){
   const btn=document.getElementById('pw-save'); btn.disabled=true; btn.textContent='Saving…';
   try{
-    const d=await getJSON('/api/projects/'+PID,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    const d=await post('/api/projects/'+PID,{
       context_notes:document.getElementById('pw-ctx').value.trim(),
       description:document.getElementById('pw-desc-in').value.trim(),
       auto_tags:document.getElementById('pw-tags').value.trim(),
-      carry_forward:document.getElementById('pw-carry').checked
-    })});
+      carry_forward:document.getElementById('pw-carry').checked},'PATCH');
     project=Object.assign(project,d.project);
     document.getElementById('pw-desc').textContent=project.description||'';
     document.getElementById('pw-saved').textContent='Saved '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-    renderConvs();
   }catch(e){ toast(e.message,'error'); }
   btn.disabled=false; btn.textContent='Save';
 }
 
+/* ── Generic modal ── */
+function val(id){ return (document.getElementById(id).value||'').trim(); }
+function modal(eyebrow,title,body,onOk){
+  document.getElementById('m-eyebrow').textContent=eyebrow;
+  document.getElementById('m-title').innerHTML=title;
+  document.getElementById('m-body').innerHTML=body;
+  const f=document.getElementById('m-foot'); f.innerHTML='<button class="btn-ghost" id="m-cancel">Cancel</button><button class="btn-new" id="m-ok">Save</button>';
+  document.getElementById('m-cancel').onclick=closeModal;
+  document.getElementById('m-ok').onclick=async()=>{ const b=document.getElementById('m-ok'); b.disabled=true; if(await onOk()) closeModal(); else b.disabled=false; };
+  document.getElementById('m-overlay').classList.add('open');
+  const first=document.querySelector('#m-body input,#m-body textarea'); if(first) first.focus();
+}
+function closeModal(){ document.getElementById('m-overlay').classList.remove('open'); }
+document.getElementById('m-overlay').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeModal(); });
+
 /* ── History and prompt comparison ── */
 function lineDiff(a,b){
-  const A=String(a||'').split('\n'), B=String(b||'').split('\n');
-  const n=A.length, m=B.length, T=Array.from({length:n+1},()=>new Int32Array(m+1));
-  for(let i=n-1;i>=0;i--) for(let j=m-1;j>=0;j--) T[i][j]=A[i]===B[j]?T[i+1][j+1]+1:Math.max(T[i+1][j],T[i][j+1]);
+  const A=String(a||'').split('\n'), B2=String(b||'').split('\n');
+  const n=A.length, m=B2.length, T=Array.from({length:n+1},()=>new Int32Array(m+1));
+  for(let i=n-1;i>=0;i--) for(let j=m-1;j>=0;j--) T[i][j]=A[i]===B2[j]?T[i+1][j+1]+1:Math.max(T[i+1][j],T[i][j+1]);
   const out=[]; let i=0,j=0;
-  while(i<n&&j<m){ if(A[i]===B[j]){out.push(['same',A[i]]);i++;j++;} else if(T[i+1][j]>=T[i][j+1]) out.push(['del',A[i++]]); else out.push(['add',B[j++]]); }
-  while(i<n) out.push(['del',A[i++]]); while(j<m) out.push(['add',B[j++]]);
+  while(i<n&&j<m){ if(A[i]===B2[j]){out.push(['same',A[i]]);i++;j++;} else if(T[i+1][j]>=T[i][j+1]) out.push(['del',A[i++]]); else out.push(['add',B2[j++]]); }
+  while(i<n) out.push(['del',A[i++]]); while(j<m) out.push(['add',B2[j++]]);
   return out;
 }
 let histMode='', histItems=[], cnt={add:0,del:0};
@@ -521,22 +997,27 @@ async function openHistory(){
 }
 function openCompare(a,b){
   histMode='prompt';
-  histItems=convs.map((c,i)=>({label:'C'+(i+1)+' · '+(c.meeting_title||c.file_name||'#'+c.id),
+  histItems=convs.map((c,i)=>({label:'S'+c.id+' · '+(c.meeting_title||c.file_name||'#'+c.id),
     text:'MEETING PROMPT\n'+(c.session_prompt||'(none)')+'\n\nCUSTOMISED PROMPT\n'+(c.composed_prompt||'(not recorded)')}));
   showHist('Prompt <em>comparison</em>',a,b);
 }
 function paintDiff(){
-  const A=histItems[+document.getElementById('h-a').value], B=histItems[+document.getElementById('h-b').value];
-  if(!A||!B) return;
+  const A=histItems[+document.getElementById('h-a').value], B2=histItems[+document.getElementById('h-b').value];
+  if(!A||!B2) return;
   cnt={add:0,del:0};
   document.getElementById('h-diff').innerHTML = histMode==='context'
-    ? diffHTML(A.desc,B.desc,'Description')+diffHTML(A.ctx,B.ctx,'Project instructions')
-    : diffHTML(A.text,B.text,'');
+    ? diffHTML(A.desc,B2.desc,'Description')+diffHTML(A.ctx,B2.ctx,'Project instructions')
+    : diffHTML(A.text,B2.text,'');
   document.getElementById('h-count').textContent=cnt.add+' line(s) added · '+cnt.del+' removed';
-  document.getElementById('h-restore').style.display=(histMode==='context'&&A!==B)?'':'none';
+  const r=document.getElementById('h-restore');
+  r.style.display=((histMode==='context'||histMode==='brief')&&A!==B2)?'':'none';
 }
 async function restoreVersion(){
   const A=histItems[+document.getElementById('h-a').value];
+  if(histMode==='brief'){
+    try{ await post('/api/projects/'+PID+'/brief/'+A.id+'/restore'); closeHist(); toast('Restored as the approved brief.','success'); await loadBrief(); }catch(e){ toast(e.message,'error'); }
+    return;
+  }
   document.getElementById('pw-ctx').value=A.ctx||'';
   document.getElementById('pw-desc-in').value=A.desc||'';
   closeHist(); await saveContext();
@@ -544,7 +1025,7 @@ async function restoreVersion(){
 }
 function closeHist(){ document.getElementById('hist-overlay').classList.remove('open'); }
 document.getElementById('hist-overlay').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeHist(); });
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeHist(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeHist(); closeModal(); } });
 
 load();
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});

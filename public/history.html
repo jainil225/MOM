@@ -1502,6 +1502,21 @@ tbody tr:hover{background:var(--gold-tint);}
 .btn-pdf:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(15,27,61,0.35)}
 .btn-pdf:disabled{opacity:.6;cursor:wait;transform:none}
 .btn-pdf svg{color:#E8C25A}
+.mv-pop{position:fixed;z-index:1000;display:none;background:var(--paper,#F0EDE6);border:1px solid var(--border-strong);border-radius:14px;box-shadow:0 18px 48px rgba(0,0,0,.22);padding:8px}
+.mv-pop.open{display:block}
+.mv-x{position:absolute;top:6px;right:8px;width:28px;height:28px;border:none;border-radius:8px;background:transparent;color:var(--ink3);font-size:20px;line-height:1;cursor:pointer}
+.mv-x:hover{background:var(--gold-tint);color:var(--gold)}
+.mv-h{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);padding:4px 6px 8px}
+#mv-q{width:100%;padding:8px 10px;border:1px solid var(--border-strong);border-radius:9px;background:var(--card);color:var(--ink);font:inherit;font-size:13px;margin-bottom:6px;outline:none}
+#mv-q:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-tint)}
+.mv-list{max-height:300px;overflow:auto}
+.mv-i{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:9px;cursor:pointer}
+.mv-i:hover{background:var(--gold-tint)}.mv-i.on{background:var(--gold-tint-strong)}
+.mv-i b{display:block;font-size:13.5px;font-weight:600;color:var(--ink)}
+.mv-i small{display:block;font-size:11.5px;color:var(--ink3);margin-top:1px}
+.mv-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:5px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;color:var(--gold)}
+.mv-new .mv-dot{width:14px;height:14px;margin-top:2px}
+.mv-empty{padding:12px;text-align:center;font-size:12.5px;color:var(--ink3)}
 </style>
 <link rel="stylesheet" href="/css/theme-dark.css">
 <style>
@@ -2277,45 +2292,66 @@ async function loadProjectFilter(){
   }catch(e){ /* filtering by project is optional — the rest of the page still works */ }
 }
 
+/* ── Move to project: searchable dropdown anchored to the clicked button ── */
+let mvFor=null;
 async function moveToProject(id,ev){
   if(ev) ev.stopPropagation();
-  const row=allRows.find(r=>r.id===id);
+  const btn=ev&&(ev.currentTarget||ev.target);
   if(!allProjects.length) await loadProjectFilter();
-
-  const lines=['Move this conversation to which project?',''];
-  lines.push('0 — not in any project');
-  allProjects.forEach((p,i)=>lines.push(`${i+1} — ${p.name}`));
-  lines.push('','Type a number, or type a new project name to create it.');
-  if(row && row.project_name) lines.push(`Currently in: ${row.project_name}`);
-
-  const answer=prompt(lines.join(String.fromCharCode(10)), '');
-  if(answer===null) return;
-  const choice=answer.trim();
-  if(!choice) return;
-
-  let projectId;
-  if(/^\d+$/.test(choice)){
-    const n=parseInt(choice,10);
-    if(n===0) projectId=null;
-    else if(allProjects[n-1]) projectId=allProjects[n-1].id;
-    else { showToast('That number is not on the list.','error'); return; }
-  }else{
-    // Anything that is not a number is treated as a new project name
-    try{
-      const r=await fetch('/api/projects',{method:'POST',credentials:'same-origin',
-        headers:{'Content-Type':'application/json'},body:JSON.stringify({name:choice})});
-      const d=await r.json();
-      if(!r.ok) throw new Error(d.error||'Could not create the project.');
-      projectId=d.project.id;
-    }catch(e){ showToast(e.message,'error'); return; }
+  mvFor=id;
+  let m=document.getElementById('mv-pop');
+  if(!m){
+    m=document.createElement('div'); m.id='mv-pop'; m.className='mv-pop';
+    m.innerHTML='<button type="button" class="mv-x" onclick="closeMove()" title="Close" aria-label="Close">×</button><div class="mv-h">Move to project</div><input id="mv-q" placeholder="Search or type a new project name" autocomplete="off"><div class="mv-list" id="mv-list"></div>';
+    document.body.appendChild(m);
+    m.addEventListener('click',e=>e.stopPropagation());
+    document.getElementById('mv-q').addEventListener('input',paintMove);
+    document.getElementById('mv-q').addEventListener('keydown',e=>{
+      if(e.key==='Enter'){ const f=document.querySelector('#mv-list .mv-i'); if(f) f.click(); }
+      if(e.key==='Escape') closeMove();
+    });
+    document.addEventListener('click',closeMove);
+    window.addEventListener('resize',closeMove);
+    window.addEventListener('scroll',closeMove,true);
   }
-
+  const r=btn&&btn.getBoundingClientRect?btn.getBoundingClientRect():{left:innerWidth/2-160,bottom:120,right:innerWidth/2+160,top:100};
+  const w=320;
+  let left=Math.min(Math.max(8,r.right-w),innerWidth-w-8);
+  m.style.left=left+'px'; m.style.width=w+'px';
+  m.classList.add('open');
+  const below=innerHeight-r.bottom;
+  if(below<360 && r.top>below){ m.style.top=''; m.style.bottom=(innerHeight-r.top+6)+'px'; }
+  else { m.style.bottom=''; m.style.top=(r.bottom+6)+'px'; }
+  document.getElementById('mv-q').value='';
+  paintMove();
+  setTimeout(()=>document.getElementById('mv-q').focus(),20);
+}
+function closeMove(){ const m=document.getElementById('mv-pop'); if(m) m.classList.remove('open'); }
+function paintMove(){
+  const q=(document.getElementById('mv-q').value||'').trim(), ql=q.toLowerCase();
+  const row=allRows.find(r=>r.id===mvFor)||{};
+  const list=allProjects.filter(p=>!ql||p.name.toLowerCase().includes(ql));
+  let h='';
+  if(!ql && row.project_id) h+='<div class="mv-i" onclick="doMove(null)"><span class="mv-dot" style="border:1.5px dashed var(--ink4)"></span><div><b>Remove from project</b><small>Currently in '+esc(row.project_name||'a project')+'</small></div></div>';
+  h+=list.map(p=>'<div class="mv-i'+(p.id===row.project_id?' on':'')+'" onclick="doMove('+p.id+')"><span class="mv-dot" style="background:'+esc(p.color||'var(--gold)')+'"></span><div><b>'+esc(p.name)+'</b><small>'+(p.session_count||0)+' conversation'+(p.session_count===1?'':'s')+(p.id===row.project_id?' · current':'')+'</small></div></div>').join('');
+  if(q && !allProjects.some(p=>p.name.toLowerCase()===ql)) h+='<div class="mv-i mv-new" onclick="doMove(\'new\')"><span class="mv-dot">＋</span><div><b>Create “'+esc(q)+'”</b><small>New project, then move this conversation into it</small></div></div>';
+  if(!h) h='<div class="mv-empty">No projects yet — type a name to create one.</div>';
+  document.getElementById('mv-list').innerHTML=h;
+}
+async function doMove(projectId){
+  const id=mvFor; closeMove();
   try{
-    const r=await fetch(`/api/history/${id}/project`,{method:'PATCH',credentials:'same-origin',
-      headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:projectId})});
-    const d=await r.json();
-    if(!r.ok) throw new Error(d.error||'Could not move it.');
-    showToast(projectId?'Moved to the project.':'Taken out of its project.','success');
+    if(projectId==='new'){
+      const name=document.getElementById('mv-q').value.trim();
+      const r=await fetch('/api/projects',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+      const d=await r.json(); if(!r.ok) throw new Error(d.error||'Could not create the project.');
+      projectId=d.project.id; allProjects=[];
+    }
+    const r=await fetch(`/api/history/${id}/project`,{method:'PATCH',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:projectId})});
+    const d=await r.json(); if(!r.ok) throw new Error(d.error||'Could not move it.');
+    const p=allProjects.find(x=>x.id===projectId);
+    showToast(projectId?'Moved to '+(p?p.name:'the project')+' — its brief will update shortly.':'Taken out of its project.','success');
+    if(!allProjects.length) loadProjectFilter();
     loadHistory();
   }catch(e){ showToast(e.message,'error'); }
 }
@@ -2427,6 +2463,7 @@ function renderTable(){
       <td onclick="event.stopPropagation()">
         <div class="action-cell">
           <button class="icon-btn" title="View" onclick="openModal(${row.id})">👁</button>
+          <a class="icon-btn" title="Transcript, conversation and prompt" href="/meeting?id=${row.id}" style="text-decoration:none">💬</a>
           <button class="icon-btn" title="Move to project" onclick="moveToProject(${row.id},event)">🗂</button>
           <button class="icon-btn del" title="Delete" onclick="deleteMOC(${row.id},event)">🗑</button>
         </div>

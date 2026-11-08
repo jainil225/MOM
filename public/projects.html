@@ -392,6 +392,11 @@ tr:hover .action-cell{opacity:1}
         <div class="field-hint">Used on the upload screen and in Records. Each name can be used once.</div>
       </div>
       <div class="field">
+        <label class="field-label" for="f-type">Project type</label>
+        <select id="f-type" class="filter-input" style="width:100%"></select>
+        <div class="field-hint">Shapes what the project brief tracks — e.g. PBC list for an audit, MIS and cash for a Virtual CFO review.</div>
+      </div>
+      <div class="field">
         <label class="field-label" for="f-desc">Description <span style="color:var(--ink4)">(optional)</span></label>
         <textarea id="f-desc" rows="2" maxlength="2000" placeholder="What this project covers"></textarea>
       </div>
@@ -667,6 +672,7 @@ function openCreate(){
   document.getElementById('f-ctx').value='';
   document.getElementById('f-carry').checked=true;
   document.getElementById('f-tags').value='';
+  fillTypes('general');
   paintSwatches();
   document.getElementById('edit-overlay').classList.add('open');
   setTimeout(()=>document.getElementById('f-name').focus(),50);
@@ -683,11 +689,17 @@ function openEdit(id){
   document.getElementById('f-ctx').value=p.context_notes||'';
   document.getElementById('f-carry').checked=p.carry_forward!==false;
   document.getElementById('f-tags').value=p.auto_tags||'';
+  fillTypes(p.project_type||'general');
   paintSwatches();
   document.getElementById('edit-overlay').classList.add('open');
   setTimeout(()=>document.getElementById('f-name').focus(),50);
 }
 
+let PTYPES=null;
+async function fillTypes(sel){
+  if(!PTYPES){ try{ const r=await fetch('/api/project-types',{credentials:'same-origin'}); PTYPES=(await r.json()).types||[]; }catch(e){ PTYPES=[{key:'general',label:'General'}]; } }
+  document.getElementById('f-type').innerHTML=PTYPES.map(t=>'<option value="'+t.key+'"'+(t.key===sel?' selected':'')+'>'+t.label+'</option>').join('');
+}
 function closeEdit(){ document.getElementById('edit-overlay').classList.remove('open'); }
 
 async function saveProject(){
@@ -700,6 +712,7 @@ async function saveProject(){
     context_notes:document.getElementById('f-ctx').value.trim(),
     carry_forward:document.getElementById('f-carry').checked,
     auto_tags:document.getElementById('f-tags').value.trim(),
+    project_type:document.getElementById('f-type').value||'general',
     color:pickedColour
   };
   const btn=document.getElementById('save-btn');
